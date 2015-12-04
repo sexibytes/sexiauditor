@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<modules>
+        <category>
+                <name>vCenter</name>
+                <module>
+                        <id>modulevc01</id>
+                        <name>list mo dule01</name>
+                        <path>module01.pl</path>
+                        <version>0.1</version>
+                        <description>Donec id elit non mi porta gravida at eget metus. Maecenas sed diam eget risus varius blandit. Donec id elit non mi porta gravida at eget metus. Maecenas sed diam eget risus varius blandit.</description>
+                </module>
+                <module>
+                        <id>modulevc02</id>
+                        <name>apply module02</name>
+                        <path>module02.pl</path>
+                        <description>non mi porta gravida at eget metus. Maecenas sed diam eget risus varius blandit. Donec id elit non mi porta gravida at eget metus. Maecenas sed diam eget risus varius blandit.</description>
+                </module>
+                <module>
+                        <id>modulevc03</id>
+                        <name>display module03</name>
+                        <path>module03.pl</path>
+                        <description>Donec id elit non t eget metus. Maecenas sed diam eget risus varius blandit. Donec id elit non mi porta gravida at eget metus. Maecenas sed diam eget risus varius blandit.</description>
+                </module>
+                <module>
+                        <id>modulevc04</id>
+                        <name>bla bla module04</name>
+                        <path>module04.pl</path>
+                        <description>Donec id elit non mi porta gravida at eget metus. Maecensus varius blandit. Donec id elit non mi porta gravida at eget metus. Maecenas sed diam eget risus varius blandit.</description>
+                </module>
+        </category>
+        <category>
+                <name>Cluster</name>
+                <module>
+                        <id>moduleclu01</id>
+                        <name>lasdasdaist mo dule01</name>
+                        <path>moduleclu01.pl</path>
+                        <description>Donec id elus. Maecenas sed diam eget risus varius blandit. Donec id elit non mi porta gravida at eget metus. Maecenas sed diam eget risus varius blandit.</description>
+                </module>
+                <module>
+                        <id>moduleclu02</id>
+                        <name>apdasdasply module02</name>
+                        <path>moduleclu02.pl</path>
+                        <description>Donec id elit non mi porta gravida at eget metus. Maecenas sed diam eget risus varius mi porta gravida at eget metus. Maecenas sed diam eget risus varius blandit.</description>
+                </module>
+                <module>
+                        <id>moduleclu03</id>
+                        <name>disasdasdplay module03</name>
+                        <path>moduleclu03.pl</path>
+                        <description>Donec id elit non mi porta gravida at eget metus. Maecerisus varius blandit. Donec id elit non mi porta gravida at eget metus. Maecenas sed diam eget risus varius blandit.</description>
+                </module>
+                <module>
+                        <id>moduleclu04</id>
+                        <name>blasdas bla module04</name>
+                        <path>moduleclu04.pl</path>
+                        <description>Donec id elit non mi porta gs sed diam eget risus varius blandit. Donec id elit non mi porta gravida at eget metus. Maecenas sed diam eget risus varius blandit.</description>
+                </module>
+        </category>
+	<category>
+		<name>Virtual Machine</name>
+		<module>
+			<id>vminventory</id>
+			<name>VM Inventory</name>
+			<description>Virtual Machine inventory with a lot of properties</description>
+		</module>
+	</category>
+</modules>
