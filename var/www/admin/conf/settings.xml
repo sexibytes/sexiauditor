@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<modules>
+  <module>
+    <id>modulevc01</id>
+    <schedule>off</schedule>
+  </module>
+  <module>
+    <id>modulevc02</id>
+    <schedule>off</schedule>
+  </module>
+  <module>
+    <id>modulevc03</id>
+    <schedule>off</schedule>
+  </module>
+  <module>
+    <id>modulevc04</id>
+    <schedule>off</schedule>
+  </module>
+  <module>
+    <id>moduleclu01</id>
+    <schedule>off</schedule>
+  </module>
+  <module>
+    <id>moduleclu02</id>
+    <schedule>off</schedule>
+  </module>
+  <module>
+    <id>moduleclu03</id>
+    <schedule>off</schedule>
+  </module>
+  <module>
+    <id>moduleclu04</id>
+    <schedule>off</schedule>
+  </module>
+  <module>
+    <id>modulevm01</id>
+    <schedule>hourly</schedule>
+  </module>
+  <module>
+    <id>vminventory</id>
+    <schedule>monthly</schedule>
+  </module>
+</modules>
