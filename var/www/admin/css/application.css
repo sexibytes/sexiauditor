@@ -1,0 +1,241 @@
+// ----------------------------------------------------------------------------
+// Base styles
+// ----------------------------------------------------------------------------
+
+img { 
+  border: 0; 
+  -ms-interpolation-mode: bicubic; 
+  vertical-align: middle; 
+}
+
+img, object { 
+  max-width: 100%; 
+}
+
+iframe { 
+  max-width: 100%; 
+}
+
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+  width: 100%;
+}
+
+td {
+  vertical-align: middle;
+}
+
+ul, ol { 
+  padding: 0; 
+  margin: 0; 
+}
+
+h1, h2, h3, h4, h5, p { 
+  padding: 0;
+  margin: 0; 
+}
+h1 { 
+  margin-bottom: 12px;
+  text-align: center;
+  font-size: 30px;
+  font-weight: 400;
+}
+h2 {
+  text-transform: uppercase;
+  font-size: 76px;
+  font-weight: 700;
+  color: #fff;
+}
+h3 {
+  font-size: 25px;
+  font-weight: 600;
+  color: #fff;
+}
+
+/**** Isotope CSS3 transitions ****/
+
+.isotope,
+.isotope .isotope-item {
+  -webkit-transition-duration: 0.8s;
+     -moz-transition-duration: 0.8s;
+      -ms-transition-duration: 0.8s;
+       -o-transition-duration: 0.8s;
+          transition-duration: 0.8s;
+}
+
+.isotope {
+  -webkit-transition-property: height, width;
+     -moz-transition-property: height, width;
+      -ms-transition-property: height, width;
+       -o-transition-property: height, width;
+          transition-property: height, width;
+}
+
+.isotope .isotope-item {
+  -webkit-transition-property: -webkit-transform, opacity;
+     -moz-transition-property:    -moz-transform, opacity;
+      -ms-transition-property:     -ms-transform, opacity;
+       -o-transition-property:      -o-transform, opacity;
+          transition-property:         transform, opacity;
+}
+
+/**** disabling Isotope CSS3 transitions ****/
+
+.isotope.no-transition,
+.isotope.no-transition .isotope-item,
+.isotope .isotope-item.no-transition {
+  -webkit-transition-duration: 0s;
+     -moz-transition-duration: 0s;
+      -ms-transition-duration: 0s;
+       -o-transition-duration: 0s;
+          transition-duration: 0s;
+}
+#statsgrid{
+  width: 100%;
+}
+.stat {
+  width: 178px;
+  height: 230px;
+  margin: 5px;
+  display: table;
+  float: left;
+  overflow: hidden;
+  position: relative;
+}
+
+.wide2 {
+  width: 366px;
+  font-size: 65px;
+}
+.more-info2 {
+  color:#EEEEEE;
+  font-size: 16px;
+  position: absolute;
+  bottom: 10px;
+  left: 0;
+  right: 0;
+}
+.wide3 {
+  width: 554px;
+}
+.height2 {
+  height: 470px;
+}
+
+.name {
+  left: 0.5em;
+  bottom: 1.6em;
+  font-size: 1.05em;
+}
+.value {
+  font-size: 2.0em;
+}
+.width2.height2 .value {
+  font-size: 4.0em; 
+}
+.scope {
+  font-size: 1.25em;
+  font-weight: bold;
+  color: hsla(0,0%,0%,.5);
+}
+
+.title {
+    color:#EEEEEE;
+    font-size: 28px;
+    font-weight: bold;
+    position: absolute;
+    top: 20px;
+    left: 0;
+    right: 0;
+}
+
+.text {
+    color: #EEEEEE;
+}
+.value {
+  color: #EEEEEE;
+  font-size: 62px;
+  font-weight: bold;
+  position: absolute;
+  top: 105px;
+  left: 0;
+  right: 0;
+}
+.tdlabel{
+  font-size: 16px;
+  text-align: left;
+  padding-top:5px;
+  color:#EEEEEE;
+}
+.tdvalue{
+  font-size: 16px;
+  text-align: right;
+  color:#EEEEEE;
+}
+.top5table{
+  padding-top: 40px;
+}
+.more-info {
+  color:#EEEEEE;
+  font-size: 13px;
+  position: absolute;
+  bottom: 10px;
+  left: 0;
+  right: 0;
+}
+
+.updated-at {
+  font-size: 15px;
+  position: absolute;
+  bottom: 12px;
+  left: 0;
+  right: 0;
+}
+.widget {
+  padding-top:0px;
+  padding-bottom: 30px;
+  padding-right:12px;
+  padding-left:12px;
+  text-align: center;
+  display: table-cell;
+  margin: 0 auto;
+  width: 100%;
+  vertical-align: middle;
+}
+.widget-moreinfo {
+  background-color:#4A4A47;
+  vertical-align: middle;
+}
+.widget-infrastructure {
+  background-color: #51BFBC;
+  vertical-align: middle;
+}
+.widget-vcenter {
+  background-color: #96BF48;
+  vertical-align: middle;
+}
+.widget-cluster {
+  background-color: #BA2121;
+  vertical-align: middle;
+}
+.widget-host {
+  background-color: #E8BA0E;
+  vertical-align: middle;
+}
+.widget-vm {
+  background-color: #036582;
+  vertical-align: middle;
+}
+.widget-lun {
+  background-color: #736766;
+  vertical-align: middle;
+}
+.widget-datastore {
+  background-color: #37643D;
+  vertical-align: middle;
+}
+.widget-vmdk {
+  background-color: #FF962D;
+  vertical-align: middle;
+}
