@@ -37,6 +37,11 @@ function humanFileSize($size,$unit="") {
         return number_format($size)." bytes";
 }
 
+function human_filesize($size, $precision = 2, $unity = 'B') {
+    for($i = 0; ($size / 1024) > 0.9; $i++, $size /= 1024) {}
+    return round($size, $precision).' '.[$unity,"k$unity","M$unity","G$unity","T$unity","P$unity","E$unity","Z$unity","Y$unity"][$i];
+}
+
 function unlinkRecursive($dir) {
 	if(!$dh = @opendir($dir))
         	return;
