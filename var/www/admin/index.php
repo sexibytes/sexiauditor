@@ -11,8 +11,136 @@ if (session_status() != PHP_SESSION_ACTIVE ) { session_start(); }
 #session_start();
 $title = "SexiGraf summary";
 require("header.php");
+require("helper.php");
+
+$xmlPath = "/opt/vcron/data/";
+if (!file_exists($xmlPath)) { 
+    exit("[ERROR] Folder $xmlPath don't exist, aborting...");
+}
+
+$xmlSubDirectories = scandir($xmlPath, SCANDIR_SORT_DESCENDING);
+if (count($xmlSubDirectories) < 3) {
+##########################################
+# vOpenData default sample               #
+# It's used only at the beginning before #
+# any infrastructure have been added     #
+##########################################
+    $totalVMs = "168K";
+    $totalvCenter = 395; 
+    $totalCluster = "1.6K";
+    $totalHost = "13.9K";
+    $totalLUN = "34.4K";
+    $totalNFS = 0;
+    $totalDatastore = "31.4K";
+    $averageVMPervCenter = 426;
+    $totalHostCPU = 0;
+    $totalHostMemory = 0;
+    $totalDatastoreSize = 0;
+    $totalvMotion = 0;
+    $totalBandwidth = 0;
+    $totalTPSSavings = 0;
+    $averageVMPerCluster = 89.4;
+    $averageVMPerHost = 12.2;
+    $averageVMDKCommitedSize = 75.72;
+    $averageVMDKUncommitedSize = 0;
+    $averageVMDKProvisionedSize = 75.72;
+    $sortedTabGuestOS = array(  "Microsoft Windows Server 2008 R2 (64-bit)" => "20.9%",
+                                "Microsoft Windows Server 2003 Standard (64-bit)" => "12.4%",
+                                "Red Hat Enterprise Linux 5 (64-bit)" => "8.6%",
+                                "Microsoft Windows Server 2003 Standard (32-bit)" => "6.7%",
+                                "Microsoft Windows XP Professional (32-bit)" => "6.2%",
+                                "Ubuntu Linux (64-bit)" => "5.8%",
+                                "Microsoft Windows 7 (64-bit)" => "5.1%",
+                                "Red Hat Enterprise Linux 6 (64-bit)" => "3.9%",
+                                "Microsoft Windows Server 2008 (64-bit)" => "3.4%",
+                                "Microsoft Windows 7 (32-bit)" => "2.5%" );
+    $sortedHostModel = array(  "HP" => "48.5%",
+                                "Dell" => "16.8%",
+                                "Dell Inc." => "15.8%",
+                                "IBM" => "11.1%",
+                                "Cisco Systems Inc" => "5.6%" );
+    $sortedHostCPUType = array( "Intel Xeon E5-2970" => "48.5%",
+                                "Cyrix" => "16.8%",
+                                "AMD G2" => "15.8%",
+                                "Pentium M" => "11.1%",
+                                "A9X" => "5.6%" );
+    $sortedESXBuild = array(    "ESX 5.5 build 23123" => "48.5%",
+                                "sdfsdfs" => "16.8%",
+                                "sdfsdfsdf" => "15.8%",
+                                "sdfsdfsdfaa" => "11.1%",
+                                "eqdnspdfn" => "5.6%" );
+    $averageHostPervCenter = 37;
+    $averageClusterPervCenter = 4;
+    $averageVMDKPervCenter = 684;
+    $averageLUNPervCenter = 91;
+    $averageHostPerCluster = "5.4";
+    $averageDatastorePerCluster = "20.5";
+    $averageDatastorePerHost = 16;
+    $averageMemoryPerHost = "118.91 GB";
+    $averageCPUPerHost = "2.1";
+    $averageDatastoreSize = 0;
+    $averageVMMemory = 0;
+    $averageVMCPU = 0;
+} else {
+    $scannedDirectories = array_values(array_diff(scandir($xmlPath, SCANDIR_SORT_DESCENDING), array('..', '.')))[0];
+    $xmlVMFile = "$xmlPath$scannedDirectories/vms-global.xml";
+    $xmlHostFile = "$xmlPath$scannedDirectories/hosts-global.xml";
+    $xmlVM = simplexml_load_file($xmlVMFile);
+    $xmlHost = simplexml_load_file($xmlHostFile);
+    $xmlVM2 = new DOMDocument;
+    $xmlVM2->load($xmlVMFile);
+    $xpathVM = new DOMXPath($xmlVM2);
+    $xmlHost2 = new DOMDocument;
+    $xmlHost2->load($xmlHostFile);
+    $xpathHost = new DOMXPath($xmlHost2);
+    $totalCommited = (int) $xpathVM->evaluate('sum(/vms/vm/COMMITED)');
+    $totalUncommited = (int) $xpathVM->evaluate('sum(/vms/vm/uncommited)');
+    $totalProvisioned = (int) $xpathVM->evaluate('sum(/vms/vm/PROVISIONNED)');
+    $totalVMs = $xmlVM->count();
+    $totalvCenter = count(array_diff(array_count_values(array_map("strval", $xmlVM->xpath("/vms/vm/VCENTER"))), array("1")));
+    $totalCluster = count(array_diff(array_count_values(array_map("strval", $xmlVM->xpath("/vms/vm/CLUSTER"))), array("1")));
+    $totalHost = count($xmlHost);
+    $totalVMCPU = (int) $xpathVM->evaluate('sum(/vms/vm/NUMCPU)');
+    $totalVMMemory = (int) $xpathVM->evaluate('sum(/vms/vm/MEMORY)');
+    $totalLUN = 0;
+    $totalNFS = 0;
+    $totalDatastore = 0;
+    $totalHostCPU = (int) $xpathHost->evaluate('sum(/hosts/host/numcpu)');
+    $totalHostCPUMhz = (int) $xpathHost->evaluate('sum(/hosts/host/cpumhz)');
+    $totalHostMemory = (int) $xpathHost->evaluate('sum(/hosts/host/memory)');
+    $totalDatastoreSize = 0;
+    $totalvMotion = 0;
+    $totalBandwidth = 0;
+    $totalTPSSavings = 0;
+    $averageVMPervCenter = round($totalVMs / $totalvCenter);
+    $averageVMPerCluster = round($totalVMs / $totalCluster);
+    $averageVMPerHost = round($totalVMs / $totalHost);
+    $averageVMDKCommitedSize = round($totalCommited / $totalVMs, 2);
+    $averageVMDKProvisionedSize = round($totalProvisioned / $totalVMs, 2);
+    $averageVMDKUncommitedSize = round($totalUncommited / $totalVMs, 2);
+    $sortedTabGuestOS = array_diff(array_count_values(array_map("strval", $xmlVM->xpath("/vms/vm/guestOS"))), array("1"));
+    arsort($sortedTabGuestOS);
+    $sortedHostModel = array_diff(array_count_values(array_map("strval", $xmlHost->xpath("/hosts/host/model"))), array("1"));
+    arsort($sortedHostModel);
+    $sortedHostCPUType = array_diff(array_count_values(array_map("strval", $xmlHost->xpath("/hosts/host/cputype"))), array("1"));
+    arsort($sortedHostCPUType);
+    $sortedESXBuild = array_diff(array_count_values(array_map("strval", $xmlHost->xpath("/hosts/host/esxbuild"))), array("1"));
+    arsort($sortedESXBuild);
+    $averageHostPervCenter = round($totalHost / $totalvCenter, 2);
+    $averageClusterPervCenter = round($totalCluster / $totalvCenter, 2);
+    $averageVMDKPervCenter = 0;
+    $averageLUNPervCenter = 0;
+    $averageHostPerCluster = round($totalHost / $totalCluster,2);
+    $averageDatastorePerCluster = 0;
+    $averageDatastorePerHost = 0;
+    $averageMemoryPerHost = human_filesize($totalHostMemory / $totalHost,2);
+    $averageCPUPerHost = round($totalHostCPU / $totalHost,2);
+    $averageDatastoreSize = 0;
+    $averageVMMemory = human_filesize(1024 * 1024 * $totalVMMemory / $totalVMs,2);
+    $averageVMCPU = round($totalVMCPU / $totalVMs,2);
+}
 ?>
-<link href='css/application.css' rel='stylesheet' />
+  <link href='css/application.css' rel='stylesheet' />
 
   <div class='container'>
   <div class='navbar navbar-static-top'>
@@ -20,33 +148,13 @@ require("header.php");
       <div class=''>
         <ul class='nav navbar-top-links navbar-left' id='filters'>
           <li><i class="glyphicon glyphicon-th"></i> <b>Please select your view scope:</b></li>
-          <li>
-            <a data-filter='*' href='#'>All</a>
-          </li>
-          <li>
-            <a data-filter='.stat-infrastructure' href='#'>Infrastructure</a>
-          </li>
-          <li>
-            <a data-filter='.stat-vcenter' href='#'>vCenter</a>
-          </li>
-          <li>
-            <a data-filter='.stat-cluster' href='#'>Cluster</a>
-          </li>
-          <li>
-            <a data-filter='.stat-host' href='#'>Host</a>
-          </li>
-          <li>
-            <a data-filter='.stat-lun' href='#'>LUN</a>
-          </li>
-          <li>
-            <a data-filter='.stat-datastore' href='#'>Datastore</a>
-          </li>
-          <li>
-            <a data-filter='.stat-vm' href='#'>VM</a>
-          </li>
-          <li>
-            <a data-filter='.stat-vmdk' href='#'>VMDK</a>
-          </li>
+          <li><a data-filter='*' href='#'>All</a></li>
+          <li><a data-filter='.stat-vcenter' href='#'>vCenter</a></li>
+          <li><a data-filter='.stat-cluster' href='#'>Cluster</a></li>
+          <li><a data-filter='.stat-host' href='#'>Host</a></li>
+          <li><a data-filter='.stat-storage' href='#'>Storage</a></li>
+          <li><a data-filter='.stat-vm' href='#'>VM</a></li>
+          <li><a data-filter='.stat-vmdk' href='#'>VMDK</a></li>
         </ul>
       </div>
     </div>
@@ -63,34 +171,10 @@ require("header.php");
                 <div class='updated-at'></div>
               </div>
             </div>
-            <div class='stat wide2 stat-infrastructure'>
-              <div class='widget widget-infrastructure'>
-                <div class='title'>Infrastructures</div>
-                <div class='value'>340</div>
-                <div class='more-info2'>Total</div>
-                <div class='updated-at'></div>
-              </div>
-            </div>
-            <div class='stat stat-infrastructure stat-cluster'>
-              <div class='widget widget-infrastructure'>
-                <div class='title'>Clusters</div>
-                <div class='value'>4</div>
-                <div class='more-info'>Average Per Infrastructure</div>
-                <div class='updated-at'></div>
-              </div>
-            </div>
-            <div class='stat stat-infrastructure stat-datastore'>
-              <div class='widget widget-infrastructure'>
-                <div class='title'>Datastores</div>
-                <div class='value'>92</div>
-                <div class='more-info'>Average Per Infrastructure</div>
-                <div class='updated-at'></div>
-              </div>
-            </div>
             <div class='stat stat-vcenter'>
               <div class='widget widget-vcenter'>
                 <div class='title'>vCenters</div>
-                <div class='value'>395</div>
+                <div class='value'><?php echo $totalvCenter; ?></div>
                 <div class='more-info'>Total</div>
                 <div class='updated-at'></div>
               </div>
@@ -98,80 +182,15 @@ require("header.php");
             <div class='stat stat-host stat-vcenter'>
               <div class='widget widget-vcenter'>
                 <div class='title'>Hosts</div>
-                <div class='value'>37</div>
+                <div class='value'><?php echo $averageHostPervCenter; ?></div>
                 <div class='more-info'>Average Per vCenter</div>
-                <div class='updated-at'></div>
-              </div>
-            </div>
-            <div class='stat wide2 height2 stat-infrastructure'>
-              <div class='widget widget-infrastructure'>
-                <div class='title'>Top 10 Countries</div>
-                <table width='100%'>
-                  <tr>
-                    <td class='tdlabel'>1. United States</td>
-                    <td class='tdvalue'>32.0%</td>
-                  </tr>
-                  <tr>
-                    <td class='tdlabel'>2. United Kingdom</td>
-                    <td class='tdvalue'>10.7%</td>
-                  </tr>
-                  <tr>
-                    <td class='tdlabel'>3. France</td>
-                    <td class='tdvalue'>10.4%</td>
-                  </tr>
-                  <tr>
-                    <td class='tdlabel'>4. Germany</td>
-                    <td class='tdvalue'>6.8%</td>
-                  </tr>
-                  <tr>
-                    <td class='tdlabel'>5. Netherlands</td>
-                    <td class='tdvalue'>6.5%</td>
-                  </tr>
-                  <tr>
-                    <td class='tdlabel'>6. Belgium</td>
-                    <td class='tdvalue'>5.9%</td>
-                  </tr>
-                  <tr>
-                    <td class='tdlabel'>7. Switzerland</td>
-                    <td class='tdvalue'>4.1%</td>
-                  </tr>
-                  <tr>
-                    <td class='tdlabel'>8. Canada</td>
-                    <td class='tdvalue'>2.7%</td>
-                  </tr>
-                  <tr>
-                    <td class='tdlabel'>9. Sweden</td>
-                    <td class='tdvalue'>2.4%</td>
-                  </tr>
-                  <tr>
-                    <td class='tdlabel'>10. Denmark</td>
-                    <td class='tdvalue'>2.1%</td>
-                  </tr>
-                </table>
-                <div class='more-info2'>Percent Of Total Infrastructures</div>
-                <div class='updated-at'></div>
-              </div>
-            </div>
-            <div class='stat stat-infrastructure stat-vmdk'>
-              <div class='widget widget-infrastructure'>
-                <div class='title'>VMDKs</div>
-                <div class='value'>754</div>
-                <div class='more-info'>Average Per Infrastructure</div>
-                <div class='updated-at'></div>
-              </div>
-            </div>
-            <div class='stat stat-infrastructure stat-host'>
-              <div class='widget widget-infrastructure'>
-                <div class='title'>Hosts</div>
-                <div class='value'>40</div>
-                <div class='more-info'>Average Per Infrastructure</div>
                 <div class='updated-at'></div>
               </div>
             </div>
             <div class='stat stat-cluster stat-vcenter'>
               <div class='widget widget-vcenter'>
                 <div class='title'>Clusters</div>
-                <div class='value'>4</div>
+                <div class='value'><?php echo $averageClusterPervCenter; ?></div>
                 <div class='more-info'>Average Per vCenter</div>
                 <div class='updated-at'></div>
               </div>
@@ -179,54 +198,23 @@ require("header.php");
             <div class='stat stat-vm stat-vcenter'>
               <div class='widget widget-vcenter'>
                 <div class='title'>VMs</div>
-                <div class='value'>426</div>
+                <div class='value'><?php echo $averageVMPervCenter; ?></div>
                 <div class='more-info'>Average Per vCenter</div>
-                <div class='updated-at'></div>
-              </div>
-            </div>
-            <div class='stat wide2 stat-infrastructure'>
-              <div class='widget widget-infrastructure'>
-                <div class='title'>Infrastructure Types</div>
-                <div class='top5table'>
-                  <table class='top5table' width='100%'>
-                    <tr>
-                      <td class='tdlabel'>1. Server</td>
-                      <td class='tdvalue'>54.1%</td>
-                    </tr>
-                    <tr>
-                      <td class='tdlabel'>2. Lab</td>
-                      <td class='tdvalue'>17.4%</td>
-                    </tr>
-                    <tr>
-                      <td class='tdlabel'>3. Combination</td>
-                      <td class='tdvalue'>12.4%</td>
-                    </tr>
-                    <tr>
-                      <td class='tdlabel'>4. Cloud</td>
-                      <td class='tdvalue'>8.5%</td>
-                    </tr>
-                    <tr>
-                      <td class='tdlabel'>5. Desktop/VDI</td>
-                      <td class='tdvalue'>7.6%</td>
-                    </tr>
-                  </table>
-                </div>
-                <div class='more-info2'>Percent Of Total Infrastructures</div>
                 <div class='updated-at'></div>
               </div>
             </div>
             <div class='stat stat-vmdk stat-vcenter'>
               <div class='widget widget-vcenter'>
                 <div class='title'>VMDKs</div>
-                <div class='value'>684</div>
+                <div class='value'><?php echo $averageVMDKPervCenter; ?></div>
                 <div class='more-info'>Average Per vCenter</div>
                 <div class='updated-at'></div>
               </div>
             </div>
-            <div class='stat stat-lun stat-vcenter'>
+            <div class='stat stat-storage stat-vcenter'>
               <div class='widget widget-vcenter'>
                 <div class='title'>LUNs</div>
-                <div class='value'>91</div>
+                <div class='value'><?php echo $averageLUNPervCenter; ?></div>
                 <div class='more-info'>Average Per vCenter</div>
                 <div class='updated-at'></div>
               </div>
@@ -234,64 +222,8 @@ require("header.php");
             <div class='stat stat-cluster'>
               <div class='widget widget-cluster'>
                 <div class='title'>Clusters</div>
-                <div class='value'>1.6K</div>
+                <div class='value'><?php echo $totalCluster; ?></div>
                 <div class='more-info'>Total</div>
-                <div class='updated-at'></div>
-              </div>
-            </div>
-            <div class='stat stat-cluster stat-host'>
-              <div class='widget widget-cluster'>
-                <div class='title'>Hosts</div>
-                <div class='value'>5.4</div>
-                <div class='more-info'>Average Per Cluster</div>
-                <div class='updated-at'></div>
-              </div>
-            </div>
-            <div class='stat stat-cluster stat-vm'>
-              <div class='widget widget-cluster'>
-                <div class='title'>VMs</div>
-                <div class='value'>89.4</div>
-                <div class='more-info'>Average Per Cluster</div>
-                <div class='updated-at'></div>
-              </div>
-            </div>
-            <div class='stat stat-cluster stat-datastore'>
-              <div class='widget widget-cluster'>
-                <div class='title'>Datastores</div>
-                <div class='value'>20.5</div>
-                <div class='more-info'>Average Per Cluster</div>
-                <div class='updated-at'></div>
-              </div>
-            </div>
-            <div class='stat wide2 stat-host'>
-              <div class='widget widget-host'>
-                <div class='title'>Hosts</div>
-                <div class='value'>13.9K</div>
-                <div class='more-info2'>Total</div>
-                <div class='updated-at'></div>
-              </div>
-            </div>
-            <div class='stat stat-host stat-vm'>
-              <div class='widget widget-host'>
-                <div class='title'>VMs</div>
-                <div class='value'>12.2</div>
-                <div class='more-info'>Average Per Host</div>
-                <div class='updated-at'></div>
-              </div>
-            </div>
-            <div class='stat stat-host stat-datastore'>
-              <div class='widget widget-host'>
-                <div class='title'>Datastores</div>
-                <div class='value'>16.0</div>
-                <div class='more-info'>Average Per Host</div>
-                <div class='updated-at'></div>
-              </div>
-            </div>
-            <div class='stat wide2 stat-host'>
-              <div class='widget widget-host'>
-                <div class='title'>Memory</div>
-                <div class='value'>118.91 GB</div>
-                <div class='more-info'>Average Per Host</div>
                 <div class='updated-at'></div>
               </div>
             </div>
@@ -299,141 +231,188 @@ require("header.php");
               <div class='widget widget-vm'>
                 <div class='title'>Top 10 Operating Systems</div>
                 <table width='100%'>
-                  <tr>
-                    <td class='tdlabel'>1. Microsoft Windows Server 2008 R2 (64-bit)</td>
-                    <td class='tdvalue'>20.9%</td>
-                  </tr>
-                  <tr>
-                    <td class='tdlabel'>2. Microsoft Windows Server 2003 Standard (64-bit)</td>
-                    <td class='tdvalue'>12.4%</td>
-                  </tr>
-                  <tr>
-                    <td class='tdlabel'>3. Red Hat Enterprise Linux 5 (64-bit)</td>
-                    <td class='tdvalue'>8.6%</td>
-                  </tr>
-                  <tr>
-                    <td class='tdlabel'>4. Microsoft Windows Server 2003 Standard (32-bit)</td>
-                    <td class='tdvalue'>6.7%</td>
-                  </tr>
-                  <tr>
-                    <td class='tdlabel'>5. Microsoft Windows XP Professional (32-bit)</td>
-                    <td class='tdvalue'>6.2%</td>
-                  </tr>
-                  <tr>
-                    <td class='tdlabel'>6. Ubuntu Linux (64-bit)</td>
-                    <td class='tdvalue'>5.8%</td>
-                  </tr>
-                  <tr>
-                    <td class='tdlabel'>7. Microsoft Windows 7 (64-bit)</td>
-                    <td class='tdvalue'>5.1%</td>
-                  </tr>
-                  <tr>
-                    <td class='tdlabel'>8. Red Hat Enterprise Linux 6 (64-bit)</td>
-                    <td class='tdvalue'>3.9%</td>
-                  </tr>
-                  <tr>
-                    <td class='tdlabel'>9. Microsoft Windows Server 2008 (64-bit)</td>
-                    <td class='tdvalue'>3.4%</td>
-                  </tr>
-                  <tr>
-                    <td class='tdlabel'>10. Microsoft Windows 7 (32-bit)</td>
-                    <td class='tdvalue'>2.5%</td>
-                  </tr>
+<?php
+    $topGuestOS = 1;
+    foreach ($sortedTabGuestOS as  $key => $value) {
+        if ($key == 'Not Available') { continue; }
+        echo '                  <tr>
+                    <td class=\'tdlabel\'>' . $topGuestOS++ . '. '. $key . '</td>
+                    <td class=\'tdvalue\'>' . $value . '</td>
+                  </tr>';
+        if ($topGuestOS >= 11) { break; }
+    }
+?>
                 </table>
                 <div class='more-info2'>Percent of Total VMs</div>
                 <div class='updated-at'></div>
               </div>
             </div>
-            <div class='stat stat-host'>
+            <div class='stat stat-cluster stat-host'>
+              <div class='widget widget-cluster'>
+                <div class='title'>Hosts</div>
+                <div class='value'><?php echo $averageHostPerCluster; ?></div>
+                <div class='more-info'>Average Per Cluster</div>
+                <div class='updated-at'></div>
+              </div>
+            </div>
+            <div class='stat stat-cluster stat-vm'>
+              <div class='widget widget-cluster'>
+                <div class='title'>VMs</div>
+                <div class='value'><?php echo $averageVMPerCluster; ?></div>
+                <div class='more-info'>Average Per Cluster</div>
+                <div class='updated-at'></div>
+              </div>
+            </div>
+            <div class='stat stat-cluster stat-storage'>
+              <div class='widget widget-cluster'>
+                <div class='title'>Datastores</div>
+                <div class='value'><?php echo $averageDatastorePerCluster; ?></div>
+                <div class='more-info'>Average Per Cluster</div>
+                <div class='updated-at'></div>
+              </div>
+            </div>
+            <div class='stat wide2 stat-host'>
               <div class='widget widget-host'>
-                <div class='title'>CPUs</div>
-                <div class='value'>2.1</div>
+                <div class='title'>Hosts</div>
+                <div class='value'><?php echo $totalHost; ?></div>
+                <div class='more-info2'>Total</div>
+                <div class='updated-at'></div>
+              </div>
+            </div>
+            <div class='stat stat-host stat-vm'>
+              <div class='widget widget-host'>
+                <div class='title'>VMs</div>
+                <div class='value'><?php echo $averageVMPerHost; ?></div>
+                <div class='more-info'>Average Per Host</div>
+                <div class='updated-at'></div>
+              </div>
+            </div>
+            <div class='stat stat-host stat-storage'>
+              <div class='widget widget-host'>
+                <div class='title'>Datastores</div>
+                <div class='value'><?php echo $averageDatastorePerHost; ?></div>
                 <div class='more-info'>Average Per Host</div>
                 <div class='updated-at'></div>
               </div>
             </div>
             <div class='stat wide2 stat-host'>
               <div class='widget widget-host'>
-                <div class='title'>Top 5 Host Vendors</div>
+                <div class='title'>Memory</div>
+                <div class='value'><?php echo $averageMemoryPerHost; ?></div>
+                <div class='more-info'>Average Per Host</div>
+                <div class='updated-at'></div>
+              </div>
+            </div>
+            <div class='stat stat-host'>
+              <div class='widget widget-host'>
+                <div class='title'>Sockets</div>
+                <div class='value'><?php echo $averageCPUPerHost; ?></div>
+                <div class='more-info'>Average Per Host</div>
+                <div class='updated-at'></div>
+              </div>
+            </div>
+            <div class='stat wide3 stat-host'>
+              <div class='widget widget-host'>
+                <div class='title'>Top 5 Host CPU Type</div>
                 <div class='top5table'>
                   <table class='top5table' width='100%'>
-                    <tr>
-                      <td class='tdlabel'>1. HP</td>
-                      <td class='tdvalue'>48.5%</td>
-                    </tr>
-                    <tr>
-                      <td class='tdlabel'>2. Dell</td>
-                      <td class='tdvalue'>16.8%</td>
-                    </tr>
-                    <tr>
-                      <td class='tdlabel'>3. Dell Inc.</td>
-                      <td class='tdvalue'>15.8%</td>
-                    </tr>
-                    <tr>
-                      <td class='tdlabel'>4. IBM</td>
-                      <td class='tdvalue'>11.1%</td>
-                    </tr>
-                    <tr>
-                      <td class='tdlabel'>5. Cisco Systems Inc</td>
-                      <td class='tdvalue'>5.6%</td>
-                    </tr>
+<?php
+    $topHostCPUType = 1;
+    foreach ($sortedHostCPUType as  $key => $value) {
+        if ($key == 'Not Available') { continue; }
+        echo '                  <tr>
+                    <td class=\'tdlabel\'>' . $topHostCPUType++ . '. '. $key . '</td>
+                    <td class=\'tdvalue\'>' . $value . ' (' . floor(100 * $value / $totalHost) . '%)</td>
+                  </tr>';
+        if ($topHostCPUType >= 6) { break; }
+    }
+?>
                   </table>
                 </div>
                 <div class='more-info2'>Percent of Total Hosts</div>
                 <div class='updated-at'></div>
               </div>
             </div>
-            <div class='stat stat-lun'>
-              <div class='widget widget-lun'>
-                <div class='title'>LUNs</div>
-                <div class='value'>34.4K</div>
+            <div class='stat stat-storage'>
+              <div class='widget widget-storage'>
+                <div class='title'>NFS</div>
+                <div class='value'><?php echo $totalNFS; ?></div>
                 <div class='more-info'>Total</div>
                 <div class='updated-at'></div>
               </div>
             </div>
-            <div class='stat wide2 stat-lun'>
-              <div class='widget widget-lun'>
-                <div class='title'>Top 5 Storage Vendors</div>
-                <div class='top5table'>
-                  <table width='100%'>
-                    <tr>
-                      <td class='tdlabel'>1. HP</td>
-                      <td class='tdvalue'>21.2%</td>
-                    </tr>
-                    <tr>
-                      <td class='tdlabel'>2. DGC</td>
-                      <td class='tdvalue'>14.6%</td>
-                    </tr>
-                    <tr>
-                      <td class='tdlabel'>3. EMC</td>
-                      <td class='tdvalue'>14.3%</td>
-                    </tr>
-                    <tr>
-                      <td class='tdlabel'>4. IBM</td>
-                      <td class='tdvalue'>9.3%</td>
-                    </tr>
-                    <tr>
-                      <td class='tdlabel'>5. HITACHI</td>
-                      <td class='tdvalue'>9.0%</td>
-                    </tr>
-                  </table>
-                </div>
-                <div class='more-info2'>Percent of Total LUNs</div>
+            <div class='stat stat-storage'>
+              <div class='widget widget-storage'>
+                <div class='title'>LUNs</div>
+                <div class='value'><?php echo $totalLUN; ?></div>
+                <div class='more-info'>Total</div>
                 <div class='updated-at'></div>
               </div>
             </div>
-            <div class='stat wide2 stat-vm'>
+            <div class='stat wide3 stat-host'>
+              <div class='widget widget-host'>
+                <div class='title'>Top 5 ESX Build</div>
+                <div class='top5table'>
+                  <table class='top5table' width='100%'>
+<?php
+    $topESXBuild = 1;
+    foreach ($sortedESXBuild as  $key => $value) {
+        if ($key == 'Not Available') { continue; }
+        echo '                  <tr>
+                    <td class=\'tdlabel\'>' . $topESXBuild++ . '. '. $key . '</td>
+                    <td class=\'tdvalue\'>' . $value . ' (' . floor(100 * $value / $totalHost) . '%)</td>
+                  </tr>';
+        if ($topESXBuild >= 6) { break; }
+    }
+?>
+                  </table>
+                </div>
+                <div class='more-info2'>Percent of Total Hosts</div>
+                <div class='updated-at'></div>
+              </div>
+            </div>
+            <div class='stat wide3 stat-host'>
+              <div class='widget widget-host'>
+                <div class='title'>Top 5 Host Models</div>
+                <div class='top5table'>
+                  <table class='top5table' width='100%'>
+<?php
+    $topHostModel = 1;
+    foreach ($sortedHostModel as  $key => $value) {
+        if ($key == 'Not Available') { continue; }
+        echo '                  <tr>
+                    <td class=\'tdlabel\'>' . $topHostModel++ . '. '. $key . '</td>
+                    <td class=\'tdvalue\'>' . $value . ' (' . floor(100 * $value / $totalHost) . '%)</td>
+                  </tr>';
+        if ($topHostModel >= 6) { break; }
+    }
+?>
+                  </table>
+                </div>
+                <div class='more-info2'>Percent of Total Hosts</div>
+                <div class='updated-at'></div>
+              </div>
+            </div>
+            <div class='stat stat-vm'>
               <div class='widget widget-vm'>
                 <div class='title'>VMs</div>
-                <div class='value'>168.5K</div>
+                <div class='value'><?php echo $totalVMs; ?></div>
                 <div class='more-info2'>Total</div>
                 <div class='updated-at'></div>
               </div>
             </div>
-            <div class='stat wide2 stat-datastore'>
+            <div class='stat stat-storage'>
               <div class='widget widget-datastore'>
                 <div class='title'>Datastores</div>
-                <div class='value'>31.4K</div>
+                <div class='value'><?php echo $averageDatastoreSize; ?></div>
+                <div class='more-info2'>Average Size</div>
+                <div class='updated-at'></div>
+              </div>
+            </div>
+            <div class='stat stat-storage'>
+              <div class='widget widget-datastore'>
+                <div class='title'>Datastores</div>
+                <div class='value'><?php echo $totalDatastore; ?></div>
                 <div class='more-info2'>Total</div>
                 <div class='updated-at'></div>
               </div>
@@ -441,8 +420,88 @@ require("header.php");
             <div class='stat wide2 stat-vmdk'>
               <div class='widget widget-vmdk'>
                 <div class='title'>VMDK</div>
-                <div class='value'>75.72 GB</div>
-                <div class='more-info2'>Average Size</div>
+                <div class='value'><?php echo $averageVMDKUncommitedSize; ?> GB</div>
+                <div class='more-info2'>Average Uncommited Size</div>
+                <div class='updated-at'></div>
+              </div>
+            </div>
+            <div class='stat wide2 stat-vmdk'>
+              <div class='widget widget-vmdk'>
+                <div class='title'>VMDK</div>
+                <div class='value'><?php echo $averageVMDKCommitedSize; ?> GB</div>
+                <div class='more-info2'>Average Commited Size</div>
+                <div class='updated-at'></div>
+              </div>
+            </div>
+            <div class='stat wide2 stat-vmdk'>
+              <div class='widget widget-vmdk'>
+                <div class='title'>VMDK</div>
+                <div class='value'><?php echo $averageVMDKProvisionedSize; ?> GB</div>
+                <div class='more-info2'>Average Provisioned Size</div>
+                <div class='updated-at'></div>
+              </div>
+            </div>
+            <div class='stat wide2 stat-host'>
+              <div class='widget widget-host'>
+                <div class='title'>Host</div>
+                <div class='value'><?php echo human_filesize($totalHostCPUMhz * 1024 * 1024, 2, "Hz"); ?></div>
+                <div class='more-info'>Total CPU</div>
+                <div class='updated-at'></div>
+              </div>
+            </div>
+            <div class='stat wide2 stat-host'>
+              <div class='widget widget-host'>
+                <div class='title'>Host</div>
+                <div class='value'><?php echo human_filesize($totalHostMemory,2); ?></div>
+                <div class='more-info'>Total Memory</div>
+                <div class='updated-at'></div>
+              </div>
+            </div>
+            <div class='stat stat-datastore'>
+              <div class='widget widget-datastore'>
+                <div class='title'>Datastore</div>
+                <div class='value'><?php echo $totalDatastoreSize; ?></div>
+                <div class='more-info'>Total Storage Size</div>
+                <div class='updated-at'></div>
+              </div>
+            </div>
+            <div class='stat wide2 stat-vm'>
+              <div class='widget widget-vm'>
+                <div class='title'>VM</div>
+                <div class='value'><?php echo $averageVMMemory; ?></div>
+                <div class='more-info2'>Average VM Memory</div>
+                <div class='updated-at'></div>
+              </div>
+            </div>
+            <div class='stat stat-host'>
+              <div class='widget widget-host'>
+                <div class='title'>Host</div>
+                <div class='value'><?php echo $totalTPSSavings; ?></div>
+                <div class='more-info2'>Total TPS Savings</div>
+                <div class='updated-at'></div>
+              </div>
+            </div>
+            <div class='stat stat-host'>
+              <div class='widget widget-host'>
+                <div class='title'>Host</div>
+                <div class='value'><?php echo $totalBandwidth; ?></div>
+                <div class='more-info2'>Total Bandwidth</div>
+                <div class='updated-at'></div>
+              </div>
+            </div>
+            <div class='stat stat-cluster'>
+              <div class='widget widget-cluster'>
+                <div class='title'>Cluster</div>
+                <div class='value'><?php echo $totalvMotion; ?></div>
+                <div class='more-info2'>Total vMotion</div>
+                <div class='updated-at'></div>
+              </div>
+            </div>
+            <div class='stat stat-vm'>
+              <div class='widget widget-vm'>
+                <div class='title'>VM</div>
+                <div class='value'><?php echo $averageVMCPU; ?></div>
+                <div class='more-info2'>Average VM CPU</div>
                 <div class='updated-at'></div>
               </div>
             </div>
