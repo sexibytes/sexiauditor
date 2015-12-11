@@ -31,7 +31,7 @@ my $xmlModuleFile = '/var/www/admin/conf/modules.xml';
 my $xmlSettingsFile = '/var/www/admin/conf/settings.xml';
 
 # global variables to store view objects
-my ($view_Datacenter, $view_ClusterComputeResource, $view_VirtualMachine);
+my ($view_Datacenter, $view_ClusterComputeResource, $view_VirtualMachine, $view_HostSystem);
 
 # hastables
 my %h_cluster = ("domain-c000" => "N/A");
@@ -86,11 +86,16 @@ if ( !-d $xmlPath ) { make_path $xmlPath or $logger->logdie("[ERROR] Failed to c
 my $xmlVMs = "$xmlPath/vms-global.xml";
 my $docVMs = XML::LibXML::Document->new('1.0', 'utf-8');
 my $rootVMs = $docVMs->createElement("vms");
+### HostSystem
+my $xmlHosts = "$xmlPath/hosts-global.xml";
+my $docHosts = XML::LibXML::Document->new('1.0', 'utf-8');
+my $rootHosts = $docHosts->createElement("hosts");
+
 
 ###########################################################
 # dispatch table for subroutine (1 module = 1 subroutine) #
 ###########################################################
-my %actions = ( vminventory => \&vminventory,
+my %actions = ( inventory => \&inventory,
               );
 
 ##########################
@@ -147,9 +152,9 @@ foreach $s_item (@server_list) {
 	#$logger->info("[INFO] Start retrieving ComputeResource objects");
 	#my $view_ComputeResource = Vim::find_entity_views(view_type => 'ComputeResource');
 	#$logger->info("[INFO] End retrieving ComputeResource objects");
-	#$logger->info("[INFO] Start retrieving HostSystem objects");
-	#my $view_HostSystem = Vim::find_entity_views(view_type => 'HostSystem');
-	#$logger->info("[INFO] End retrieving HostSystem objects");
+	$logger->info("[INFO] Start retrieving HostSystem objects");
+	$view_HostSystem = Vim::find_entity_views(view_type => 'HostSystem', properties => ['name', 'summary.config.product.fullName', 'summary.hardware.model', 'summary.hardware.cpuModel', 'summary.hardware.memorySize', 'summary.hardware.numCpuPkgs', 'summary.hardware.numCpuCores', 'summary.hardware.cpuMhz']);
+	$logger->info("[INFO] End retrieving HostSystem objects");
 	#$logger->info("[INFO] Start retrieving DistributedVirtualSwitch objects");
 	#my $view_DistributedVirtualSwitch = Vim::find_entity_views(view_type => 'DistributedVirtualSwitch');
 	#$logger->info("[INFO] End retrieving DistributedVirtualSwitch objects");
@@ -198,6 +203,9 @@ foreach $s_item (@server_list) {
 ########################
 $docVMs->toFile($xmlVMs, 2) or $logger->error("[ERROR] Unable to save file $xmlVMs");
 chmod 0644, $xmlVMs;
+$docHosts->toFile($xmlHosts, 2) or $logger->error("[ERROR] Unable to save file $xmlHosts");
+chmod 0644, $xmlHosts;
+
 
 
 
@@ -205,8 +213,13 @@ chmod 0644, $xmlVMs;
 # subroutine definition #
 #########################
 
+sub inventory {
+    vminventory( );
+    hostinventory( );
+}
+
 sub vminventory {
-	my $vmNodeProperty;
+	#my $vmNodeProperty;
 	foreach my $vm_view (@$view_VirtualMachine) {
 		my $vnics = $vm_view->guest->net;
 		my @vm_pg_string = ();
@@ -226,6 +239,11 @@ sub vminventory {
 				push(@vm_ip_string, "N/A");
 			}
 		}
+        my $vm_guestfullname = "Not Available";
+        if(defined($vm_view->guest) && defined($vm_view->guest->guestFullName)) {
+                $vm_guestfullname = $vm_view->guest->guestFullName
+            
+        }
 		my $vcentersdk = new URI::URL $vm_view->{'vim'}->{'service_url'};
 		my %h_vm = (
 			name => $vm_view->name,
@@ -238,9 +256,11 @@ sub vminventory {
 			NUMCPU => ($vm_view->{'summary.config.numCpu'} ? $vm_view->{'summary.config.numCpu'} : "N/A"),
 			MEMORY => ($vm_view->{'summary.config.memorySizeMB'} ? $vm_view->{'summary.config.memorySizeMB'} : "N/A"),
 			COMMITED => int($vm_view->{'summary.storage'}->committed / 1073741824),
+			uncommited => int($vm_view->{'summary.storage'}->uncommitted / 1073741824),
 			PROVISIONNED => int(($vm_view->{'summary.storage'}->committed + $vm_view->{'summary.storage'}->uncommitted) / 1073741824),
 			DATASTORE => (split /\[/, (split /\]/, $vm_view->{'summary.config.vmPathName'})[0])[1],
-			MAC => join(',', @vm_mac)
+			MAC => join(',', @vm_mac),
+			guestOS => $vm_guestfullname
 		);
 		my $vmNode = $docVMs->createElement("vm");
 		for my $vmProperty (keys %h_vm) {
@@ -252,4 +272,32 @@ sub vminventory {
 		$rootVMs->appendChild($vmNode);
 	}
 	$docVMs->setDocumentElement($rootVMs);
+}
+
+sub hostinventory {
+    foreach my $host_view (@$view_HostSystem) {
+        my $vcentersdk = new URI::URL $host_view->{'vim'}->{'service_url'};
+        my %h_host = (
+            name => $host_view->name,
+            vcenter => $vcentersdk->host,
+            numcpu => $host_view->{'summary.hardware.numCpuPkgs'},
+            numcpucore => $host_view->{'summary.hardware.numCpuCores'},
+            cpumhz => $host_view->{'summary.hardware.cpuMhz'},
+            cputype => $host_view->{'summary.hardware.cpuModel'},
+            memory => $host_view->{'summary.hardware.memorySize'},
+            esxbuild => $host_view->{'summary.config.product.fullName'},
+            model => $host_view->{'summary.hardware.model'},
+            sharedmemory => 0,
+            bandwidthcapacity => 0
+        );
+        my $hostNode = $docHosts->createElement("host");
+        for my $hostProperty (keys %h_host) {
+            my $hostNodeProperty = $docHosts->createElement($hostProperty);
+            my $value = $h_host{$hostProperty};
+            $hostNodeProperty->appendTextNode($value);
+            $hostNode->appendChild($hostNodeProperty);
+        }
+        $rootHosts->appendChild($hostNode);
+    }
+    $docHosts->setDocumentElement($rootHosts);
 }
