@@ -1,31 +1,8 @@
 <?php
 
-$crontabFile = "/tmp/crontab";
-$crontabPath = "/etc/cron.d/";
-
-#function isViEnabled($inputvcenter) {
-#	global $crontabFile;
-#	return (preg_match("/^[^#].*ViPullStatistics\.pl --server ($inputvcenter) .* --sessionfile.*$/m", file_get_contents($crontabFile)) == 1 ? true : false);
-#}
-
-function isViEnabled($inputvcenter) {
-	global $crontabPath;
-	return (file_exists($crontabPath . "vi_" . str_replace(".", "_", $inputvcenter)));
-}
-
-function isVsanEnabled($inputvcenter) {
-	global $crontabPath;
-	return (file_exists($crontabPath . "vsan_" . str_replace(".", "_", $inputvcenter)));
-#	return (preg_match("/^[^#].*VsanPullStatistics\.pl --server ($inputvcenter) .* --sessionfile.*$/m", file_get_contents($crontabFile)) == 1 ? true : false);
-}
-
-function enableVi($inputvcenter) { shell_exec("sudo /bin/bash /var/www/scripts/addViCrontab.sh " . $inputvcenter); }
-
-function enableVsan($inputvcenter) { shell_exec("sudo /bin/bash /var/www/scripts/addVsanCrontab.sh " . $inputvcenter); }
-
-function disableVi($inputvcenter) { shell_exec("sudo /bin/bash /var/www/scripts/removeViCrontab.sh " . $inputvcenter); }
-
-function disableVsan($inputvcenter) { shell_exec("sudo /bin/bash /var/www/scripts/removeVsanCrontab.sh " . $inputvcenter); }
+$achievementFile = "/var/www/admin/achievements.txt";
+$credstoreFile = "/var/www/.vmware/credstore/vicredentials.xml";
+$xmlStartPath = "/opt/vcron/data/";
 
 function humanFileSize($size,$unit="") {
         if( (!$unit && $size >= 1<<30) || $unit == "GB")
@@ -98,5 +75,43 @@ function php_file_tree_dir($directory, $first_call = true) {
 	}
 	return $php_file_tree;
 }
+
+function rand_line($fileName, $maxLineLength = 4096) {
+    $handle = @fopen($fileName, "r");
+    if ($handle) {
+        $random_line = null;
+        $line = null;
+        $count = 0;
+        while (($line = fgets($handle, $maxLineLength)) !== false) {
+            $count++;
+            // P(1/$count) probability of picking current line as random line
+            if(rand() % $count == 0) {
+              $random_line = $line;
+            }
+        }
+        if (!feof($handle)) {
+            echo "Error: unexpected fgets() fail\n";
+            fclose($handle);
+            return null;
+        } else {
+            fclose($handle);
+        }
+        return $random_line;
+    }
+}
+
+function addOrdinalNumberSuffix($num) {
+    if (!in_array(($num % 100),array(11,12,13))){
+		switch ($num % 10) {
+			// Handle 1st, 2nd, 3rd
+			case 1:  return $num.'st';
+			case 2:  return $num.'nd';
+			case 3:  return $num.'rd';
+		}
+    }
+    return $num.'th';
+}
+
+function secureInput($data) { return htmlspecialchars(stripslashes(trim($data))); }
 
 ?>
