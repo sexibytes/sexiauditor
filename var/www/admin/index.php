@@ -1,35 +1,31 @@
-<?php 
-session_name('Private');
-if (session_status() != PHP_SESSION_ACTIVE ) { session_start(); }
-#$private_id = session_id();
-#if (!isset($_SESSION['viewState'])) { $_SESSION['viewState'] = 'user'; }
-#$validViewState = array('user', 'admin');
-# define default view if not or wrong specified
-#if ((!isset($_GET['viewState']) || !in_array($_GET['viewState'], $validViewState)) && isset($isAdminPage) && !$isAdminPage) { $_GET['viewState'] = 'user'; }
-#session_write_close();
-
-#session_start();
-$title = "SexiGraf summary";
+<?php require("session.php"); ?>
+<?php
+$title = "Platform stats";
+$additionalStylesheet = array( 'css/vopendata.css' );
+$additionalScript = array(  'js/vopendata.js',
+                            'js/isotope.min.js');
 require("header.php");
 require("helper.php");
 
 $xmlPath = "/opt/vcron/data/";
-if (!file_exists($xmlPath)) { 
-    exit("[ERROR] Folder $xmlPath don't exist, aborting...");
-}
+if (!file_exists($xmlPath)) : 
+    echo '<div class="alert alert-danger" role="alert"><span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span><span class="sr-only">Error:</span> Folder ' . $xmlPath . ' don\'t exist, aborting... </div>';
+else:
 
 $xmlSubDirectories = scandir($xmlPath, SCANDIR_SORT_DESCENDING);
+# if no folder available (minus '.' and '..') we switch to vopendata sample
 if (count($xmlSubDirectories) < 3) {
 ##########################################
 # vOpenData default sample               #
 # It's used only at the beginning before #
 # any infrastructure have been added     #
 ##########################################
+    $introductionLabel = 'This is a selection of statistics from the <a href="http://www.vopendata.org">vOpenData project</a>. Want to see you infrastructure metrics instead? Add your infrastructure in the Admin View > Credential Store!';
     $totalVMs = "168K";
     $totalvCenter = 395; 
     $totalCluster = "1.6K";
     $totalHost = "13.9K";
-    $totalLUN = "34.4K";
+    $totalVMFS = "34.4K";
     $totalNFS = 0;
     $totalDatastore = "31.4K";
     $averageVMPervCenter = 426;
@@ -71,20 +67,20 @@ if (count($xmlSubDirectories) < 3) {
                                 "eqdnspdfn" => "5.6%" );
     $averageHostPervCenter = 37;
     $averageClusterPervCenter = 4;
-    $averageVMDKPervCenter = 684;
-    $averageLUNPervCenter = 91;
     $averageHostPerCluster = "5.4";
     $averageDatastorePerCluster = "20.5";
-    $averageDatastorePerHost = 16;
     $averageMemoryPerHost = "118.91 GB";
     $averageCPUPerHost = "2.1";
     $averageDatastoreSize = 0;
     $averageVMMemory = 0;
     $averageVMCPU = 0;
 } else {
-    $scannedDirectories = array_values(array_diff(scandir($xmlPath, SCANDIR_SORT_DESCENDING), array('..', '.')))[0];
-    $xmlVMFile = "$xmlPath$scannedDirectories/vms-global.xml";
-    $xmlHostFile = "$xmlPath$scannedDirectories/hosts-global.xml";
+    $introductionLabel = 'This is a selection of statistics from your platform, based on the <a href="http://www.vopendata.org">vOpenData project</a>. These will be updated every time scheduler is running !';
+    // $scannedDirectories = array_values(array_diff(scandir($xmlPath, SCANDIR_SORT_DESCENDING), array('..', '.')))[0];
+    $xmlVMFile = "$xmlPath/latest/vms-global.xml";
+    $xmlHostFile = "$xmlPath/latest/hosts-global.xml";
+    $xmlClusterFile = "$xmlPath/latest/clusters-global.xml";
+    $xmlDatastoreFile = "$xmlPath/latest/datastores-global.xml";
     $xmlVM = simplexml_load_file($xmlVMFile);
     $xmlHost = simplexml_load_file($xmlHostFile);
     $xmlVM2 = new DOMDocument;
@@ -93,23 +89,31 @@ if (count($xmlSubDirectories) < 3) {
     $xmlHost2 = new DOMDocument;
     $xmlHost2->load($xmlHostFile);
     $xpathHost = new DOMXPath($xmlHost2);
-    $totalCommited = (int) $xpathVM->evaluate('sum(/vms/vm/COMMITED)');
+    $xmlCluster = new DOMDocument;
+    $xmlCluster->load($xmlClusterFile);
+    $xpathCluster = new DOMXPath($xmlCluster);
+    $xmlDatastore = simplexml_load_file($xmlDatastoreFile);
+    $xmlDatastoreDOM = new DOMDocument;
+    $xmlDatastoreDOM->load($xmlDatastoreFile);
+    $xpathDatastore = new DOMXPath($xmlDatastoreDOM);
+    $totalCommited = (int) $xpathVM->evaluate('sum(/vms/vm/commited)');
     $totalUncommited = (int) $xpathVM->evaluate('sum(/vms/vm/uncommited)');
-    $totalProvisioned = (int) $xpathVM->evaluate('sum(/vms/vm/PROVISIONNED)');
+    $totalProvisioned = (int) $xpathVM->evaluate('sum(/vms/vm/provisionned)');
     $totalVMs = $xmlVM->count();
-    $totalvCenter = count(array_diff(array_count_values(array_map("strval", $xmlVM->xpath("/vms/vm/VCENTER"))), array("1")));
-    $totalCluster = count(array_diff(array_count_values(array_map("strval", $xmlVM->xpath("/vms/vm/CLUSTER"))), array("1")));
+    $totalvCenter = count(array_diff(array_count_values(array_map("strval", $xmlVM->xpath("/vms/vm/vcenter"))), array("1")));
+    $totalCluster = count(array_diff(array_count_values(array_map("strval", $xmlVM->xpath("/vms/vm/cluster"))), array("1")));
     $totalHost = count($xmlHost);
-    $totalVMCPU = (int) $xpathVM->evaluate('sum(/vms/vm/NUMCPU)');
-    $totalVMMemory = (int) $xpathVM->evaluate('sum(/vms/vm/MEMORY)');
-    $totalLUN = 0;
-    $totalNFS = 0;
-    $totalDatastore = 0;
+    $totalVMCPU = (int) $xpathVM->evaluate('sum(/vms/vm/numcpu)');
+    $totalVMMemory = (int) $xpathVM->evaluate('sum(/vms/vm/memory)');
+    $totalVMFS = (int) $xpathDatastore->evaluate('count(/datastores/datastore/type[text()=\'VMFS\']/../shared[text()=\'true\'])');
+    $totalNFS = (int) $xpathDatastore->evaluate('count(/datastores/datastore/type[text()=\'NFS\'])');
+    #$totalDatastore = count($xmlDatastore);
+    $totalDatastore = $totalNFS + $totalVMFS;
     $totalHostCPU = (int) $xpathHost->evaluate('sum(/hosts/host/numcpu)');
     $totalHostCPUMhz = (int) $xpathHost->evaluate('sum(/hosts/host/cpumhz)');
     $totalHostMemory = (int) $xpathHost->evaluate('sum(/hosts/host/memory)');
-    $totalDatastoreSize = 0;
-    $totalvMotion = 0;
+    $totalDatastoreSize = (int) $xpathDatastore->evaluate('sum(/datastores/datastore/size)');
+    $totalvMotion = (int) $xpathCluster->evaluate('sum(/clusters/cluster/vmotion)');
     $totalBandwidth = 0;
     $totalTPSSavings = 0;
     $averageVMPervCenter = round($totalVMs / $totalvCenter);
@@ -128,22 +132,18 @@ if (count($xmlSubDirectories) < 3) {
     arsort($sortedESXBuild);
     $averageHostPervCenter = round($totalHost / $totalvCenter, 2);
     $averageClusterPervCenter = round($totalCluster / $totalvCenter, 2);
-    $averageVMDKPervCenter = 0;
-    $averageLUNPervCenter = 0;
     $averageHostPerCluster = round($totalHost / $totalCluster,2);
-    $averageDatastorePerCluster = 0;
-    $averageDatastorePerHost = 0;
+    $averageDatastorePerCluster = round($totalDatastore / $totalCluster,2);
     $averageMemoryPerHost = human_filesize($totalHostMemory / $totalHost,2);
     $averageCPUPerHost = round($totalHostCPU / $totalHost,2);
-    $averageDatastoreSize = 0;
+    $averageDatastoreSize = round($totalDatastoreSize / $totalDatastore,2);
     $averageVMMemory = human_filesize(1024 * 1024 * $totalVMMemory / $totalVMs,2);
     $averageVMCPU = round($totalVMCPU / $totalVMs,2);
 }
 ?>
-  <link href='css/application.css' rel='stylesheet' />
 
   <div class='container'>
-  <div class='navbar navbar-static-top'>
+  <div class='navbar navbar-static-top' style="z-index: 0;">
     <div class='navbar-inner'>
       <div class=''>
         <ul class='nav navbar-top-links navbar-left' id='filters'>
@@ -154,7 +154,6 @@ if (count($xmlSubDirectories) < 3) {
           <li><a data-filter='.stat-host' href='#'>Host</a></li>
           <li><a data-filter='.stat-storage' href='#'>Storage</a></li>
           <li><a data-filter='.stat-vm' href='#'>VM</a></li>
-          <li><a data-filter='.stat-vmdk' href='#'>VMDK</a></li>
         </ul>
       </div>
     </div>
@@ -166,7 +165,7 @@ if (count($xmlSubDirectories) < 3) {
             <div class='stat wide2'>
               <div class='widget widget-moreinfo'>
                 <div class='title'>What Is This?</div>
-                <h4 class='text'>This is a selection of statistics from the <a href="http://www.vopendata.org">vOpenData project</a>. Want to see you infrastructure metrics instead? Add your infrastructure in the Admin View > Credential Store!</h4>
+                <h4 class='text'><?php echo $introductionLabel; ?></h4>
                 <div class='more-info'></div>
                 <div class='updated-at'></div>
               </div>
@@ -199,22 +198,6 @@ if (count($xmlSubDirectories) < 3) {
               <div class='widget widget-vcenter'>
                 <div class='title'>VMs</div>
                 <div class='value'><?php echo $averageVMPervCenter; ?></div>
-                <div class='more-info'>Average Per vCenter</div>
-                <div class='updated-at'></div>
-              </div>
-            </div>
-            <div class='stat stat-vmdk stat-vcenter'>
-              <div class='widget widget-vcenter'>
-                <div class='title'>VMDKs</div>
-                <div class='value'><?php echo $averageVMDKPervCenter; ?></div>
-                <div class='more-info'>Average Per vCenter</div>
-                <div class='updated-at'></div>
-              </div>
-            </div>
-            <div class='stat stat-storage stat-vcenter'>
-              <div class='widget widget-vcenter'>
-                <div class='title'>LUNs</div>
-                <div class='value'><?php echo $averageLUNPervCenter; ?></div>
                 <div class='more-info'>Average Per vCenter</div>
                 <div class='updated-at'></div>
               </div>
@@ -287,14 +270,6 @@ if (count($xmlSubDirectories) < 3) {
                 <div class='updated-at'></div>
               </div>
             </div>
-            <div class='stat stat-host stat-storage'>
-              <div class='widget widget-host'>
-                <div class='title'>Datastores</div>
-                <div class='value'><?php echo $averageDatastorePerHost; ?></div>
-                <div class='more-info'>Average Per Host</div>
-                <div class='updated-at'></div>
-              </div>
-            </div>
             <div class='stat wide2 stat-host'>
               <div class='widget widget-host'>
                 <div class='title'>Memory</div>
@@ -343,8 +318,8 @@ if (count($xmlSubDirectories) < 3) {
             </div>
             <div class='stat stat-storage'>
               <div class='widget widget-storage'>
-                <div class='title'>LUNs</div>
-                <div class='value'><?php echo $totalLUN; ?></div>
+                <div class='title'>VMFS</div>
+                <div class='value'><?php echo $totalVMFS; ?></div>
                 <div class='more-info'>Total</div>
                 <div class='updated-at'></div>
               </div>
@@ -401,10 +376,10 @@ if (count($xmlSubDirectories) < 3) {
                 <div class='updated-at'></div>
               </div>
             </div>
-            <div class='stat stat-storage'>
+            <div class='stat wide2 stat-storage'>
               <div class='widget widget-datastore'>
                 <div class='title'>Datastores</div>
-                <div class='value'><?php echo $averageDatastoreSize; ?></div>
+                <div class='value'><?php echo human_filesize($averageDatastoreSize, 2); ?></div>
                 <div class='more-info2'>Average Size</div>
                 <div class='updated-at'></div>
               </div>
@@ -417,7 +392,15 @@ if (count($xmlSubDirectories) < 3) {
                 <div class='updated-at'></div>
               </div>
             </div>
-            <div class='stat wide2 stat-vmdk'>
+            <div class='stat wide2 stat-storage'>
+              <div class='widget widget-datastore'>
+                <div class='title'>Datastore</div>
+                <div class='value'><?php echo human_filesize($totalDatastoreSize, 2); ?></div>
+                <div class='more-info'>Total Storage Size</div>
+                <div class='updated-at'></div>
+              </div>
+            </div>
+            <div class='stat wide2 stat-storage stat-vm'>
               <div class='widget widget-vmdk'>
                 <div class='title'>VMDK</div>
                 <div class='value'><?php echo $averageVMDKUncommitedSize; ?> GB</div>
@@ -425,7 +408,7 @@ if (count($xmlSubDirectories) < 3) {
                 <div class='updated-at'></div>
               </div>
             </div>
-            <div class='stat wide2 stat-vmdk'>
+            <div class='stat wide2 stat-storage stat-vm'>
               <div class='widget widget-vmdk'>
                 <div class='title'>VMDK</div>
                 <div class='value'><?php echo $averageVMDKCommitedSize; ?> GB</div>
@@ -433,7 +416,7 @@ if (count($xmlSubDirectories) < 3) {
                 <div class='updated-at'></div>
               </div>
             </div>
-            <div class='stat wide2 stat-vmdk'>
+            <div class='stat wide2 stat-storage stat-vm'>
               <div class='widget widget-vmdk'>
                 <div class='title'>VMDK</div>
                 <div class='value'><?php echo $averageVMDKProvisionedSize; ?> GB</div>
@@ -454,14 +437,6 @@ if (count($xmlSubDirectories) < 3) {
                 <div class='title'>Host</div>
                 <div class='value'><?php echo human_filesize($totalHostMemory,2); ?></div>
                 <div class='more-info'>Total Memory</div>
-                <div class='updated-at'></div>
-              </div>
-            </div>
-            <div class='stat stat-datastore'>
-              <div class='widget widget-datastore'>
-                <div class='title'>Datastore</div>
-                <div class='value'><?php echo $totalDatastoreSize; ?></div>
-                <div class='more-info'>Total Storage Size</div>
                 <div class='updated-at'></div>
               </div>
             </div>
@@ -492,7 +467,7 @@ if (count($xmlSubDirectories) < 3) {
             <div class='stat stat-cluster'>
               <div class='widget widget-cluster'>
                 <div class='title'>Cluster</div>
-                <div class='value'><?php echo $totalvMotion; ?></div>
+                <div class='value'><?php echo floor($totalvMotion / 1000); ?>K</div>
                 <div class='more-info2'>Total vMotion</div>
                 <div class='updated-at'></div>
               </div>
@@ -511,7 +486,5 @@ if (count($xmlSubDirectories) < 3) {
     </div>
   </div>
 
-<script src='http://dash.vopendata.org/js/application.js'></script>
-<script src='http://dash.vopendata.org/js/isotope.min.js'></script>
-
+<?php endif; ?>
 <?php require("footer.php"); ?>
