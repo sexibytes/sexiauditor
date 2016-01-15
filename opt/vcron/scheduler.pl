@@ -13,6 +13,9 @@ use Number::Bytes::Human qw(format_bytes);
 use POSIX qw(strftime);
 use XML::LibXML;
 use File::Path qw( make_path );
+use Switch;
+
+my $start = time;
 
 $Util::script_version = "0.1";
 $ENV{'PERL_LWP_SSL_VERIFY_HOSTNAME'} = 0;
@@ -29,9 +32,13 @@ my $url;
 my $href = ();
 my $xmlModuleFile = '/var/www/admin/conf/modules.xml';
 my $xmlSettingsFile = '/var/www/admin/conf/settings.xml';
+my $xmlModuleSettingsFile = '/var/www/admin/conf/modulesettings.xml';
+my $schedulerTTBFile = '/opt/vcron/scheduler-ttb.xml';
 
 # global variables to store view objects
-my ($view_Datacenter, $view_ClusterComputeResource, $view_VirtualMachine, $view_HostSystem);
+my ($view_Datacenter, $view_ClusterComputeResource, $view_VirtualMachine, $view_HostSystem, $view_Datastore, $view_DistributedVirtualPortgroup);
+
+my ($alarm_key,$alarm_state,$alarm_name,$alarm_entity) = ("Alarm Key","Alarm State", "Alarm Name", "Alarm Entity");
 
 # hastables
 my %h_cluster = ("domain-c000" => "N/A");
@@ -41,17 +48,29 @@ my %h_hostcluster = ();
 # requiring both file to be readable
 (-r $xmlModuleFile) or $logger->logdie ("[ERROR] File $xmlModuleFile not available and/or readable, abort");
 (-r $xmlSettingsFile) or $logger->logdie ("[ERROR] File $xmlSettingsFile not available and/or readable, abort");
+(-r $xmlModuleSettingsFile) or $logger->logdie ("[ERROR] File $xmlModuleSettingsFile not available and/or readable, abort");
+(-w $schedulerTTBFile) or $logger->logdie ("[ERROR] File $schedulerTTBFile not available and/or writeable, abort");
 
 # modules and settings xml file initialize
 my $parser = XML::LibXML->new();
 my $docModule = $parser->parse_file($xmlModuleFile);
 my $docSettings = $parser->parse_file($xmlSettingsFile);
+my $docModuleSettings = $parser->parse_file($xmlModuleSettingsFile);
+
+# Data purge threshold
+my $purgeThreshold = 0;
+$purgeThreshold = $docModuleSettings->findvalue("/settings/setting[id='thresholdHistory']/value");
+
+# date schedule
+my $dailySchedule = ($docModuleSettings->exists("/settings/setting[id='dailySchedule']/value") ? $docModuleSettings->findvalue("/settings/setting[id='dailySchedule']/value") : 0);
+my $weeklySchedule = ($docModuleSettings->exists("/settings/setting[id='weeklySchedule']/value") ? $docModuleSettings->findvalue("/settings/setting[id='weeklySchedule']/value") : 0);
+my $monthlySchedule = ($docModuleSettings->exists("/settings/setting[id='monthlySchedule']/value") ? $docModuleSettings->findvalue("/settings/setting[id='monthlySchedule']/value") : 1);
 
 # browsing modules and fetching schedule
 $logger->info("[INFO] Start processing modules list");
 foreach my $node ($docModule->findnodes('/modules/category/module')) {
-	my $moduleName = $node->findnodes('./id')->to_literal;
-	my $scheduleModule = $docSettings->findnodes("/modules/module/id[text()='".$moduleName."']/../schedule")->to_literal;
+	my $moduleName = $node->findvalue('./id');
+	my $scheduleModule = $docSettings->findvalue("/modules/module/id[text()='".$moduleName."']/../schedule");
 	if ($scheduleModule ne 'off') {
 		$href->{ $moduleName } = $scheduleModule;
 		$logger->info("[INFO] Found module $moduleName with schedule $scheduleModule");
@@ -80,6 +99,9 @@ my $execDate = time2str("%Y%m%d%H%M", time);
 ############################################
 # XML files definition (1 module = 1 file) #
 ############################################
+
+# TODO
+# only create folder if files to dump are not empty, in order to avoir empty folders
 my $xmlPath = "/opt/vcron/data/$execDate";
 if ( !-d $xmlPath ) { make_path $xmlPath or $logger->logdie("[ERROR] Failed to create path: $xmlPath"); }
 ### VirtualMachine
@@ -90,12 +112,83 @@ my $rootVMs = $docVMs->createElement("vms");
 my $xmlHosts = "$xmlPath/hosts-global.xml";
 my $docHosts = XML::LibXML::Document->new('1.0', 'utf-8');
 my $rootHosts = $docHosts->createElement("hosts");
+### ClusterComputeResource
+my $xmlClusters = "$xmlPath/clusters-global.xml";
+my $docClusters = XML::LibXML::Document->new('1.0', 'utf-8');
+my $rootClusters = $docClusters->createElement("clusters");
+### Datastore
+my $xmlDatastores = "$xmlPath/datastores-global.xml";
+my $docDatastores = XML::LibXML::Document->new('1.0', 'utf-8');
+my $rootDatastores = $docDatastores->createElement("datastores");
+### Alarms
+my $xmlAlarms = "$xmlPath/alarms-global.xml";
+my $docAlarms = XML::LibXML::Document->new('1.0', 'utf-8');
+my $rootAlarms = $docAlarms->createElement("alarms");
+### Snapshots
+my $xmlSnapshots = "$xmlPath/snapshots-global.xml";
+my $docSnapshots = XML::LibXML::Document->new('1.0', 'utf-8');
+my $rootSnapshots = $docSnapshots->createElement("snapshots");
+### DistributedVirtualPortgroups
+my $xmlDistributedVirtualPortgroups = "$xmlPath/distributedvirtualportgroups-global.xml";
+my $docDistributedVirtualPortgroups = XML::LibXML::Document->new('1.0', 'utf-8');
+my $rootDistributedVirtualPortgroups = $docDistributedVirtualPortgroups->createElement("distributedvirtualportgroups");
+### vCenter Sessions
+my $xmlSessions = "$xmlPath/sessions-global.xml";
+my $docSessions = XML::LibXML::Document->new('1.0', 'utf-8');
+my $rootSessions = $docSessions->createElement("sessions");
+### vCenter Licenses
+my $xmlLicenses = "$xmlPath/licenses-global.xml";
+my $docLicenses = XML::LibXML::Document->new('1.0', 'utf-8');
+my $rootLicenses = $docLicenses->createElement("licenses");
 
 
 ###########################################################
 # dispatch table for subroutine (1 module = 1 subroutine) #
 ###########################################################
 my %actions = ( inventory => \&inventory,
+                vcSessionAge => \&sessionage,
+                vcLicenceReport => \&licenseReport,
+                vcPermissionReport => \&dummy,
+                clusterConfigurationIssues => \&dummy,
+                clusterAdmissionControl => \&dummy,
+                clusterHAStatus => \&dummy,
+                clusterDatastoreConsistency => \&dummy,
+                clusterMembersVersion => \&dummy,
+                clusterMembersOvercommit => \&dummy,
+                clusterMembersLUNPathCountMismatch => \&dummy,
+                clusterCPURatio => \&dummy,
+                clusterTPSSavings => \&dummy,
+                clusterAutoSlotSize => \&dummy,
+                clusterProfile => \&dummy,
+                vmSnapshotsage => \&dummy,
+                vmphantomsnapshot => \&dummy,
+                vmballoonzipswap => \&dummy,
+                vmmultiwritermode => \&dummy,
+                vmNonpersistentmode => \&dummy,
+                vmscsibussharing => \&dummy,
+                vmconsolidationneeded => \&dummy,
+                vmcpuramhddreservation => \&dummy,
+                vmcpuramhddlimits => \&dummy,
+                vmcpuramhotadd => \&dummy,
+                vmvHardwarePivot => \&dummy,
+                vmToolsPivot => \&dummy,
+                alarms => \&getAlarms,
+                vmInconsistent => \&dummy,
+                vmRemovableConnected => \&dummy,
+                vmGuestIdMismatch => \&dummy,
+                vmPoweredOff => \&dummy,
+                vmGuestPivot => \&dummy,
+                vmMisnamed => \&dummy,
+                vmInvalidOrInaccessible => \&dummy,
+                networkDVSportsfree => \&dummy,
+                networkDVPGAutoExpand => \&dummy,
+                networkDVSprofile => \&dummy,
+                datastoreSpacereport => \&dummy,
+                datastoreOrphanedVMFilesreport => \&dummy,
+                datastoreOverallocation => \&dummy,
+                datastoreSIOCdisabled => \&dummy,
+                datastoremaintenancemode => \&dummy,
+                datastoreAccessible => \&dummy
               );
 
 ##########################
@@ -105,16 +198,31 @@ my %actions = ( inventory => \&inventory,
 ##########################
 
 
+# Data purge
+# no purge done if 0
+if ($purgeThreshold ne 0) {
+    $logger->info("[INFO][PURGE] Start purge process");
+    my $command = `find /opt/vcron/data/ -type d -ctime +$purgeThreshold -exec rm -rf {} \\;`;
+    $logger->info("[INFO][PURGE] Purge return: $command");
+    $logger->info("[INFO][PURGE] End purge process");
+}
+
+# TODO
+# plan to kill some previous execution if it's hang
+
 VMware::VICredStore::init (filename => $filename) or $logger->logdie ("[ERROR] Unable to initialize Credential Store.");
 @server_list = VMware::VICredStore::get_hosts ();
 foreach $s_item (@server_list) {
-	$logger->info("[INFO] Start processing vCenter $s_item");
+#if ($s_item ne 'vmlon03vce2.lon.uk.world.socgen') {next;}
+	$logger->info("[INFO][VCENTER] Start processing vCenter $s_item");
 	my $normalizedServerName = $s_item;
 	@user_list = VMware::VICredStore::get_usernames (server => $s_item);
 	if (scalar @user_list == 0) {
-		$logger->logdie ("[ERROR] No credential store user detected for $s_item");
+		$logger->error ("[ERROR] No credential store user detected for $s_item");
+        next;
 	} elsif (scalar @user_list > 1) {
-		$logger->logdie ("[ERROR] Multiple credential store user detected for $s_item");
+		$logger->error ("[ERROR] Multiple credential store user detected for $s_item");
+        next;
 	} else {
 		$u_item = "@user_list";
 		$password = VMware::VICredStore::get_password (server => $s_item, username => $u_item);
@@ -122,61 +230,70 @@ foreach $s_item (@server_list) {
 		$normalizedServerName =~ s/[ .]/_/g;
 		$normalizedServerName = lc ($normalizedServerName);
 		my $sessionfile = "/tmp/vpx_${normalizedServerName}.dat";
-		if (defined($sessionfile) and -e $sessionfile) {
-		        eval { Vim::load_session(service_url => $url, session_file => $sessionfile); };
-		        if ($@) {
-				# session is no longer valid, we must destroy it to let it be recreated
-				$logger->warn("[WARNING] Session file $sessionfile is no longer valid, it has been destroyed");
+		if (-e $sessionfile) {
+            eval { Vim::load_session(service_url => $url, session_file => $sessionfile); };
+		    if ($@) {
+			    # session is no longer valid, we must destroy it to let it be recreated
+				$logger->warn("[WARNING][TOKEN] Session file $sessionfile is no longer valid, it has been destroyed");
 				unlink($sessionfile);
-		                Vim::login(service_url => $url, user_name => $u_item, password => $password) or $logger->logdie ("[ERROR] Unable to connect to $url with username $u_item");
-		        }
-		} else {
 		        eval { Vim::login(service_url => $url, user_name => $u_item, password => $password); };
+                if ($@) {
+				    $logger->error("[ERROR] Cannot connect to vCenter $normalizedServerName and login $u_item, moving on to next vCenter entry");
+                    next;
+                } else {
+    		        $logger->info("[INFO][TOKEN] Saving session token in file $sessionfile");
+                    Vim::save_session(session_file => $sessionfile);
+                }
+		    }
+		} else {
+		    eval { Vim::login(service_url => $url, user_name => $u_item, password => $password); };
 			if ($@) {
-				$logger->logdie("[ERROR] Wrong credential for vCenter $normalizedServerName and login $u_item");
-			}
-		}
-		if (defined($sessionfile)) {
-			$logger->info("[INFO] Saving session token in file $sessionfile");
-		        Vim::save_session(session_file => $sessionfile);
+				$logger->error("[ERROR] Cannot connect to vCenter $normalizedServerName and login $u_item, moving on to next vCenter entry");
+                next;
+			} else {
+                $logger->info("[INFO][TOKEN] Saving session token in file $sessionfile");
+                Vim::save_session(session_file => $sessionfile);
+            }
 		}
 	}
 
     # TODO: check version
+    # TODO: watchdog
 
 	# vCenter connection should be OK at this point
 	# generating meta objects
-	$logger->info("[INFO] Start retrieving ClusterComputeResource objects");
-	$view_ClusterComputeResource = Vim::find_entity_views(view_type => 'ClusterComputeResource', properties => ['name', 'host']);
-	$logger->info("[INFO] End retrieving ClusterComputeResource objects");
+	$logger->info("[INFO][OBJECTS] Start retrieving ClusterComputeResource objects");
+	$view_ClusterComputeResource = Vim::find_entity_views(view_type => 'ClusterComputeResource', properties => ['name', 'host', 'summary', 'configIssue']);
+	$logger->info("[INFO][OBJECTS] End retrieving ClusterComputeResource objects");
 	#$logger->info("[INFO] Start retrieving ComputeResource objects");
 	#my $view_ComputeResource = Vim::find_entity_views(view_type => 'ComputeResource');
 	#$logger->info("[INFO] End retrieving ComputeResource objects");
-	$logger->info("[INFO] Start retrieving HostSystem objects");
-	$view_HostSystem = Vim::find_entity_views(view_type => 'HostSystem', properties => ['name', 'summary.config.product.fullName', 'summary.hardware.model', 'summary.hardware.cpuModel', 'summary.hardware.memorySize', 'summary.hardware.numCpuPkgs', 'summary.hardware.numCpuCores', 'summary.hardware.cpuMhz']);
-	$logger->info("[INFO] End retrieving HostSystem objects");
-	#$logger->info("[INFO] Start retrieving DistributedVirtualSwitch objects");
-	#my $view_DistributedVirtualSwitch = Vim::find_entity_views(view_type => 'DistributedVirtualSwitch');
-	#$logger->info("[INFO] End retrieving DistributedVirtualSwitch objects");
-	#$logger->info("[INFO] Start retrieving StoragePod objects");
+	$logger->info("[INFO][OBJECTS] Start retrieving HostSystem objects");
+	$view_HostSystem = Vim::find_entity_views(view_type => 'HostSystem', properties => ['name', 'summary.config.product.fullName', 'summary.hardware.model', 'summary.hardware.cpuModel', 'summary.hardware.memorySize', 'summary.hardware.numCpuPkgs', 'summary.hardware.numCpuCores', 'summary.hardware.cpuMhz', 'configManager.storageSystem']);
+	$logger->info("[INFO][OBJECTS] End retrieving HostSystem objects");
+	$logger->info("[INFO][OBJECTS] Start retrieving DistributedVirtualPortgroup objects");
+	$view_DistributedVirtualPortgroup = Vim::find_entity_views(view_type => 'DistributedVirtualPortgroup', properties => ['name', 'vm', 'config.numPorts', 'config.autoExpand', 'tag']);
+	$logger->info("[INFO][OBJECTS] End retrieving DistributedVirtualPortgroup objects");
+	$logger->info("[INFO][OBJECTS] Start retrieving Datastore objects");
+	$view_Datastore = Vim::find_entity_views(view_type => 'Datastore', properties => ['name', 'summary', 'iormConfiguration']);
+	$logger->info("[INFO][OBJECTS] End retrieving Datastore objects");
+    #$logger->info("[INFO] Start retrieving StoragePod objects");
 	#my $view_StoragePod = Vim::find_entity_views(view_type => 'StoragePod');
 	#$logger->info("[INFO] End retrieving StoragePod objects");
-	#$logger->info("[INFO] Start retrieving Datacenter objects");
-	#$view_Datacenter = Vim::find_entity_views(view_type => 'Datacenter');
-	#$logger->info("[INFO] End retrieving Datacenter objects");
-	$logger->info("[INFO] Start retrieving VirtualMachine objects");
-	$view_VirtualMachine = Vim::find_entity_views(view_type => 'VirtualMachine', properties => ['name','guest','summary.config.vmPathName','runtime.host','network','summary.config.numCpu','summary.config.memorySizeMB','summary.storage']);
-	$logger->info("[INFO] End retrieving VirtualMachine objects");
-	#do 'modules/module01.pl';
-
+	$logger->info("[INFO][OBJECTS] Start retrieving Datacenter objects");
+	$view_Datacenter = Vim::find_entity_views(view_type => 'Datacenter', properties => ['name','triggeredAlarmState']);
+	$logger->info("[INFO][OBJECTS] End retrieving Datacenter objects");
+	$logger->info("[INFO][OBJECTS] Start retrieving VirtualMachine objects");
+	$view_VirtualMachine = Vim::find_entity_views(view_type => 'VirtualMachine', properties => ['name','guest','summary.config.vmPathName','config.guestId','runtime','network','summary.config.numCpu','summary.config.memorySizeMB','summary.storage','triggeredAlarmState','config.hardware.device','config.version','resourceConfig','config.cpuHotAddEnabled','config.memoryHotAddEnabled','config.extraConfig','summary.quickStats','snapshot']);
+	$logger->info("[INFO][OBJECTS] End retrieving VirtualMachine objects");
 	# hastables creation to speed later queries
 	foreach my $cluster_view (@$view_ClusterComputeResource) {
-        	my $cluster_name = lc ($cluster_view->name);
+        my $cluster_name = lc ($cluster_view->name);
 		$h_cluster{%$cluster_view{'mo_ref'}->value} = $cluster_name;
 		my $cluster_hosts_views = Vim::find_entity_views(view_type => 'HostSystem', begin_entity => $cluster_view , properties => [ 'name' ]);
 		foreach my $cluster_host_view (@$cluster_hosts_views) {
-                	my $host_name = lc ($cluster_host_view->{'name'});
-			$h_host{%$cluster_host_view{'mo_ref'}->value} = $host_name;
+           	my $host_name = lc ($cluster_host_view->{'name'});
+		    $h_host{%$cluster_host_view{'mo_ref'}->value} = $host_name;
 			$h_hostcluster{%$cluster_host_view{'mo_ref'}->value} = %$cluster_view{'mo_ref'}->value;
 		}
 	}
@@ -190,36 +307,158 @@ foreach $s_item (@server_list) {
 	}
 
 	for my $key ( keys(%$href) ) {
-		my $value = $href->{$key};
 		# using dispatch table to call dynamically named subroutine
-		$actions{ $key }->();
+		my $value = $href->{$key};
+        my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
+        switch ($value) {
+            case "hourly" {
+                $logger->info("[INFO][SUBROUTINE] Start hourly process for $key");
+                $actions{ $key }->();
+                $logger->info("[INFO][SUBROUTINE] End hourly process for $key");
+            }
+            case "daily" {
+                if ($hour == $dailySchedule) {
+                    $logger->info("[INFO][SUBROUTINE] Start daily process for $key");
+                    $actions{ $key }->();
+                    $logger->info("[INFO][SUBROUTINE] End daily process for $key");
+                } else {
+                    $logger->info("[DEBUG][SUBROUTINE] Skipping daily process for $key as it's not yet daily schedule $dailySchedule");
+                }
+             }
+            case "weekly" {
+                if ($wday == $weeklySchedule) {
+                    $logger->info("[INFO][SUBROUTINE] Start weekly process for $key");
+                    $actions{ $key }->();
+                    $logger->info("[INFO][SUBROUTINE] End weekly process for $key");
+                } else {
+                    $logger->info("[DEBUG][SUBROUTINE] Skipping weekly process for $key as it's not yet weekly schedule $weeklySchedule");
+                }
+             }
+            case "monthly" {
+                if ($wday == $weeklySchedule) {
+                    $logger->info("[INFO][SUBROUTINE] Start monthly process for $key");
+                    $actions{ $key }->();
+                    $logger->info("[INFO][SUBROUTINE] End monthly process for $key");
+                } else {
+                    $logger->info("[DEBUG][SUBROUTINE] Skipping monthly process for $key as it's not yet monthly schedule $monthlySchedule");
+                }
+             }
+            case "off" { $logger->info("[INFO][SUBROUTINE] Ignoring process for $key as it's off"); }
+            else { $logger->warning("[WARNING][SUBROUTINE] Unknow schedule $value for $key"); }
+        }
 	}
 
-	$logger->info("[INFO] End processing vCenter $s_item");
+	$logger->info("[INFO][VCENTER] End processing vCenter $s_item");
 }
 
-########################
-# File dump generation #
-########################
-$docVMs->toFile($xmlVMs, 2) or $logger->error("[ERROR] Unable to save file $xmlVMs");
-chmod 0644, $xmlVMs;
-$docHosts->toFile($xmlHosts, 2) or $logger->error("[ERROR] Unable to save file $xmlHosts");
-chmod 0644, $xmlHosts;
+###################################
+# File dump generation            #
+# Updating 'latest' symbolic link #
+# >inline update is not possible  #
+# >thus we do it in 2 way         #
+###################################
+sub xmlDump {
+	my ($docXML, $obj, $xmlObject, $xmlFile) = @_;
+	if ($docXML->findvalue("count(//".$obj.")") > 0) {
+		$docXML->toFile($xmlObject, 2) or $logger->error("[ERROR] Unable to save file $xmlObject");
+		unlink($xmlFile);
+		symlink($xmlObject, $xmlFile);
+		chmod 0644, $xmlObject;
+	}
+}
 
+xmlDump($docVMs, "vm", $xmlVMs, "/opt/vcron/data/latest/vms-global.xml");
+xmlDump($docHosts, "host", $xmlHosts, "/opt/vcron/data/latest/hosts-global.xml");
+xmlDump($docClusters, "cluster", $xmlClusters, "/opt/vcron/data/latest/clusters-global.xml");
+xmlDump($docDatastores, "datastore", $xmlDatastores, "/opt/vcron/data/latest/datastores-global.xml");
+xmlDump($docAlarms, "alarm", $xmlAlarms, "/opt/vcron/data/latest/alarms-global.xml");
+xmlDump($docSnapshots, "snapshot", $xmlSnapshots, "/opt/vcron/data/latest/snapshots-global.xml");
+xmlDump($docDistributedVirtualPortgroups, "distributedvirtualportgroup", $xmlDistributedVirtualPortgroups, "/opt/vcron/data/latest/distributedvirtualportgroups-global.xml");
+xmlDump($docSessions, "session", $xmlSessions, "/opt/vcron/data/latest/sessions-global.xml");
+xmlDump($docLicenses, "license", $xmlLicenses, "/opt/vcron/data/latest/licenses-global.xml");
 
+my $ttbParser = XML::LibXML->new();
+my $docTTB = $ttbParser->parse_file($schedulerTTBFile);
+my $executionEntry = $docTTB->ownerDocument->createElement('executiontime');
+$executionEntry->setAttribute("date", $execDate);
+$executionEntry->setAttribute("seconds", time - $start);
+$docTTB->documentElement()->appendChild($executionEntry);
+$docTTB->toFile($schedulerTTBFile,2);
 
 
 #########################
 # subroutine definition #
 #########################
 
+sub dummy { }
+
+sub sessionage {
+    my $sessionMgr = Vim::get_view(mo_ref => Vim::get_service_content()->sessionManager);
+    my $sessionList = eval {$sessionMgr->sessionList || []};
+    my $currentSessionkey = $sessionMgr->currentSession->key;
+    my $vcentersdk = new URI::URL $sessionMgr->{'vim'}->{'service_url'};
+
+    foreach my $session (@$sessionList) {
+        my %h_session = (
+            loginTime => substr($session->loginTime, 0, 19),
+            vcenter => $vcentersdk->host,
+            userAgent => (defined($session->userAgent) ? $session->userAgent : 'N/A'),
+            ipAddress => (defined($session->ipAddress) ? $session->ipAddress : 'N/A'),
+            lastActiveTime => substr($session->lastActiveTime, 0, 19),
+            userName => $session->userName
+        );
+        my $sessionNode = $docSessions->createElement("session");
+        for my $sessionProperty (keys %h_session) {
+            my $sessionNodeProperty = $docSessions->createElement($sessionProperty);
+            my $value = $h_session{$sessionProperty};
+            $sessionNodeProperty->appendTextNode($value);
+            $sessionNode->appendChild($sessionNodeProperty);
+        }
+        $rootSessions->appendChild($sessionNode);
+    }
+    $docSessions->setDocumentElement($rootSessions);
+}
+
+sub licenseReport {
+    my $licMgr = Vim::get_view(mo_ref => Vim::get_service_content()->licenseManager);
+    my $installedLicenses = $licMgr->licenses;
+    my $vcentersdk = new URI::URL $licMgr->{'vim'}->{'service_url'};
+    
+    foreach my $license (@$installedLicenses) {
+        # we don't want evaluation license to be stored
+        if ($license->editionKey ne 'eval') {
+            my %h_license = (
+                total => $license->total,
+                vcenter => $vcentersdk->host,
+                name => $license->name,
+                licenseKey => $license->licenseKey,
+                editionKey => $license->editionKey,
+                used => $license->used,
+                costUnit => $license->costUnit
+            );
+            my $licenseNode = $docLicenses->createElement("license");
+            for my $licenseProperty (keys %h_license) {
+                my $licenseNodeProperty = $docLicenses->createElement($licenseProperty);
+                my $value = $h_license{$licenseProperty};
+                $licenseNodeProperty->appendTextNode($value);
+                $licenseNode->appendChild($licenseNodeProperty);
+            }
+           $rootLicenses->appendChild($licenseNode);
+        }
+    }
+    $docLicenses->setDocumentElement($rootLicenses);
+}
+
+
 sub inventory {
     vminventory( );
     hostinventory( );
+    clusterinventory( );
+    datastoreinventory( );
+    dvpginventory( );
 }
 
 sub vminventory {
-	#my $vmNodeProperty;
 	foreach my $vm_view (@$view_VirtualMachine) {
 		my $vnics = $vm_view->guest->net;
 		my @vm_pg_string = ();
@@ -240,27 +479,88 @@ sub vminventory {
 			}
 		}
         my $vm_guestfullname = "Not Available";
-        if(defined($vm_view->guest) && defined($vm_view->guest->guestFullName)) {
-                $vm_guestfullname = $vm_view->guest->guestFullName
-            
+        if(defined($vm_view->guest) && defined($vm_view->guest->guestFullName)) { $vm_guestfullname = $vm_view->guest->guestFullName; }
+        my $vm_guestFamily = "Not Available";
+        if(defined($vm_view->guest) && defined($vm_view->guest->guestFamily)) { $vm_guestFamily = $vm_view->guest->guestFamily; }
+        my $vm_guestHostName = "Not Available";
+        if(defined($vm_view->guest) && defined($vm_view->guest->hostName)) { $vm_guestHostName = $vm_view->guest->hostName; }
+        my $vm_guestId = "Not Available";
+        if(defined($vm_view->guest) && defined($vm_view->guest->guestId)) { $vm_guestId = $vm_view->guest->guestId; }
+        my $vm_configGuestId = "Not Available";
+        if(defined($vm_view->{'config.guestId'})) { $vm_configGuestId = $vm_view->{'config.guestId'}; }
+        my $vm_toolsVersion = "Not Available";
+        if(defined($vm_view->guest) && defined($vm_view->guest->toolsVersion)) { $vm_toolsVersion = $vm_view->guest->toolsVersion; }
+        my $devices = $vm_view->{'config.hardware.device'};
+        my $removableExist = 0;
+        foreach my $device (@$devices) {
+            if(($device->isa('VirtualFloppy') or $device->isa('VirtualCdrom')) and $device->connectable->connected) {
+                $removableExist = 1;
+                last;
+            }
+        }
+        my $sharedBus = 0;
+        foreach my $device (@$devices) {
+            if(($device->isa('VirtualSCSIController')) and $device->sharedBus->val ne 'noSharing') {
+                $sharedBus = 1;
+                last;
+            }
+        }
+        my $multiwriter = 0;
+        foreach(@{$vm_view->{'config.extraConfig'}}) {
+            if ($_->key =~ /scsi.*sharing/ && $_->value eq 'multi-writer') {
+                $multiwriter = 1;
+                last;
+           }
+        }
+        my $phantomSnapshot = 0;
+        if (!$vm_view->snapshot) {
+            foreach my $device (@$devices) {
+                if ($device->isa('VirtualDisk') && $device->backing->fileName =~ /-\d{6}\.vmdk/i) {
+                    $phantomSnapshot = 1;
+                    last;
+                }
+            }
         }
 		my $vcentersdk = new URI::URL $vm_view->{'vim'}->{'service_url'};
 		my %h_vm = (
 			name => $vm_view->name,
-			VCENTER => $vcentersdk->host,
-			CLUSTER => $h_cluster{($h_hostcluster{$vm_view->{'runtime.host'}->value} ? $h_hostcluster{$vm_view->{'runtime.host'}->value} : "domain-c000")},
-			HOST => $h_host{$vm_view->{'runtime.host'}->value},
-			VMXPATH => $vm_view->{'summary.config.vmPathName'},
-			PORTGROUP => join(',', @vm_pg_string),
-			IP => join(',', @vm_ip_string),
-			NUMCPU => ($vm_view->{'summary.config.numCpu'} ? $vm_view->{'summary.config.numCpu'} : "N/A"),
-			MEMORY => ($vm_view->{'summary.config.memorySizeMB'} ? $vm_view->{'summary.config.memorySizeMB'} : "N/A"),
-			COMMITED => int($vm_view->{'summary.storage'}->committed / 1073741824),
+			vcenter => $vcentersdk->host,
+			cluster => $h_cluster{($h_hostcluster{$vm_view->runtime->host->value} ? $h_hostcluster{$vm_view->runtime->host->value} : "domain-c000")},
+			host => $h_host{$vm_view->runtime->host->value},
+			vmxpath => $vm_view->{'summary.config.vmPathName'},
+			portgroup => join(',', @vm_pg_string),
+			ip => join(',', @vm_ip_string),
+			numcpu => ($vm_view->{'summary.config.numCpu'} ? $vm_view->{'summary.config.numCpu'} : "N/A"),
+			memory => ($vm_view->{'summary.config.memorySizeMB'} ? $vm_view->{'summary.config.memorySizeMB'} : "N/A"),
+			commited => int($vm_view->{'summary.storage'}->committed / 1073741824),
 			uncommited => int($vm_view->{'summary.storage'}->uncommitted / 1073741824),
-			PROVISIONNED => int(($vm_view->{'summary.storage'}->committed + $vm_view->{'summary.storage'}->uncommitted) / 1073741824),
-			DATASTORE => (split /\[/, (split /\]/, $vm_view->{'summary.config.vmPathName'})[0])[1],
+			provisionned => int(($vm_view->{'summary.storage'}->committed + $vm_view->{'summary.storage'}->uncommitted) / 1073741824),
+			datastore => (split /\[/, (split /\]/, $vm_view->{'summary.config.vmPathName'})[0])[1],
 			MAC => join(',', @vm_mac),
-			guestOS => $vm_guestfullname
+			guestOS => $vm_guestfullname,
+			guestId => $vm_guestId,
+			configGuestId => $vm_configGuestId, 
+            guestFamily =>  $vm_guestFamily,
+            moref => $vm_view->{'mo_ref'}->{'type'}."-".$vm_view->{'mo_ref'}->{'value'},
+            powerState => $vm_view->runtime->powerState->val,
+            fqdn => $vm_guestHostName,
+            removable => $removableExist,
+            hwversion => $vm_view->{'config.version'},
+            vmtools => $vm_toolsVersion,
+            consolidationNeeded => (defined($vm_view->runtime->consolidationNeeded) ? $vm_view->runtime->consolidationNeeded : 0),
+            cpuReservation => $vm_view->resourceConfig->cpuAllocation->reservation,
+            cpuLimit => $vm_view->resourceConfig->cpuAllocation->limit,
+            memReservation => $vm_view->resourceConfig->memoryAllocation->reservation,
+            memLimit => $vm_view->resourceConfig->memoryAllocation->limit,
+            cpuHotAddEnabled => (defined($vm_view->{'config.cpuHotAddEnabled'}) ? $vm_view->{'config.cpuHotAddEnabled'} : 0),
+            memHotAddEnabled => (defined($vm_view->{'config.memoryHotAddEnabled'}) ? $vm_view->{'config.memoryHotAddEnabled'} : 0),
+            sharedBus => $sharedBus,
+            multiwriter => $multiwriter,
+            swappedMemory => 1048576*$vm_view->{'summary.quickStats'}->swappedMemory,
+            balloonedMemory => 1048576*$vm_view->{'summary.quickStats'}->balloonedMemory,
+            compressedMemory => 1024*$vm_view->{'summary.quickStats'}->compressedMemory,
+            connectionState => $vm_view->runtime->connectionState->val,
+            phantomSnapshot => $phantomSnapshot
 		);
 		my $vmNode = $docVMs->createElement("vm");
 		for my $vmProperty (keys %h_vm) {
@@ -268,14 +568,29 @@ sub vminventory {
 			my $value = $h_vm{$vmProperty};
 			$vmNodeProperty->appendTextNode($value);
 			$vmNode->appendChild($vmNodeProperty);
-		}                                
+		}
 		$rootVMs->appendChild($vmNode);
+        if ($vm_view->snapshot) {
+            foreach (@{$vm_view->snapshot->rootSnapshotList}) {
+                getSnapshots($_, $vcentersdk->host, $vm_view->name);
+            }
+        }
 	}
 	$docVMs->setDocumentElement($rootVMs);
 }
 
 sub hostinventory {
     foreach my $host_view (@$view_HostSystem) {
+        my $storageSys = Vim::get_view(mo_ref => $host_view->{'configManager.storageSystem'}, properties => ['storageDeviceInfo']);
+        my $lunpathcount = 0;
+        my $lunpaths = eval{$storageSys->storageDeviceInfo->multipathInfo->lun || []};
+        $lunpathcount = 0+@$lunpaths;
+        foreach my $lunpath (@$lunpaths) {
+#            if ($device->can('isa') && $device->isa('HostScsiDisk')) {
+#            if ($device->model =~ /Logical Volume/) {
+                $lunpathcount++;
+#            }
+        }
         my $vcentersdk = new URI::URL $host_view->{'vim'}->{'service_url'};
         my %h_host = (
             name => $host_view->name,
@@ -287,8 +602,11 @@ sub hostinventory {
             memory => $host_view->{'summary.hardware.memorySize'},
             esxbuild => $host_view->{'summary.config.product.fullName'},
             model => $host_view->{'summary.hardware.model'},
+            lunpathcount => $lunpathcount,
             sharedmemory => 0,
-            bandwidthcapacity => 0
+            bandwidthcapacity => 0,
+            cluster => (defined($h_hostcluster{$host_view->{'mo_ref'}->{'value'}}) ? $h_cluster{$h_hostcluster{$host_view->{'mo_ref'}->{'value'}}} : 'Standalone'),
+            moref => $host_view->{'mo_ref'}->{'type'}."-".$host_view->{'mo_ref'}->{'value'}
         );
         my $hostNode = $docHosts->createElement("host");
         for my $hostProperty (keys %h_host) {
@@ -300,4 +618,153 @@ sub hostinventory {
         $rootHosts->appendChild($hostNode);
     }
     $docHosts->setDocumentElement($rootHosts);
+}
+
+sub clusterinventory {
+    foreach my $cluster_view (@$view_ClusterComputeResource) {
+        my $lastconfigissue = 0;
+        my $lastconfigissuetime = 0;
+        if (defined($cluster_view->configIssue)){
+            foreach my $issue ( sort {$b->key cmp $a->key} @{$cluster_view->configIssue}) {
+                $lastconfigissue = $issue->fullFormattedMessage;
+                $lastconfigissuetime = substr($issue->createdTime, 0, 19);
+                last;
+            }
+        }
+        my $vcentersdk = new URI::URL $cluster_view->{'vim'}->{'service_url'};
+        my %h_cluster = (
+            name => $cluster_view->name,
+            vcenter => $vcentersdk->host,
+            vmotion => $cluster_view->summary->numVmotions,
+            dasenabled => (defined($cluster_view->summary->dasData) ? 1 : 0),
+            lastconfigissue => $lastconfigissue,
+            lastconfigissuetime => $lastconfigissuetime,
+            moref => $cluster_view->{'mo_ref'}->{'type'}."-".$cluster_view->{'mo_ref'}->{'value'}
+        );
+        my $clusterNode = $docClusters->createElement("cluster");
+        for my $clusterProperty (keys %h_cluster) {
+            my $clusterNodeProperty = $docClusters->createElement($clusterProperty);
+            my $value = $h_cluster{$clusterProperty};
+            $clusterNodeProperty->appendTextNode($value);
+            $clusterNode->appendChild($clusterNodeProperty);
+        }
+        $rootClusters->appendChild($clusterNode);
+    }
+    $docClusters->setDocumentElement($rootClusters);
+}
+
+sub datastoreinventory {
+    foreach my $datastore_view (@$view_Datastore) {
+        my $vcentersdk = new URI::URL $datastore_view->{'vim'}->{'service_url'};
+        my %h_datastore = (
+            name => $datastore_view->name,
+            vcenter => $vcentersdk->host,
+            size => $datastore_view->summary->capacity,
+            freespace => $datastore_view->summary->freeSpace,
+            uncommitted => (defined($datastore_view->summary->uncommitted) ? $datastore_view->summary->uncommitted : 0),
+            type => $datastore_view->summary->type,
+            accessible => $datastore_view->summary->accessible,
+            iormConfiguration => $datastore_view->iormConfiguration->enabled,
+            shared => $datastore_view->summary->multipleHostAccess,
+            maintenanceMode => (defined($datastore_view->summary->maintenanceMode) ? $datastore_view->summary->maintenanceMode : 'normal'),
+            moref => $datastore_view->{'mo_ref'}->{'type'}."-".$datastore_view->{'mo_ref'}->{'value'}
+        );
+        my $datastoreNode = $docDatastores->createElement("datastore");
+        for my $datastoreProperty (keys %h_datastore) {
+            my $datastoreNodeProperty = $docDatastores->createElement($datastoreProperty);
+            my $value = $h_datastore{$datastoreProperty};
+            $datastoreNodeProperty->appendTextNode($value);
+            $datastoreNode->appendChild($datastoreNodeProperty);
+        }
+        $rootDatastores->appendChild($datastoreNode);
+    }
+    $docDatastores->setDocumentElement($rootDatastores);
+}
+
+sub getAlarms {
+    foreach my $datacenter_view (@$view_Datacenter) {
+        next if(!defined($datacenter_view->triggeredAlarmState));
+        foreach my $triggeredAlarm (@{$datacenter_view->triggeredAlarmState}) {
+            my $entity = Vim::get_view(mo_ref => $triggeredAlarm->entity, properties => [ 'name' ]);
+            my $alarm = Vim::get_view(mo_ref => $triggeredAlarm->alarm, properties => [ 'info.name' ]);
+            my $vcentersdk = new URI::URL $datacenter_view->{'vim'}->{'service_url'};
+            my %h_alarm = (
+                name => $alarm->{'info.name'},
+                vcenter => $vcentersdk->host,
+                entity_type => $triggeredAlarm->entity->type,
+                entity => $entity->name,
+                status => $triggeredAlarm->overallStatus->val,
+                moref => $alarm->{'mo_ref'}->{'type'}."-".$alarm->{'mo_ref'}->{'value'},
+                time => substr($triggeredAlarm->time, 0, 19)
+            );
+            my $alarmNode = $docAlarms->createElement("alarm");
+            for my $alarmProperty (keys %h_alarm) {
+                my $alarmNodeProperty = $docAlarms->createElement($alarmProperty);
+                my $value = $h_alarm{$alarmProperty};
+                $alarmNodeProperty->appendTextNode($value);
+                $alarmNode->appendChild($alarmNodeProperty);
+            }
+            $rootAlarms->appendChild($alarmNode);
+        }
+    }
+    $docAlarms->setDocumentElement($rootAlarms);
+}
+
+sub getSnapshots {
+    my ($snapshotTree,$vcenterURL,$vmname) = @_;
+    my $description = 'Not Available';
+    my %h_snapshot = (
+        quiesced => $snapshotTree->quiesced,
+        vcenter => $vcenterURL,
+        createTime => substr($snapshotTree->createTime, 0, 19),
+        state => $snapshotTree->state->val,
+        name => $snapshotTree->name,
+        description => (defined($snapshotTree->description) ? $snapshotTree->description : $description),
+        id => $snapshotTree->id,
+        moref => $snapshotTree->{'snapshot'}->{'type'}."-".$snapshotTree->{'snapshot'}->{'value'},
+        vm => $vmname
+    );
+    my $snapshotNode = $docSnapshots->createElement("snapshot");
+    for my $snapshotProperty (keys %h_snapshot) {
+        my $snapshotNodeProperty = $docSnapshots->createElement($snapshotProperty);
+        my $value = $h_snapshot{$snapshotProperty};
+        $snapshotNodeProperty->appendTextNode($value);
+        $snapshotNode->appendChild($snapshotNodeProperty);
+    }
+    $rootSnapshots->appendChild($snapshotNode);
+    $docSnapshots->setDocumentElement($rootSnapshots);
+
+    # recurse through the tree of snaps
+    if ($snapshotTree->childSnapshotList) {
+        # loop through any children that may exist
+        foreach (@{$snapshotTree->childSnapshotList}) {
+            getSnapshots($_,$vcenterURL,$vmname);
+        }
+    }
+}
+
+sub dvpginventory {
+    foreach my $distributedVirtualPortgroup_view (@$view_DistributedVirtualPortgroup) {
+        # Exclude DV uplinks portgroup
+        if (!defined($distributedVirtualPortgroup_view->tag) || @{$distributedVirtualPortgroup_view->tag}[0]->key ne 'SYSTEM/DVS.UPLINKPG') {
+            my $vcentersdk = new URI::URL $distributedVirtualPortgroup_view->{'vim'}->{'service_url'};
+            my %h_distributedVirtualPortgroup = (
+                name => $distributedVirtualPortgroup_view->name,
+                vcenter => $vcentersdk->host,
+                numports => $distributedVirtualPortgroup_view->{'config.numPorts'},
+                openports => $distributedVirtualPortgroup_view->{'config.numPorts'} - (defined($distributedVirtualPortgroup_view->vm) ? 0+@{$distributedVirtualPortgroup_view->vm} : 0),
+                autoexpand => $distributedVirtualPortgroup_view->{'config.autoExpand'},
+                moref => $distributedVirtualPortgroup_view->{'mo_ref'}->{'type'}."-".$distributedVirtualPortgroup_view->{'mo_ref'}->{'value'}
+            );
+            my $distributedVirtualPortgroupNode = $docDistributedVirtualPortgroups->createElement("distributedvirtualportgroup");
+            for my $distributedVirtualPortgroupProperty (keys %h_distributedVirtualPortgroup) {
+                my $distributedVirtualPortgroupNodeProperty = $docDistributedVirtualPortgroups->createElement($distributedVirtualPortgroupProperty);
+                my $value = $h_distributedVirtualPortgroup{$distributedVirtualPortgroupProperty};
+                $distributedVirtualPortgroupNodeProperty->appendTextNode($value);
+                $distributedVirtualPortgroupNode->appendChild($distributedVirtualPortgroupNodeProperty);
+            }
+            $rootDistributedVirtualPortgroups->appendChild($distributedVirtualPortgroupNode);
+        }
+        $docDistributedVirtualPortgroups->setDocumentElement($rootDistributedVirtualPortgroups);
+    }
 }
