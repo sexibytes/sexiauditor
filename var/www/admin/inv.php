@@ -1,55 +1,48 @@
+<?php require("session.php"); ?>
 <?php
-$time = microtime();
-$time = explode(' ', $time);
-$time = $time[1] + $time[0];
-$start = $time;
-?>
-<!doctype html>
-<html>
-    <head>
-        <title>Offline Inventory</title>
-        
-        <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css"/>
-        <link rel="stylesheet" type="text/css" href="css/jquery.dataTables.min.css"/>
-        <link rel="stylesheet" type="text/css" href="css/sexigraf.css"/>
-        <link rel="stylesheet" type="text/css" href="css/bootstrap-datetimepicker.css" rel="stylesheet"> 
+$title = "VM Inventory";
+$additionalStylesheet = array(  'css/jquery.dataTables.min.css',
+                                'css/bootstrap-datetimepicker.css');
+$additionalScript = array(  'js/jquery.dataTables.min.js',
+                            'js/jszip.min.js',
+                            'js/dataTables.autoFill.min.js',
+                            'js/dataTables.bootstrap.min.js',
+                            'js/dataTables.buttons.min.js',
+                            'js/autoFill.bootstrap.min.js',
+                            'js/buttons.bootstrap.min.js',
+                            'js/buttons.colVis.min.js',
+                            'js/buttons.html5.min.js',
+                            'js/file-size.js',
+                            'js/moment.js',
+                            'js/bootstrap-datetimepicker.js');
+require("header.php");
+require("helper.php");
 
-                <script type="text/javascript" src="js/jquery.min.js"></script>
-                <script type="text/javascript" src="js/bootstrap.min.js"></script>
-                <script type="text/javascript" src="js/jquery.dataTables.min.js"></script>
-                <script type="text/javascript" src="js/jszip.min.js"></script>
-                <script type="text/javascript" src="js/dataTables.autoFill.min.js"></script>
-                <script type="text/javascript" src="js/autoFill.bootstrap.min.js"></script>
-                <script type="text/javascript" src="js/dataTables.buttons.min.js"></script>
-                <script type="text/javascript" src="js/buttons.bootstrap.min.js"></script>
-                <script type="text/javascript" src="js/buttons.colVis.min.js"></script>
-                <script type="text/javascript" src="js/buttons.html5.min.js"></script>
-                <script type="text/javascript" src="http://momentjs.com/downloads/moment.js"></script>
-                <script src="//cdn.rawgit.com/Eonasdan/bootstrap-datetimepicker/e8bddc60e73c1ec2475f827be36e1957af72e2ea/src/js/bootstrap-datetimepicker.js"></script>
-    </head>
-    <body>
-
-<?php
-$xmlStartPath = "/opt/vcron/data/";
-$scannedDirectories = array_values(array_diff(scandir($xmlStartPath, SCANDIR_SORT_DESCENDING), array('..', '.')));
+$scannedDirectories = array_values(array_diff(scandir($xmlStartPath, SCANDIR_SORT_DESCENDING), array('..', '.', 'latest')));
 if ($_SERVER['REQUEST_METHOD'] == 'POST'){
     $selectedDate = $_POST["selectedDate"];
     foreach ($scannedDirectories as $key => $value) {
         if (strpos($value, str_replace("/","",$selectedDate)) === 0) {
-         $xmlSelectedPath = $value;
-         break;
+            $xmlSelectedPath = $value;
+            break;
         }
     }
 } else {
-    $selectedDate = DateTime::createFromFormat('YmdHi', $scannedDirectories[0])->format('Y/m/d');
+    $xmlSelectedPath = $scannedDirectories[0];
+    $selectedDate = DateTime::createFromFormat('Ymd', $scannedDirectories[0])->format('Y/m/d');
 }
+
 ?>
-<div class="container">
-<form class="form-inline" action="inv.php" method="post">
-<!-- <div class="container">
-    <div class="col-sm-2" style="height:130px;"> -->
-        <div class="form-group">
-            <label for="datetimepicker11">Select your date:</label>
+	<div id="purgeLoading" style="display:flex;"><span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>&nbsp; Loading inventory, please wait for awesomeness ...</div> 
+    <div style="display:none; padding-top: 10px; padding-bottom: 10px;" class="container" id="wrapper-container">
+	<div class="row">
+	<div class="col-lg-10 alert alert-info" style="margin-top: 20px; text-align: center;">
+		<h1 style="margin-top: 10px;">VM Inventory on <?php echo DateTime::createFromFormat('Y/m/d', $selectedDate)->format('l jS F Y'); ?></h1>
+	</div>
+	
+	<div class="alert col-lg-2">
+        <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>" style="margin-top: 5px;" method="post">
+        <div class="form-group" style="margin-bottom: 5px;">
             <div class='input-group date' id='datetimepicker11'>
                 <input type='text' class="form-control" name="selectedDate" readonly />
                 <span class="input-group-addon">
@@ -58,9 +51,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST'){
                 </span>
             </div>
         </div>
-        <button type="submit" class="btn btn-default">Select this date</button>
-<!--    </div> -->
-    <script type="text/javascript">
+        <button type="submit" class="btn btn-default" style="width: 100%">Select this date</button>
+        <script type="text/javascript">
         $(function () {
             $('#datetimepicker11').datetimepicker({
                 ignoreReadonly: true,
@@ -70,24 +62,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST'){
                 enabledDates: [
 <?php
     foreach ($scannedDirectories as $xmlDirectory) {
-        echo '                  "' . DateTime::createFromFormat('YmdHi', $xmlDirectory)->format('Y/m/d H:i') . '",' . "\n";
+        echo '                  "' . DateTime::createFromFormat('Ymd', $xmlDirectory)->format('Y/m/d H:i') . '",' . "\n";
     }
 ?>
                 ]
             });
         });
-    </script>
-<!-- </div> -->
-</form>
-</div>
-<?php 
-if ($_SERVER['REQUEST_METHOD'] == 'POST'):
-
-?>
-   <div id="purgeLoading" style="display:flex;">
-            <span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>&nbsp; Loading inventory, please wait for awesomeness ...
+        </script>
+        </form>
     </div>
-    <div id="wrapper" style="width:98%; padding:10px; display:none;">
+	</div>
+    <div style="width:98%; padding:10px;">
         <div>Show/Hide column: 
             <button type="button" class="btn btn-success btn-xs toggle-vis" style="outline: 5px auto;" name="0" data-column="0">VM</button> 
             <button type="button" class="btn btn-success btn-xs toggle-vis" style="outline: 5px auto;" name="1" data-column="1">vCenter</button> 
@@ -102,10 +87,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST'):
             <button type="button" class="btn btn-danger btn-xs toggle-vis" style="outline: 5px auto;" name="10" data-column="10">ProvisionnedGB</button>
             <button type="button" class="btn btn-success btn-xs toggle-vis" style="outline: 5px auto;" name="11" data-column="11">Datastore</button>
             <button type="button" class="btn btn-danger btn-xs toggle-vis" style="outline: 5px auto;" name="12" data-column="12">MAC</button>
-        </div><br />
-       <div name="export-button">Export in: </div>
+        </div>
         <hr />
-        <table id="inventory" class="display" cellspacing="0" width="100%">
+        <table id="inventory" class="display table" cellspacing="0" width="100%">
             <thead>
                 <tr>
                     <th>VM</th>
@@ -126,24 +110,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST'):
 
             <tbody>
 <?php
-$xmlFile = "/opt/vcron/data/$xmlSelectedPath/vms-global.xml";
+$xmlFile = "$xmlStartPath$xmlSelectedPath/vms-global.xml";
 $xml = simplexml_load_file($xmlFile);
 
 foreach ($xml->vm as $vm) {
 echo "<tr>";
 echo "<td>" . $vm->name . "</td>";
-echo "<td>" . $vm->VCENTER . "</td>";
-echo "<td>" . $vm->CLUSTER . "</td>";
-echo "<td>" . $vm->HOST . "</td>";
-echo "<td>" . $vm->VMXPATH . "</td>";
-echo "<td>" . $vm->PORTGROUP . "</td>";
-echo "<td>" . $vm->IP . "</td>";
-echo "<td>" . $vm->NUMCPU . "</td>";
-echo "<td>" . $vm->MEMORY . "</td>";
-echo "<td>" . $vm->COMMITED . "</td>";
-echo "<td>" . $vm->PROVISIONNED . "</td>";
-echo "<td>" . $vm->DATASTORE . "</td>";
-echo "<td>" . $vm->MAC . "</td>";
+echo "<td>" . $vm->vcenter . "</td>";
+echo "<td>" . $vm->cluster . "</td>";
+echo "<td>" . $vm->host . "</td>";
+echo "<td>" . $vm->vmxpath . "</td>";
+echo "<td>" . str_ireplace(',','<br/>',$vm->portgroup) . "</td>";
+echo "<td>" . str_ireplace(',','<br/>',$vm->ip) . "</td>";
+echo "<td>" . $vm->numcpu . "</td>";
+echo "<td>" . $vm->memory . "</td>";
+echo "<td>" . $vm->commited . "</td>";
+echo "<td>" . $vm->provisionned . "</td>";
+echo "<td>" . str_ireplace(',','<br/>',$vm->datastore). "</td>";
+echo "<td>" . str_ireplace(',','<br/>',$vm->mac) . "</td>";
 echo "</tr>";
 
 }
@@ -152,7 +136,6 @@ echo "</tr>";
 ?>
             </tbody>
         </table>
-        <div class="generated">Page generated @ 2015-11-26 06:03 UTC</div>
     </div>
     <script type="text/javascript">
         $(document).ready( function () {
@@ -164,8 +147,6 @@ echo "</tr>";
                     "columnDefs": [ { "targets": [ 4, 5, 6, 7, 8, 9, 10, 12 ], "visible": false } ]
                 }
             );
-            new $.fn.dataTable.Buttons( table, { buttons: [ 'csv', 'excel' ] } );
-            table.buttons().container().appendTo( $(document.getElementsByName('export-button')) );
             $('button.toggle-vis').on( 'click', function (e) {
                     e.preventDefault();
                     var column = table.column( $(this).attr('data-column') );
@@ -179,17 +160,8 @@ echo "</tr>";
                 }
             } );
          } );
-                 document.getElementById("wrapper").style.display = "block";
+                 document.getElementById("wrapper-container").style.display = "block";
                  document.getElementById("purgeLoading").style.display = "none";
     </script>
-<?php endif; ?>
-<?php
-$time = microtime();
-$time = explode(' ', $time);
-$time = $time[1] + $time[0];
-$finish = $time;
-$total_time = round(($finish - $start), 4);
-echo 'Page generated in '.$total_time.' seconds.';
-?>
-</body>
-</html>
+
+<?php require("footer.php"); ?>
