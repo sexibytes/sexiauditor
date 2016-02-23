@@ -1,102 +1,47 @@
-<?php 
-session_start();
-$isAdminPage = TRUE;
-$title = "SexiGraf vSphere Credential Store";
+<?php require("session.php"); ?>
+<?php
+$isAdminPage = true;
+$title = "SexiAuditor vSphere Credential Store";
 require("header.php");
 require("helper.php");
 ?>
 	<div class="container"><br/>
 		<div class="panel panel-default">
 			<div class="panel-heading"><h3 class="panel-title">Credential Store Notes</h3></div>
-                	<div class="panel-body"><ul>
-                        	<li>The credential store is used to store credential that will be used for vCenter query, it use vSphere SDK Credential Store Library</li>
-                        	<li>Please refer to the <a href="http://www.sexigraf.fr/">project website</a> and documentation for more information.</li>
-                    	</ul></div>
-	        </div>
-            	<h2><span class="glyphicon glyphicon-briefcase" aria-hidden="true"></span> SexiGraf Credential Store</h2>
-		<table class="table table-hover">
-      		<thead><tr>
-	          <th class="col-sm-4">vCenter Name</th>
-        	  <th class="col-sm-3">Username</th>
-        	  <th class="col-sm-2">Password</th>
-        	  <th class="col-sm-1">VI</th>
-        	  <th class="col-sm-1">VSAN</th>
-        	  <th class="col-sm-1">&nbsp;</th>
-       		</tr></thead>
-	      <tbody>
-<?php 
-	$credstoreData = shell_exec("/usr/lib/vmware-vcli/apps/general/credstore_admin.pl --credstore /var/www/.vmware/credstore/vicredentials.xml list");
-	foreach(preg_split("/((\r?\n)|(\r\n?))/", $credstoreData) as $line) {
-		if (strlen($line) == 0) { break; }
-		if (preg_match('/^(?:(?!Server).)/', $line)) {
-			$lineObjects = preg_split('/\s+/', $line);
-			echo '              <tr>
-              		<td>' . $lineObjects[0] . "</td>
-			<td>" . $lineObjects[1] . '</td>
-			<td>***********</td>';
-			if (isViEnabled($lineObjects[0])) {
-                                echo '                        <td><span class="glyphicon glyphicon-ok-sign" style="color:#5cb85c;font-size:2em;" aria-hidden="true"></span></td>';
-                        } else {
-                                echo '                        <td><span class="glyphicon glyphicon-remove-sign" style="color:#d9534f;font-size:2em;" aria-hidden="true"></span></td>';
-                        }
-                        if (isVsanEnabled($lineObjects[0])) {
-                                echo '                        <td><span class="glyphicon glyphicon-ok-sign" style="color:#5cb85c;font-size:2em;" aria-hidden="true"></span></td>';
-                        } else {
-                                echo '                        <td><span class="glyphicon glyphicon-remove-sign" style="color:#d9534f;font-size:2em;" aria-hidden="true"></span></td>';
-                        }
-			echo '			<td><form class="form" action="credstore.php" method="post">
-				<input type="hidden" name="input-vcenter" value="' . $lineObjects[0] . '">
-				<input type="hidden" name="input-username" value="' . $lineObjects[1] . '">
-				<div class="btn-group">
-					<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-						Action <span class="caret"></span>
-					</button>
-					<ul class="dropdown-menu">';
-			if (isViEnabled($lineObjects[0])) {
-				echo '                          <li><button name="submit" class="btn btn-link btn-xs" value="disable-vi">Disable VI</button></li>';
-			} else {
-				echo '                          <li><button name="submit" class="btn btn-link btn-xs" value="enable-vi">Enable VI</button></li>';
-			}
-			if (isVsanEnabled($lineObjects[0])) {
-				echo '                          <li><button name="submit" class="btn btn-link btn-xs" value="disable-vsan">Disable VSAN</button></li>';
-			} else {
-				echo '                          <li><button name="submit" class="btn btn-link btn-xs" value="enable-vsan">Enable VSAN</button></li>';
-			}
-			echo '				<li role="separator" class="divider"></li>
-                          <li><button name="submit" class="btn btn-link btn-xs" value="delete-vcentry">Delete</button></li> 
-                                        </ul>
-				</div>
-			</form></td>
-		</tr>
-';
-		}
-	} 
-?>
-		<tr><form class="form" action="credstore.php" method="post">
-			<td><input type="text" class="form-control" name="input-vcenter" placeholder="vCenter IP or FQDN" aria-describedby="vcenter-label"></td>
-			<td><input type="text" class="form-control" name="input-username" placeholder="Username" aria-describedby="username-label"></td>
-			<td><input type="password" class="form-control" name="input-password" placeholder="Password" aria-describedby="password-label"></td>
-			<td><button name="submit" class="btn btn-success" value="addmodify">Add</button></td>
-		</form></tr>
-	      </tbody>
-	    </table>
+			<div class="panel-body"><ul>
+				<li>The credential store is used to store credential that will be used for vCenter query, it use vSphere SDK Credential Store Library</li>
+				<li>Please refer to the <a href="http://www.sexiauditor.fr/">project website</a> and documentation for more information.</li>
+			</ul></div>
+		</div>
+		<h2><span class="glyphicon glyphicon-briefcase"></span> SexiAuditor Credential Store</h2>
 <?php
 	if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-		switch ($_POST["submit"]) {
+		$safe_submit = secureInput($_POST["submit"]);
+		$safe_vcenter = secureInput($_POST["input-vcenter"]);
+		$username = secureInput(str_replace("\\","\\\\",$_POST["input-username"]));
+		$password = secureInput($_POST["input-password"]);
+		switch ($safe_submit) {
 			case "addmodify":
 				$errorHappened = false;
-				if (empty($_POST["input-vcenter"]) or empty($_POST["input-username"]) or empty($_POST["input-password"])) {
+				if (empty($safe_vcenter) or empty($username) or empty($password)) {
 					$errorHappened = true;
 					$errorMessage = "All mandatory values have not been provided."; 
-				} elseif (!filter_var($_POST["input-vcenter"], FILTER_VALIDATE_IP) and (gethostbyname($_POST["input-vcenter"]) == $_POST["input-vcenter"])) {
-		                        $errorHappened = true;
-	        	                $errorMessage = "vCenter IP or FQDN is not correct.";
-				} elseif (shell_exec("/usr/lib/vmware-vcli/apps/general/credstore_admin.pl --credstore /var/www/.vmware/credstore/vicredentials.xml list --server " . $_POST["input-vcenter"] . " | grep " . $_POST["input-vcenter"] . " | wc -l") > 0) {
-                                	$errorHappened = true;
-                                	$errorMessage = "vCenter IP or FQDN is already in credential store, duplicate entry is not supported.";
-				} elseif (preg_match("/^([a-zA-Z0-9-_.]*)\\\\?([a-zA-Z0-9-_.]+)$|^([a-zA-Z0-9-_.]*)$|^([a-zA-Z0-9-_.]+)@([a-zA-Z0-9-_.]*)$/", $_POST["input-username"]) == 0) {
-		                        $errorHappened = true;
-	        	                $errorMessage = "Bad username format, supported format are DOMAIN\USERNAME, USERNAME, USERNAME@DOMAIN.TLD";
+				} elseif (!filter_var($safe_vcenter, FILTER_VALIDATE_IP) and (gethostbyname($safe_vcenter) == $safe_vcenter)) {
+					$errorHappened = true;
+					$errorMessage = "vCenter IP or FQDN is not correct.";
+				} elseif (shell_exec("/usr/lib/vmware-vcli/apps/general/credstore_admin.pl --credstore " . $credstoreFile . " list --server " . $safe_vcenter . " | grep " . $safe_vcenter . " | wc -l") > 0) {
+					$errorHappened = true;
+					$errorMessage = "vCenter IP or FQDN is already in credential store, duplicate entry is not supported.";
+				} elseif (preg_match("/^([a-zA-Z0-9-_.]*)\\\\?([a-zA-Z0-9-_.]+)$|^([a-zA-Z0-9-_.]*)$|^([a-zA-Z0-9-_.]+)@([a-zA-Z0-9-_.]*)$/", $username) == 0) {
+					$errorHappened = true;
+					$errorMessage = "Bad username format, supported format are DOMAIN\USERNAME, USERNAME, USERNAME@DOMAIN.TLD";
+				} else {
+					# if input seems to be well-formated, we just need to test a connection query
+					exec("/usr/lib/vmware-vcli/apps/general/connect.pl --server " . escapeshellcmd($safe_vcenter) . " --username '" . $username . "' --password '" . $password . "'", $null, $return_var);
+					if ($return_var) {
+						$errorHappened = true;
+						$errorMessage = "Cannot complete login due to an incorrect user name or password";
+					}
 				}
 				if ($errorHappened) {
 					echo '	<div class="alert alert-danger" role="alert">
@@ -108,7 +53,7 @@ require("helper.php");
 					echo '	<div class="alert alert-success" role="alert">
 		<span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
 		<span class="sr-only">Success:</span>';
-					echo shell_exec("/usr/lib/vmware-vcli/apps/general/credstore_admin.pl --credstore /var/www/.vmware/credstore/vicredentials.xml add --server " . $_POST["input-vcenter"] . " --username " . escapeshellcmd($_POST["input-username"]) . " --password " . escapeshellcmd($_POST["input-password"]));
+					echo shell_exec("/usr/lib/vmware-vcli/apps/general/credstore_admin.pl --credstore " . $credstoreFile . " add --server " . $safe_vcenter . " --username " . escapeshellcmd($username) . " --password " . escapeshellcmd($password));
 					// Once newly vCenter has been added, we want the inventory to be updated
 					shell_exec("sudo /bin/bash /var/www/scripts/updateInventory.sh > /dev/null 2>/dev/null &");
 					echo '	</div>';
@@ -116,66 +61,64 @@ require("helper.php");
 				}
 				break;
 			case "delete-vcentry":
-                                echo '  <div class="alert alert-warning" role="warning">
+                echo '  <div class="alert alert-warning" role="warning">
 		<h4><span class="glyphicon glyphicon-alert" aria-hidden="true"></span>
                 <span class="sr-only">Warning:</span>
 		Confirmation needed!</h4>
-		You are about to delete entry from VMware Credential Store for ' . $_POST["input-vcenter"] . '. Are you sure about this? We mean, <strong>really sure</strong>?<br />
-		<form class="form" action="credstore.php" method="post">
-                	<input type="hidden" name="input-vcenter" value="' . $_POST["input-vcenter"] . '">
-                        <input type="hidden" name="input-username" value="' . $_POST["input-username"] . '">
+		You are about to delete entry from VMware Credential Store for ' . $safe_vcenter . '. Are you sure about this? We mean, <strong>really sure</strong>?<br />
+		<form class="form" action="' . htmlspecialchars($_SERVER["PHP_SELF"]) . '" method="post">
+                	<input type="hidden" name="input-vcenter" value="' . $safe_vcenter . '">
+                        <input type="hidden" name="input-username" value="' . $username . '">
 			<p><button name="submit" class="btn btn-warning" value="delete-vcentry-confirmed">Delete entry</button></p>
 		</form>';
-                                echo '  </div>';
-                                break;
+				echo '  </div>';
+			break;
 			case "delete-vcentry-confirmed":
-                		disableVi($_POST["input-vcenter"]);
-                		disableVsan($_POST["input-vcenter"]);
-	                        echo '  <div class="alert alert-success" role="alert">
+	            echo '  <div class="alert alert-success" role="alert">
                 <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
                 <span class="sr-only">Success:</span>';
-				echo shell_exec("/usr/lib/vmware-vcli/apps/general/credstore_admin.pl --credstore /var/www/.vmware/credstore/vicredentials.xml remove --server " . $_POST["input-vcenter"] . " --username " . escapeshellcmd($_POST["input-username"])) . "Refreshing...";
+				echo shell_exec("/usr/lib/vmware-vcli/apps/general/credstore_admin.pl --credstore " . $credstoreFile . " remove --server " . $safe_vcenter . " --username " . escapeshellcmd($username)) . "Refreshing...";
 				echo '  </div>';
 				echo '<script type="text/javascript">setTimeout(function(){ location.replace("credstore.php"); }, 1000);</script>';
-				break;
-			case "enable-vi":
-				enableVi($_POST["input-vcenter"]);
-			        echo '  <div class="alert alert-success" role="alert">
-                <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
-                <span class="sr-only">Success:</span>
-		VI query successfully enabled for ' . $_POST["input-vcenter"] . ', refreshing...
-	</div>
-	<script type="text/javascript">setTimeout(function(){ location.replace("credstore.php"); }, 1000);</script>';
-				break;
-			case "enable-vsan":
-				enableVsan($_POST["input-vcenter"]);
-                                echo '  <div class="alert alert-success" role="alert">
-                <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
-                <span class="sr-only">Success:</span>
-                VSAN query successfully enabled for ' . $_POST["input-vcenter"] . ', refreshing...
-        </div>
-        <script type="text/javascript">setTimeout(function(){ location.replace("credstore.php"); }, 1000);</script>';
-				break;
-			case "disable-vi":
-				disableVi($_POST["input-vcenter"]);
-				echo '  <div class="alert alert-success" role="alert">
-                <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
-                <span class="sr-only">Success:</span>
-                VI query successfully disabled for ' . $_POST["input-vcenter"] . ', refreshing...
-        </div>
-        <script type="text/javascript">setTimeout(function(){ location.replace("credstore.php"); }, 1000);</script>';
-				break;
-			case "disable-vsan":
-				disableVsan($_POST["input-vcenter"]);
-                                echo '  <div class="alert alert-success" role="alert">
-                <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
-                <span class="sr-only">Success:</span>
-                VSAN query successfully disabled for ' . $_POST["input-vcenter"] . ', refreshing...
-        </div>
-        <script type="text/javascript">setTimeout(function(){ location.replace("credstore.php"); }, 1000);</script>';
-				break;
+			break;
 		}
 	}
 ?>
+		<table class="table table-hover">
+      		<thead><tr>
+				<th class="col-sm-5">vCenter Name</th>
+				<th class="col-sm-4">Username</th>
+				<th class="col-sm-2">Password</th>
+				<th class="col-sm-1">&nbsp;</th>
+       		</tr></thead>
+	    <tbody>
+		<tr><form class="form" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>" method="post">
+			<td><input type="text" class="form-control" name="input-vcenter" placeholder="vCenter IP or FQDN" aria-describedby="vcenter-label"></td>
+			<td><input type="text" class="form-control" name="input-username" placeholder="Username" aria-describedby="username-label"></td>
+			<td><input type="password" class="form-control" name="input-password" placeholder="Password" aria-describedby="password-label"></td>
+			<td><button name="submit" class="btn btn-success" value="addmodify">Add</button></td>
+		</form></tr>
+<?php 
+	$credstoreData = shell_exec("/usr/lib/vmware-vcli/apps/general/credstore_admin.pl --credstore " . $credstoreFile . " list");
+	foreach(preg_split("/((\r?\n)|(\r\n?))/", $credstoreData) as $line) {
+		if (strlen($line) == 0) { break; }
+		if (preg_match('/^(?:(?!Server).)/', $line)) {
+			$lineObjects = preg_split('/\s+/', $line);
+			echo '              <tr>
+              		<td>' . $lineObjects[0] . "</td>
+			<td>" . $lineObjects[1] . '</td>
+			<td>***********</td>';
+			echo '			<td><form class="form" action="' . htmlspecialchars($_SERVER["PHP_SELF"]) . '" method="post">
+				<input type="hidden" name="input-vcenter" value="' . $lineObjects[0] . '">
+				<input type="hidden" name="input-username" value="' . $lineObjects[1] . '">
+				<button name="submit" class="btn btn-danger" value="delete-vcentry">Delete</button>
+			</form></td>
+		</tr>
+';
+		}
+	} 
+?>
+	      </tbody>
+	    </table>
 	</div>
 <?php require("footer.php"); ?>
