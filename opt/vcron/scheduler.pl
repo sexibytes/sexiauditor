@@ -14,6 +14,11 @@ use POSIX qw(strftime);
 use XML::LibXML;
 use File::Path qw( make_path );
 use Switch;
+use Getopt::Long;
+
+# TODO
+# check for multiple run, prevent simultaneous execution
+
 
 my $start = time;
 
@@ -35,6 +40,11 @@ my $xmlSettingsFile = '/var/www/admin/conf/settings.xml';
 my $xmlModuleSettingsFile = '/var/www/admin/conf/modulesettings.xml';
 my $schedulerTTBFile = '/opt/vcron/scheduler-ttb.xml';
 
+# Using --force switch will bypass scheduler and run every subroutine
+my $force;
+GetOptions("force"  => \$force);
+if ($force) { $logger->info ("[DEBUG] Force Mode enable, all checks will be run whatever their schedule!"); }
+
 # global variables to store view objects
 my ($view_Datacenter, $view_ClusterComputeResource, $view_VirtualMachine, $view_HostSystem, $view_Datastore, $view_DistributedVirtualPortgroup);
 
@@ -52,10 +62,10 @@ my %h_hostcluster = ();
 (-w $schedulerTTBFile) or $logger->logdie ("[ERROR] File $schedulerTTBFile not available and/or writeable, abort");
 
 # modules and settings xml file initialize
-my $parser = XML::LibXML->new();
-my $docModule = $parser->parse_file($xmlModuleFile);
-my $docSettings = $parser->parse_file($xmlSettingsFile);
-my $docModuleSettings = $parser->parse_file($xmlModuleSettingsFile);
+#my $parser = XML::LibXML->new();
+my $docModule = XML::LibXML->new->parse_file($xmlModuleFile);
+my $docSettings = XML::LibXML->new->parse_file($xmlSettingsFile);
+my $docModuleSettings = XML::LibXML->new->parse_file($xmlModuleSettingsFile);
 
 # Data purge threshold
 my $purgeThreshold = 0;
@@ -87,7 +97,8 @@ $logger->info("[INFO] End processing modules list, found $nbActiveModule active 
 ($nbActiveModule gt 0) or $logger->logdie ("[ERROR] No active module found, abort");
 
 # datetime used for folder history management
-my $execDate = time2str("%Y%m%d%H%M", time);
+my $execDateTTB = time2str("%Y%m%d%H%M", time);
+my $execDate = time2str("%Y%m%d", time);
 
 
 ######################
@@ -149,6 +160,7 @@ my %actions = ( inventory => \&inventory,
                 vcSessionAge => \&sessionage,
                 vcLicenceReport => \&licenseReport,
                 vcPermissionReport => \&dummy,
+                vcTerminateSession => \&dummy,
                 clusterConfigurationIssues => \&dummy,
                 clusterAdmissionControl => \&dummy,
                 clusterHAStatus => \&dummy,
@@ -309,41 +321,48 @@ foreach $s_item (@server_list) {
 		# using dispatch table to call dynamically named subroutine
 		my $value = $href->{$key};
         my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
-        switch ($value) {
-            case "hourly" {
-                $logger->info("[INFO][SUBROUTINE] Start hourly process for $key");
-                $actions{ $key }->();
-                $logger->info("[INFO][SUBROUTINE] End hourly process for $key");
+        if ($force) {
+            # --force switch have been triggered, unleashed the subroutine
+            $logger->info("[INFO][SUBROUTINE-FORCE] Start process for $key (normal schedule is $value)");
+            $actions{ $key }->();
+            $logger->info("[INFO][SUBROUTINE-FORCE] End process for $key (normal schedule is $value)");
+        } else {
+            switch ($value) {
+                case "hourly" {
+                    $logger->info("[INFO][SUBROUTINE] Start hourly process for $key");
+                    $actions{ $key }->();
+                    $logger->info("[INFO][SUBROUTINE] End hourly process for $key");
+                }
+                case "daily" {
+                    if ($hour == $dailySchedule) {
+                        $logger->info("[INFO][SUBROUTINE] Start daily process for $key");
+                        $actions{ $key }->();
+                        $logger->info("[INFO][SUBROUTINE] End daily process for $key");
+                    } else {
+                        $logger->info("[DEBUG][SUBROUTINE] Skipping daily process for $key as it's not yet daily schedule $dailySchedule");
+                    }
+                 }
+                case "weekly" {
+                    if ($wday == $weeklySchedule) {
+                        $logger->info("[INFO][SUBROUTINE] Start weekly process for $key");
+                        $actions{ $key }->();
+                        $logger->info("[INFO][SUBROUTINE] End weekly process for $key");
+                    } else {
+                        $logger->info("[DEBUG][SUBROUTINE] Skipping weekly process for $key as it's not yet weekly schedule $weeklySchedule");
+                    }
+                 }
+                case "monthly" {
+                    if ($wday == $weeklySchedule) {
+                        $logger->info("[INFO][SUBROUTINE] Start monthly process for $key");
+                        $actions{ $key }->();
+                        $logger->info("[INFO][SUBROUTINE] End monthly process for $key");
+                    } else {
+                        $logger->info("[DEBUG][SUBROUTINE] Skipping monthly process for $key as it's not yet monthly schedule $monthlySchedule");
+                    }
+                 }
+                case "off" { $logger->info("[INFO][SUBROUTINE] Ignoring process for $key as it's off"); }
+                else { $logger->warning("[WARNING][SUBROUTINE] Unknow schedule $value for $key"); }
             }
-            case "daily" {
-                if ($hour == $dailySchedule) {
-                    $logger->info("[INFO][SUBROUTINE] Start daily process for $key");
-                    $actions{ $key }->();
-                    $logger->info("[INFO][SUBROUTINE] End daily process for $key");
-                } else {
-                    $logger->info("[DEBUG][SUBROUTINE] Skipping daily process for $key as it's not yet daily schedule $dailySchedule");
-                }
-             }
-            case "weekly" {
-                if ($wday == $weeklySchedule) {
-                    $logger->info("[INFO][SUBROUTINE] Start weekly process for $key");
-                    $actions{ $key }->();
-                    $logger->info("[INFO][SUBROUTINE] End weekly process for $key");
-                } else {
-                    $logger->info("[DEBUG][SUBROUTINE] Skipping weekly process for $key as it's not yet weekly schedule $weeklySchedule");
-                }
-             }
-            case "monthly" {
-                if ($wday == $weeklySchedule) {
-                    $logger->info("[INFO][SUBROUTINE] Start monthly process for $key");
-                    $actions{ $key }->();
-                    $logger->info("[INFO][SUBROUTINE] End monthly process for $key");
-                } else {
-                    $logger->info("[DEBUG][SUBROUTINE] Skipping monthly process for $key as it's not yet monthly schedule $monthlySchedule");
-                }
-             }
-            case "off" { $logger->info("[INFO][SUBROUTINE] Ignoring process for $key as it's off"); }
-            else { $logger->warning("[WARNING][SUBROUTINE] Unknow schedule $value for $key"); }
         }
 	}
 
@@ -377,9 +396,10 @@ xmlDump($docSessions, "session", $xmlSessions, "/opt/vcron/data/latest/sessions-
 xmlDump($docLicenses, "license", $xmlLicenses, "/opt/vcron/data/latest/licenses-global.xml");
 
 my $ttbParser = XML::LibXML->new();
-my $docTTB = $ttbParser->parse_file($schedulerTTBFile);
+$ttbParser->keep_blanks(0);
+my $docTTB = $ttbParser->load_xml(location => $schedulerTTBFile);
 my $executionEntry = $docTTB->ownerDocument->createElement('executiontime');
-$executionEntry->setAttribute("date", $execDate);
+$executionEntry->setAttribute("date", $execDateTTB);
 $executionEntry->setAttribute("seconds", time - $start);
 $docTTB->documentElement()->appendChild($executionEntry);
 $docTTB->toFile($schedulerTTBFile,2);
@@ -535,7 +555,7 @@ sub vminventory {
 			uncommited => int($vm_view->{'summary.storage'}->uncommitted / 1073741824),
 			provisionned => int(($vm_view->{'summary.storage'}->committed + $vm_view->{'summary.storage'}->uncommitted) / 1073741824),
 			datastore => (split /\[/, (split /\]/, $vm_view->{'summary.config.vmPathName'})[0])[1],
-			MAC => join(',', @vm_mac),
+			mac => join(',', @vm_mac),
 			guestOS => $vm_guestfullname,
 			guestId => $vm_guestId,
 			configGuestId => $vm_configGuestId, 
