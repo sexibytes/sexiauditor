@@ -1,7 +1,7 @@
 <?php require("session.php"); ?>
 <?php
 $title = "Platform stats";
-$additionalStylesheet = array( 'css/vopendata.css' );
+$additionalStylesheet = array('css/vopendata.css');
 $additionalScript = array(  'js/vopendata.js',
                             'js/isotope.min.js');
 require("header.php");
