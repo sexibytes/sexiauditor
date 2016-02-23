@@ -212,30 +212,37 @@ h3 {
   vertical-align: middle;
 }
 .widget-vcenter {
-  background-color: #96BF48;
+  /* background-color: #96BF48; */
+  background-color: #C8D657;
   vertical-align: middle;
 }
 .widget-cluster {
-  background-color: #BA2121;
+  /* background-color: #BA2121; */
+  background-color: #E85C63;
   vertical-align: middle;
 }
 .widget-host {
-  background-color: #E8BA0E;
+  /* background-color: #E8BA0E; */
+  background-color: #F8BB48;
   vertical-align: middle;
 }
 .widget-vm {
-  background-color: #036582;
+  /* background-color: #036582; */
+  background-color: #309FDB;
   vertical-align: middle;
 }
-.widget-lun {
-  background-color: #736766;
+.widget-storage {
+  /* background-color: #736766; */
+  background-color: #AA529B;
   vertical-align: middle;
 }
 .widget-datastore {
-  background-color: #37643D;
+  /* background-color: #37643D; */
+  background-color: #2DB3AC;
   vertical-align: middle;
 }
 .widget-vmdk {
-  background-color: #FF962D;
+  /* background-color: #FF962D; */
+  background-color: #E85D88;
   vertical-align: middle;
 }
