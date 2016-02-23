@@ -55,8 +55,8 @@ function php_file_tree_dir($directory, $first_call = true) {
 		if( is_dir("$directory/$this_file" ) ) $dirs[] = $this_file; else $files[] = $this_file;
 	}
 	$file = array_merge($dirs, $files);
-	
-	if( count($file) > 2 ) { 
+
+	if( count($file) > 2 ) {
 		$php_file_tree = "<ul";
 		if( $first_call ) { $php_file_tree .= " class=\"php-file-tree\""; $first_call = false; }
 		$php_file_tree .= ">";
@@ -114,4 +114,14 @@ function addOrdinalNumberSuffix($num) {
 
 function secureInput($data) { return htmlspecialchars(stripslashes(trim($data))); }
 
+function sendMailNewUser($username, $displayname, $role, $acess) {
+  $bodyTextContent    = 'A new user have been created with your email to access audit platform on ' . gethostname() . '<br/>Please find information below:<br />';
+  $bodyTextContent   .= 'Username: ' . $username . '<br />';
+  $bodyTextContent   .= 'Display Name: ' . $displayname . '<br />';
+  $bodyTextContent   .= 'Role: ' . $role . '<br />';
+  $bodyTextContent   .= 'Access: '. $acess . '<br />';
+  $bodyContent = preg_replace('/\%SEXIAUDITOR_TEXT\%/s', $bodyTextContent, file_get_contents('mail-template/newuser.html'));
+
+  return $bodyContent;
+}
 ?>
