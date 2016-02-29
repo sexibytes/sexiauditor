@@ -60,7 +60,7 @@ foreach ($xmlSettings->xpath('/settings/setting') as $setting) { $h_modulesettin
 		<div class="col-lg-10 alert alert-info" style="margin-top: 20px; text-align: center;">
 			<h1 style="margin-top: 10px;">Network Checks on <?php echo DateTime::createFromFormat('Y/m/d', $selectedDate)->format('l jS F Y'); ?></h1>
 		</div>
-	
+
 		<div class="alert col-lg-2">
 			<form action="check-network.php" style="margin-top: 5px;" method="post">
 			<div class="form-group" style="margin-bottom: 5px;">
@@ -107,7 +107,7 @@ foreach ($xmlSettings->xpath('/settings/setting') as $setting) { $h_modulesettin
 	$openPortThreshold = (int) $h_modulesettings['networkDVSVSSportsfree'];
 ?>
 <?php if($h_settings['networkDVSportsfree'] != 'off' && $h_settings['inventory'] != 'off'): ?>
-<?php 
+<?php
     $impactedDVPG = $xmlDVPortgroup->xpath("/distributedvirtualportgroups/distributedvirtualportgroup[openports<" . $openPortThreshold . "]");
     if (count($impactedDVPG) > 0):
 ?>
@@ -126,7 +126,7 @@ foreach ($xmlSettings->xpath('/settings/setting') as $setting) { $h_modulesettin
             <tbody>
 <?php
     foreach ($impactedDVPG as $dvportgroup) {
-        echo '            <tr><td>' . $dvportgroup->name . '</td><td>' . ($dvportgroup->autoexpand ? '<i class="glyphicon glyphicon-ok alarm-green"></i>' : '<i class="glyphicon glyphicon-remove alarm-red"></i>') . '</td><td>' . $dvportgroup->numports . '</td><td>' . $dvportgroup->openports . '</td><td>' . round(100 * ($dvportgroup->openports / $dvportgroup->numports)) . ' %</td><td>' . $dvportgroup->vcenter . '</td></tr>';
+        echo '            <tr><td>' . $dvportgroup->name . '</td><td>' . ($dvportgroup->autoexpand ? '<i class="glyphicon glyphicon-ok alarm-green"></i>' : '<i class="glyphicon glyphicon-remove alarm-red"></i>') . '</td><td>' . $dvportgroup->numports . '</td><td>' . $dvportgroup->openports . '</td><td>' . (($dvportgroup->numports > 0) ? round(100 * ($dvportgroup->openports / $dvportgroup->numports)) : 0) . ' %</td><td>' . $dvportgroup->vcenter . '</td></tr>';
     }
 ?>
             </tbody>
@@ -143,7 +143,7 @@ foreach ($xmlSettings->xpath('/settings/setting') as $setting) { $h_modulesettin
                     { "orderable": false, className: "dt-body-center", "targets": [ 1 ] },
                     { className: "dt-body-center", "targets": [ 2, 3, 4 ] }
                 ]
- 
+
             } );
          } );
         </script>
