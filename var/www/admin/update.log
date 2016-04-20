@@ -1,0 +1,139 @@
+Starting update process on 2015-10-03 20:00:38
+Updating from version 0.99 "Black Mesa" to version 0.99 "Black Mesa"
+Unpacking SexiGraf Update Package in /tmp/sexigraf-update/
+Archive:  /var/www/admin/files/sexigraf-master.sup
+e06132f57bf5bf48ff1e55fbb1716cb96b7bbbe0
+   creating: /tmp/sexigraf-update/sexigraf-master/
+  inflating: /tmp/sexigraf-update/sexigraf-master/README.md  
+   creating: /tmp/sexigraf-update/sexigraf-master/etc/
+   creating: /tmp/sexigraf-update/sexigraf-master/etc/apache2/
+  inflating: /tmp/sexigraf-update/sexigraf-master/etc/apache2/ports.conf  
+   creating: /tmp/sexigraf-update/sexigraf-master/etc/apache2/sites-available/
+  inflating: /tmp/sexigraf-update/sexigraf-master/etc/apache2/sites-available/graphite.conf  
+   creating: /tmp/sexigraf-update/sexigraf-master/etc/carbon/
+  inflating: /tmp/sexigraf-update/sexigraf-master/etc/carbon/storage-schemas.conf  
+   creating: /tmp/sexigraf-update/sexigraf-master/etc/collectd/
+  inflating: /tmp/sexigraf-update/sexigraf-master/etc/collectd/collectd.conf  
+   creating: /tmp/sexigraf-update/sexigraf-master/etc/cron.d/
+  inflating: /tmp/sexigraf-update/sexigraf-master/etc/cron.d/ViOfflineInventory  
+   creating: /tmp/sexigraf-update/sexigraf-master/etc/default/
+  inflating: /tmp/sexigraf-update/sexigraf-master/etc/default/grub  
+   creating: /tmp/sexigraf-update/sexigraf-master/etc/grafana/
+  inflating: /tmp/sexigraf-update/sexigraf-master/etc/grafana/grafana.ini  
+   creating: /tmp/sexigraf-update/sexigraf-master/etc/graphite/
+  inflating: /tmp/sexigraf-update/sexigraf-master/etc/graphite/local_settings.py  
+  inflating: /tmp/sexigraf-update/sexigraf-master/etc/log4perl.conf  
+   creating: /tmp/sexigraf-update/sexigraf-master/etc/logrotate.d/
+  inflating: /tmp/sexigraf-update/sexigraf-master/etc/logrotate.d/sexigraf  
+ extracting: /tmp/sexigraf-update/sexigraf-master/etc/sexigraf_version  
+   creating: /tmp/sexigraf-update/sexigraf-master/etc/sudoers.d/
+  inflating: /tmp/sexigraf-update/sexigraf-master/etc/sudoers.d/sexigraf  
+   creating: /tmp/sexigraf-update/sexigraf-master/root/
+  inflating: /tmp/sexigraf-update/sexigraf-master/root/ViPullStatistics.pl  
+  inflating: /tmp/sexigraf-update/sexigraf-master/root/VsanPullStatistics.pl  
+  inflating: /tmp/sexigraf-update/sexigraf-master/root/getInventory.pl  
+   creating: /tmp/sexigraf-update/sexigraf-master/root/seximenu/
+  inflating: /tmp/sexigraf-update/sexigraf-master/root/seximenu/seximenu.sh  
+  inflating: /tmp/sexigraf-update/sexigraf-master/updateRunner.xml  
+   creating: /tmp/sexigraf-update/sexigraf-master/usr/
+   creating: /tmp/sexigraf-update/sexigraf-master/usr/share/
+   creating: /tmp/sexigraf-update/sexigraf-master/usr/share/collectd/
+  inflating: /tmp/sexigraf-update/sexigraf-master/usr/share/collectd/types.db  
+   creating: /tmp/sexigraf-update/sexigraf-master/usr/share/grafana/
+   creating: /tmp/sexigraf-update/sexigraf-master/usr/share/grafana/public/
+   creating: /tmp/sexigraf-update/sexigraf-master/usr/share/grafana/public/dashboards/
+  inflating: /tmp/sexigraf-update/sexigraf-master/usr/share/grafana/public/dashboards/home.json  
+   creating: /tmp/sexigraf-update/sexigraf-master/usr/share/grafana/public/img/
+  inflating: /tmp/sexigraf-update/sexigraf-master/usr/share/grafana/public/img/sexigraf-banner.png  
+   creating: /tmp/sexigraf-update/sexigraf-master/var/
+   creating: /tmp/sexigraf-update/sexigraf-master/var/lib/
+   creating: /tmp/sexigraf-update/sexigraf-master/var/lib/grafana/
+   creating: /tmp/sexigraf-update/sexigraf-master/var/lib/grafana/dashboards/
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/lib/grafana/dashboards/SexiGraf_Pull_Exec_Time.json  
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/lib/grafana/dashboards/SexiGraf_VI_Offline_Inventory.json  
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/lib/grafana/dashboards/SexiGraf_Web_Admin.json  
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/lib/grafana/dashboards/VMware_Cluster_FullStats.json  
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/lib/grafana/dashboards/VMware_Cluster_IORM_Stats.json  
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/lib/grafana/dashboards/VMware_Cluster_Network.json  
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/lib/grafana/dashboards/VMware_ESX_FullStats.json  
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/lib/grafana/dashboards/VMware_FlambX.json  
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/lib/grafana/dashboards/VMware_Multi_Cluster_CPU_RAM_Utilization.json  
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/lib/grafana/dashboards/VMware_Multi_Cluster_Capacity_Planning.json  
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/lib/grafana/dashboards/VMware_Multi_Cluster_FullStats.json  
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/lib/grafana/dashboards/VMware_Multi_Cluster_IORM_SIOC.json  
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/lib/grafana/dashboards/VMware_Multi_Cluster_QuickStats.json  
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/lib/grafana/dashboards/VMware_Multi_Cluster_Usage.json  
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/lib/grafana/dashboards/VMware_Multi_Cluster_vMotion.json  
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/lib/grafana/dashboards/VMware_Multi_Datastore.json  
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/lib/grafana/dashboards/VMware_Multi_ESX_QuickStats.json  
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/lib/grafana/dashboards/VMware_VSAN_Capacity.json  
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/lib/grafana/dashboards/VMware_VSAN_Monitor.json  
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/lib/grafana/dashboards/VMware_VSAN_SSD_Stats.json  
+   creating: /tmp/sexigraf-update/sexigraf-master/var/log/
+   creating: /tmp/sexigraf-update/sexigraf-master/var/log/sexigraf/
+ extracting: /tmp/sexigraf-update/sexigraf-master/var/log/sexigraf/getInventory.log  
+   creating: /tmp/sexigraf-update/sexigraf-master/var/www/
+   creating: /tmp/sexigraf-update/sexigraf-master/var/www/admin/
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/www/admin/credstore.php  
+   creating: /tmp/sexigraf-update/sexigraf-master/var/www/admin/css/
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/www/admin/css/bootstrap.min.css  
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/www/admin/css/jquery.dataTables.min.css  
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/www/admin/css/sexigraf.css  
+   creating: /tmp/sexigraf-update/sexigraf-master/var/www/admin/files/
+ extracting: /tmp/sexigraf-update/sexigraf-master/var/www/admin/files/.gitignore  
+   creating: /tmp/sexigraf-update/sexigraf-master/var/www/admin/fonts/
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/www/admin/fonts/DroidSans.eot  
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/www/admin/fonts/DroidSans.ttf  
+ extracting: /tmp/sexigraf-update/sexigraf-master/var/www/admin/fonts/PirataOne.woff2  
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/www/admin/fonts/glyphicons-halflings-regular.ttf  
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/www/admin/fonts/glyphicons-halflings-regular.woff  
+ extracting: /tmp/sexigraf-update/sexigraf-master/var/www/admin/fonts/glyphicons-halflings-regular.woff2  
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/www/admin/header.php  
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/www/admin/helper.php  
+   creating: /tmp/sexigraf-update/sexigraf-master/var/www/admin/images/
+ extracting: /tmp/sexigraf-update/sexigraf-master/var/www/admin/images/directory.png  
+ extracting: /tmp/sexigraf-update/sexigraf-master/var/www/admin/images/file.png  
+ extracting: /tmp/sexigraf-update/sexigraf-master/var/www/admin/images/pattern.png  
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/www/admin/images/sort_asc.png  
+ extracting: /tmp/sexigraf-update/sexigraf-master/var/www/admin/images/sort_both.png  
+ extracting: /tmp/sexigraf-update/sexigraf-master/var/www/admin/images/sort_desc.png  
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/www/admin/index.php  
+   creating: /tmp/sexigraf-update/sexigraf-master/var/www/admin/js/
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/www/admin/js/autoFill.bootstrap.min.js  
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/www/admin/js/bootstrap.min.js  
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/www/admin/js/buttons.bootstrap.min.js  
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/www/admin/js/buttons.colVis.min.js  
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/www/admin/js/buttons.flash.min.js  
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/www/admin/js/buttons.html5.min.js  
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/www/admin/js/dataTables.autoFill.min.js  
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/www/admin/js/dataTables.bootstrap.min.js  
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/www/admin/js/dataTables.buttons.min.js  
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/www/admin/js/jquery.dataTables.min.js  
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/www/admin/js/jquery.dropdown.js  
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/www/admin/js/jquery.min.js  
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/www/admin/js/jszip.min.js  
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/www/admin/js/php_file_tree_jquery.js  
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/www/admin/offline-vminventory.html  
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/www/admin/purge.php  
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/www/admin/refresh-inventory.php  
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/www/admin/showlog.php  
+   creating: /tmp/sexigraf-update/sexigraf-master/var/www/admin/template/
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/www/admin/template/inventory.tmpl  
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/www/admin/updateRunner.php  
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/www/admin/updater.php  
+   creating: /tmp/sexigraf-update/sexigraf-master/var/www/scripts/
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/www/scripts/addViCrontab.sh  
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/www/scripts/addVsanCrontab.sh  
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/www/scripts/purgeWhisperFile.sh  
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/www/scripts/removeViCrontab.sh  
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/www/scripts/removeVsanCrontab.sh  
+  inflating: /tmp/sexigraf-update/sexigraf-master/var/www/scripts/updateInventory.sh  
+[INFO] Command run successfully: cp -ru /tmp/sexigraf-update/sexigraf-master/etc/* /etc/
+
+[INFO] Command run successfully: cp -ru /tmp/sexigraf-update/sexigraf-master/root/* /root/
+
+[INFO] Command run successfully: cp -ru /tmp/sexigraf-update/sexigraf-master/usr/* /usr/
+
+[INFO] Command run successfully: cp -ru /tmp/sexigraf-update/sexigraf-master/var/* /var/
+
+Purging temporary folder /tmp/sexigraf-update/

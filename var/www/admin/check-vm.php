@@ -57,12 +57,12 @@ $h_modulesettings = array();
 foreach ($xmlSettings->xpath('/settings/setting') as $setting) { $h_modulesettings[(string) $setting->id] = (string) $setting->value; }
 
 ?>
-<div style="padding-top: 10px; padding-bottom: 10px;" class="container">
-      <div class="col-lg-12">
+    <div style="margin: 10px 20px 10px 20px;" class="container-fluid">
+	<div class="row">
 	<div class="col-lg-10 alert alert-info" style="margin-top: 20px; text-align: center;">
 			<h1 style="margin-top: 10px;">VM Checks on <?php echo DateTime::createFromFormat('Y/m/d', $selectedDate)->format('l jS F Y'); ?></h1>
 		</div>
-
+	
 	<div class="alert col-lg-2">
         <form action="check-vm.php" style="margin-top: 5px;" method="post">
         <div class="form-group" style="margin-bottom: 5px;">
@@ -156,7 +156,7 @@ Highcharts.theme = {
 
    // General
    background2: '#F0F0EA'
-
+   
 };
 
 // Apply the theme
@@ -178,7 +178,7 @@ Highcharts.setOptions(Highcharts.theme);
         exit('  <div class="alert alert-danger" role="alert"><span class="glyphicon glyphicon-ok" aria-hidden="true"></span><span class="sr-only">Error:</span> File ' . $xmlVMFile . ' is not existant or not readable</div>');
     }
 ?>
-
+        
 <?php if($h_settings['vmSnapshotsage'] != 'off' && $h_settings['inventory'] != 'off'): ?>
 <?php
     $xmlSnapshotFile = "$xmlStartPath$xmlSelectedPath/snapshots-global.xml";
@@ -235,7 +235,7 @@ Highcharts.setOptions(Highcharts.theme);
 <?php endif; /* endif count */ ?>
 <?php endif; /* endif module */ ?>
 <?php if($h_settings['vmphantomsnapshot'] != 'off' && $h_settings['inventory'] != 'off'): ?>
-<?php
+<?php 
     $impactedVM = $xmlVM->xpath("/vms/vm[phantomSnapshot='1']");
     if (count($impactedVM) > 0):
 ?>
@@ -272,7 +272,7 @@ Highcharts.setOptions(Highcharts.theme);
 <?php endif; /* endif count */ ?>
 <?php endif; /* endif module */ ?>
 <?php if($h_settings['vmconsolidationneeded'] != 'off' && $h_settings['inventory'] != 'off'): ?>
-<?php
+<?php 
     $impactedVM = $xmlVM->xpath("/vms/vm[consolidationNeeded='1']");
     if (count($impactedVM) > 0):
 ?>
@@ -309,7 +309,7 @@ Highcharts.setOptions(Highcharts.theme);
 <?php endif; /* endif count */ ?>
 <?php endif; /* endif module */ ?>
 <?php if($h_settings['vmcpuramhddreservation'] != 'off' && $h_settings['inventory'] != 'off'): ?>
-<?php
+<?php 
     $impactedVM = $xmlVM->xpath("/vms/vm[cpuReservation>0 or memReservation>0]");
     if (count($impactedVM) > 0):
 ?>
@@ -387,7 +387,7 @@ Highcharts.setOptions(Highcharts.theme);
 <?php endif; /* endif count */ ?>
 <?php endif; /* endif module */ ?>
 <?php if($h_settings['vmcpuramhotadd'] != 'off' && $h_settings['inventory'] != 'off'): ?>
-<?php
+<?php 
     $impactedVM = $xmlVM->xpath("/vms/vm[cpuHotAddEnabled='true' or memHotAddEnabled='true']");
     if (count($impactedVM) > 0):
 ?>
@@ -473,7 +473,7 @@ Highcharts.setOptions(Highcharts.theme);
         <hr class="divider-dashed" />
 <?php endif; ?>
 <?php if($h_settings['vmballoonzipswap'] != 'off' && $h_settings['inventory'] != 'off'): ?>
-<?php
+<?php 
     $impactedVM = $xmlVM->xpath("/vms/vm[swappedMemory!=0 or balloonedMemory!=0 or compressedMemory!=0]");
     if (count($impactedVM) > 0):
 ?>
@@ -515,7 +515,7 @@ Highcharts.setOptions(Highcharts.theme);
 <?php endif; /* endif count */ ?>
 <?php endif; /* endif module */ ?>
 <?php if($h_settings['vmmultiwritermode'] != 'off' && $h_settings['inventory'] != 'off'): ?>
-<?php
+<?php 
     $impactedVM = $xmlVM->xpath("/vms/vm[mutlwriter=1]");
     if (count($impactedVM) > 0):
 ?>
@@ -553,7 +553,7 @@ Highcharts.setOptions(Highcharts.theme);
 <?php endif; /* endif count */ ?>
 <?php endif; /* endif module */ ?>
 <?php if($h_settings['vmNonpersistentmode'] != 'off' && $h_settings['inventory'] != 'off'): ?>
-<?php
+<?php 
     $impactedVM = $xmlVM->xpath("/vms/vm[nonPersistentDisk=1]");
     if (count($impactedVM) > 0):
 ?>
@@ -591,7 +591,7 @@ Highcharts.setOptions(Highcharts.theme);
 <?php endif; /* endif count */ ?>
 <?php endif; /* endif module */ ?>
 <?php if($h_settings['vmscsibussharing'] != 'off' && $h_settings['inventory'] != 'off'): ?>
-<?php
+<?php 
     $impactedVM = $xmlVM->xpath("/vms/vm[sharedBus=1]");
     if (count($impactedVM) > 0):
 ?>
@@ -628,7 +628,7 @@ Highcharts.setOptions(Highcharts.theme);
 <?php endif; /* endif count */ ?>
 <?php endif; /* endif module */ ?>
 <?php if($h_settings['vmInvalidOrInaccessible'] != 'off' && $h_settings['inventory'] != 'off'): ?>
-<?php
+<?php 
     $impactedVM = $xmlVM->xpath("/vms/vm[connectionState='invalid' or connectionState='inaccessible']");
     if (count($impactedVM) > 0):
 ?>
@@ -666,7 +666,7 @@ Highcharts.setOptions(Highcharts.theme);
 <?php endif; /* endif count */ ?>
 <?php endif; /* endif module */ ?>
 <?php if($h_settings['vmInconsistent'] != 'off' && $h_settings['inventory'] != 'off'): ?>
-<?php
+<?php 
     if (!isset($xpathFullVM)) { $xpathFullVM = $xmlVM->xpath("/vms/vm"); }
 	$impactedVM = array();
 	foreach ($xpathFullVM as $vm) { if (!preg_match("/\[.*\] " . $vm->name . "\/" . $vm->name . "\.vmx/i", $vm->vmxpath, $null)) { $impactedVM[] = $vm; } }
@@ -706,7 +706,7 @@ Highcharts.setOptions(Highcharts.theme);
 <?php endif; /* endif count */ ?>
 <?php endif; /* endif module */ ?>
 <?php if($h_settings['vmRemovableConnected'] != 'off' && $h_settings['inventory'] != 'off'): ?>
-<?php
+<?php 
     $impactedVM = $xmlVM->xpath("/vms/vm[removable='1']");
     if (count($impactedVM) > 0):
 ?>
@@ -742,7 +742,7 @@ Highcharts.setOptions(Highcharts.theme);
             } );
          } );
     </script>
-
+ 
         <hr class="divider-dashed" />
 <?php elseif ($h_modulesettings['showEmpty'] == 'enable'): /* else count */ ?>
         <h2 class="text-success"><i class="glyphicon glyphicon-ok-sign"></i> VM with removable devices <small><?php echo rand_line($achievementFile); ?></small></h2>
@@ -792,7 +792,7 @@ Highcharts.setOptions(Highcharts.theme);
                 },
                 "order": [[ 1, "asc" ]],
                 "columnDefs": [
-                    { "orderable": false, className: "dt-body-right", "targets": [ 0 ] }
+                    { "orderable": false, className: "dt-body-right", "targets": [ 0 ] } 
                 ]
             } );
          } );
@@ -800,7 +800,7 @@ Highcharts.setOptions(Highcharts.theme);
         <hr class="divider-dashed" />
 <?php endif; ?>
 <?php if($h_settings['vmGuestIdMismatch'] != 'off' && $h_settings['inventory'] != 'off'): ?>
-<?php
+<?php 
     $impactedVM = $xmlVM->xpath("/vms/vm[guestId!='Not Available' and guestId!=configGuestId]");
     if (count($impactedVM) > 0):
 ?>
@@ -839,7 +839,7 @@ Highcharts.setOptions(Highcharts.theme);
 <?php endif; /* endif count */ ?>
 <?php endif; /* endif module */ ?>
 <?php if($h_settings['vmPoweredOff'] != 'off' && $h_settings['inventory'] != 'off'): ?>
-<?php
+<?php 
     $impactedVM = $xmlVM->xpath("/vms/vm[powerState='poweredOff']");
     if (count($impactedVM) > 0):
 ?>
@@ -920,7 +920,7 @@ Highcharts.setOptions(Highcharts.theme);
         echo '            <tr><td>' . $key . '</td><td>' . $value . '</td></tr>';
     }
 ?>
-            </tbody>
+            </tbody> 
         </table>
         </div>
         <div class="col-lg-6">

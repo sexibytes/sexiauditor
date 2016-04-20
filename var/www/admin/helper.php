@@ -3,8 +3,6 @@
 $achievementFile = "/var/www/admin/achievements.txt";
 $credstoreFile = "/var/www/.vmware/credstore/vicredentials.xml";
 $xmlStartPath = "/opt/vcron/data/";
-$powerChoice = array("static" => "High performance", "dynamic" => "Balanced", "low" => "Low power", "custom" => "Custom", "off" => "Not supported (BIOS config)");
-$alarmStatus = array("yellow" => '<i class="glyphicon glyphicon-question-sign alarm-yellow"></i>', "red" => '<i class="glyphicon glyphicon-remove-sign alarm-red"></i>');
 
 function humanFileSize($size,$unit="") {
         if( (!$unit && $size >= 1<<30) || $unit == "GB")
@@ -126,110 +124,4 @@ function sendMailNewUser($username, $displayname, $role, $acess) {
 
   return $bodyContent;
 }
-
-class SexiCheck {
-  private $checkType = "";
-  private $xmlFile;
-  private $xpathQuery;
-  private $title;
-  private $description;
-  private $thead = array();
-  private $tbody = array();
-  private $order;
-  private $columnDefs;
-  private $h_modulesettings = array();
-  private $powerChoice;
-  private $alarmStatus;
-  // private $h_settings = array();
-  private $achievementFile = "/var/www/admin/achievements.txt";
-  private $xmlSettingsFile = "/var/www/admin/conf/modulesettings.xml";
-
-  public function __construct() {
-    if (is_readable($this->xmlSettingsFile)) {
-      $xmlSettings = simplexml_load_file($this->xmlSettingsFile);
-      # hash table initialization with settings XML file
-      foreach ($xmlSettings->xpath('/settings/setting') as $setting) {
-        $this->h_modulesettings[(string) $setting->id] = (string) $setting->value;
-      }
-
-      # hash table initialization with settings XML file
-      // foreach ($xmlSettings->xpath('/modules/module') as $module) {
-      //   $this->h_settings[(string) $module->id] = (string) $module->schedule;
-      // }
-      global $powerChoice;
-      global $alarmStatus;
-      $this->powerChoice = $powerChoice;
-      $this->alarmStatus = $alarmStatus;
-    }
-  }
-
-  public function displayCheck($args) {
-    $args += [
-      'xmlFile' => null,
-      'xpathQuery' => null,
-      'title' => null,
-      'description' => null,
-      'thead' => array(),
-      'tbody' => array(),
-      'order' => null,
-      'columnDefs' => null,
-    ];
-    extract($args);
-    $this->xmlFile = $xmlFile;
-    $this->xpathQuery = $xpathQuery;
-    $this->title = $title;
-    $this->description = $description;
-    $this->thead = $thead;
-    $this->tbody = $tbody;
-    $this->order = $order;
-    $this->columnDefs = $columnDefs;
-
-    if (is_readable($this->xmlFile)) {
-      $xmlContent = simplexml_load_file($this->xmlFile);
-    	$xpathFull = $xmlContent->xpath($this->xpathQuery);
-    	if (count($xpathFull) > 0) {
-        echo '              <h2 class="text-danger"><i class="glyphicon glyphicon-exclamation-sign"></i> ' . $this->title . '</h2>'."\n";
-        echo '              <div class="alert alert-warning" role="alert"><i>' . $this->description . '</i></div>'."\n";
-        echo '              <div class="col-lg-12">'."\n";
-        echo '                <table id="' . preg_replace('/\s+/', '', strtolower($this->title)) . '" class="table table-hover">
-                <thead><tr>'."\n";
-        foreach ($this->thead as $thead) {
-          echo '                    <th>' . $thead . '</th>'."\n";
-        }
-        echo '                  </thead>
-                <tbody>'."\n";
-        foreach ($xpathFull as $entry) {
-    		  echo '                    <tr>';
-          foreach ($this->tbody as $column) {
-            eval("echo $column;");
-          }
-          echo '</tr>'."\n";
-        }
-        echo '                  </tbody>
-            </table>
-            </div>
-            <script type="text/javascript">
-            $(document).ready( function () {
-                $("#' . preg_replace('/\s+/', '', strtolower($this->title)) . '").DataTable( {
-                    "search": {
-                        "smart": false,
-                        "regex": true
-                    },';
-        if (!is_null($this->order)) { echo '          "order": [' . $this->order . '],'; }
-        if (!is_null($this->columnDefs)) { echo '          "columnDefs": [' . $this->columnDefs . '],'; }
-        echo '
-                } );
-             } );
-            </script>
-            <hr class="divider-dashed" />'."\n";
-      } elseif ($this->h_modulesettings['showEmpty'] == 'enable') {
-        echo '              <h2 class="text-success"><i class="glyphicon glyphicon-ok-sign"></i> ' . $this->title . ' <small>' . rand_line($this->achievementFile) . '</small></h2>';
-      } else {
-        echo '          <div class="alert alert-danger" role="alert"><span class="glyphicon glyphicon-ok" aria-hidden="true"></span><span class="sr-only">Error:</span> File <?php echo $xmlLicenseFile; ?> is not existant or not readable. Please check for <a href="/admin/sandbox.php">module selection</a> and/or wait for scheduler</div>';
-      }
-    }
-  }
-}
-
-
 ?>
