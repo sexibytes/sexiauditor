@@ -6,7 +6,7 @@ $mail = new PHPMailer;
 //$mail->SMTPDebug = 3;                               // Enable verbose debug output
 
 $mail->isSMTP();                                      // Set mailer to use SMTP
-$mail->Host = 'smtp-goss.fr.world.socgen';  // Specify main and backup SMTP servers
+$mail->Host = 'xxx';  // Specify main and backup SMTP servers
 $mail->SMTPAuth = false;                               // Enable SMTP authentication
 // $mail->Username = 'user@example.com';                 // SMTP username
 // $mail->Password = 'secret';                           // SMTP password
@@ -14,8 +14,8 @@ $mail->SMTPAuth = false;                               // Enable SMTP authentica
 // $mail->Port = 587;                                    // TCP port to connect to
 // $mail->Port = 25;                                    // TCP port to connect to
 
-$mail->setFrom('BCO_VCenter-2@socgen.com', 'Mailer');
-$mail->addAddress('frederic.c.martin-ext@socgen.com', 'frederick');     // Add a recipient
+$mail->setFrom('xxx', 'Mailer');
+$mail->addAddress('xxx', 'frederic');     // Add a recipient
 // $mail->addAddress('ellen@example.com');               // Name is optional
 $mail->addReplyTo('info@example.com', 'Information');
 // $mail->addCC('cc@example.com');
