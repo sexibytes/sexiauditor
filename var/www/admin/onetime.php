@@ -6,8 +6,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         if(isset($_POST['forceScheduler']) && $_POST['forceScheduler'] == 'enable') {
             $argumentForce = '--force';
         }
-        exec("sudo /opt/vcron/scheduler.pl $argumentForce > /dev/null 2>&1 &");
         # run scheduler
+        exec("sudo /opt/vcron/scheduler.pl $argumentForce > /dev/null 2>&1 &");
+        sleep(2);
         header("Location: status.php");
     }
 }
