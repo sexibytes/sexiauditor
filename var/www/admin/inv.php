@@ -33,13 +33,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST'){
 }
 
 ?>
-	<div id="purgeLoading" style="display:flex;"><span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>&nbsp; Loading inventory, please wait for awesomeness ...</div> 
+	<div id="purgeLoading" style="display:flex;"><span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>&nbsp; Loading inventory, please wait for awesomeness ...</div>
     <div style="display:none; padding-top: 10px; padding-bottom: 10px;" class="container" id="wrapper-container">
 	<div class="row">
 	<div class="col-lg-10 alert alert-info" style="margin-top: 20px; text-align: center;">
 		<h1 style="margin-top: 10px;">VM Inventory on <?php echo DateTime::createFromFormat('Y/m/d', $selectedDate)->format('l jS F Y'); ?></h1>
 	</div>
-	
+
 	<div class="alert col-lg-2">
         <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>" style="margin-top: 5px;" method="post">
         <div class="form-group" style="margin-bottom: 5px;">
@@ -73,15 +73,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST'){
     </div>
 	</div>
     <div style="width:98%; padding:10px;">
-        <div>Show/Hide column: 
-            <button type="button" class="btn btn-success btn-xs toggle-vis" style="outline: 5px auto;" name="0" data-column="0">VM</button> 
-            <button type="button" class="btn btn-success btn-xs toggle-vis" style="outline: 5px auto;" name="1" data-column="1">vCenter</button> 
-            <button type="button" class="btn btn-success btn-xs toggle-vis" style="outline: 5px auto;" name="2" data-column="2">Cluster</button> 
-            <button type="button" class="btn btn-success btn-xs toggle-vis" style="outline: 5px auto;" name="3" data-column="3">Host</button> 
-            <button type="button" class="btn btn-danger btn-xs toggle-vis" style="outline: 5px auto;" name="4" data-column="4">vmx Path</button> 
-            <button type="button" class="btn btn-danger btn-xs toggle-vis" style="outline: 5px auto;" name="5" data-column="5">Portgroup</button> 
-            <button type="button" class="btn btn-danger btn-xs toggle-vis" style="outline: 5px auto;" name="6" data-column="6">IP</button> 
-            <button type="button" class="btn btn-danger btn-xs toggle-vis" style="outline: 5px auto;" name="7" data-column="7">NumCPU</button> 
+        <div>Show/Hide column:
+            <button type="button" class="btn btn-success btn-xs toggle-vis" style="outline: 5px auto;" name="0" data-column="0">VM</button>
+            <button type="button" class="btn btn-success btn-xs toggle-vis" style="outline: 5px auto;" name="1" data-column="1">vCenter</button>
+            <button type="button" class="btn btn-success btn-xs toggle-vis" style="outline: 5px auto;" name="2" data-column="2">Cluster</button>
+            <button type="button" class="btn btn-success btn-xs toggle-vis" style="outline: 5px auto;" name="3" data-column="3">Host</button>
+            <button type="button" class="btn btn-danger btn-xs toggle-vis" style="outline: 5px auto;" name="4" data-column="4">vmx Path</button>
+            <button type="button" class="btn btn-danger btn-xs toggle-vis" style="outline: 5px auto;" name="5" data-column="5">Portgroup</button>
+            <button type="button" class="btn btn-danger btn-xs toggle-vis" style="outline: 5px auto;" name="6" data-column="6">IP</button>
+            <button type="button" class="btn btn-danger btn-xs toggle-vis" style="outline: 5px auto;" name="7" data-column="7">NumCPU</button>
             <button type="button" class="btn btn-danger btn-xs toggle-vis" style="outline: 5px auto;" name="8" data-column="8">MemoryMB</button>
             <button type="button" class="btn btn-danger btn-xs toggle-vis" style="outline: 5px auto;" name="9" data-column="9">CommitedGB</button>
             <button type="button" class="btn btn-danger btn-xs toggle-vis" style="outline: 5px auto;" name="10" data-column="10">ProvisionnedGB</button>
@@ -93,9 +93,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST'){
             <thead>
                 <tr>
                     <th>VM</th>
-                    <th>vCenter</th>
-                    <th>Cluster</th>
-                    <th>Host</th>
+                    <th>vCenter (<?php echo $totalVC; ?> entries)</th>
+                    <th>Cluster (<?php echo $totalCluster; ?> entries)</th>
+                    <th>Host (<?php echo $totalHost; ?> entries)</th>
                     <th>vmx Path</th>
                     <th>Portgroup</th>
                     <th>IP</th>
@@ -103,7 +103,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST'){
                     <th>MemoryMB</th>
                     <th>CommitedGB</th>
                     <th>ProvisionnedGB</th>
-                    <th>Datastore</th>
+                    <th>Datastore (<?php echo $totalDatastore; ?> entries)</th>
                     <th>MAC</th>
                 </tr>
             </thead>
