@@ -56,14 +56,6 @@ foreach ($xmlSettings->xpath('/settings/setting') as $setting) { $h_modulesettin
 
 ?>
     <div style="padding-top: 10px; padding-bottom: 10px;" class="container">
-<!--     <div class="row">
-        <div class="col-md-2" style="text-align: center;"><img src="images/vc-vcenter.gif" class="glyphicon-custom" /></div>
-        <div class="col-md-2" style="text-align: center;"><img src="images/vc-cluster.gif" class="glyphicon-custom" /></div>
-        <div class="col-md-2" style="text-align: center;"><img src="images/vc-host.gif" class="glyphicon-custom" /></div>
-        <div class="col-md-2" style="text-align: center;"><img src="images/vc-datastore.gif" class="glyphicon-custom" /></div>
-        <div class="col-md-2" style="text-align: center;"><img src="images/vc-network.gif" class="glyphicon-custom" /></div>
-        <div class="col-md-2" style="text-align: center;"><img src="images/vc-vm.gif" class="glyphicon-custom" /></div>
-    </div> -->
 	<div class="row">
 		<div class="col-lg-10 alert alert-info" style="margin-top: 20px; text-align: center;">
 			<h1 style="margin-top: 10px;">vCenter Checks on <?php echo DateTime::createFromFormat('Y/m/d', $selectedDate)->format('l jS F Y'); ?></h1>
@@ -106,7 +98,7 @@ foreach ($xmlSettings->xpath('/settings/setting') as $setting) { $h_modulesettin
     # TODO
     # initialise objects if at least one module is active
     # Display bootstrap Success Panel if no result per module instead of empty dataTable
-	
+
 
 ?>
 <?php if($h_settings['vcSessionAge'] != 'off'): ?>
