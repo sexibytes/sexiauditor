@@ -11,7 +11,7 @@ $dir = "/var/www/admin/files/";
 	        <div class="panel-heading"><h3 class="panel-title">Update Package Notes</h3></div>
 	        <div class="panel-body">
 	            <ul>
-	                <li>The maximum file size for uploads in this package updater <strong>500 KB</strong></li>
+	                <li>The maximum file size for uploads in this package updater <strong>2 MB</strong></li>
 	                <li>Use this page to upload SexiAuditor Update Package files (<strong>SUP</strong>)</li>
 	                <li>Please refer to the <a href="http://www.sexiauditor.fr/">project website</a> and documentation for more information.</li>
 	            </ul>
@@ -24,23 +24,57 @@ $dir = "/var/www/admin/files/";
 			Current version of SexiAuditor is: <strong><?php echo (file_exists('/etc/sexiauditor_version') ? file_get_contents('/etc/sexiauditor_version', FILE_USE_INCLUDE_PATH) : "Unknown"); ?></strong>
         </div>
 		<form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>" method="post" enctype="multipart/form-data">
-		<input type="hidden" name="MAX_FILE_SIZE" value="500000"/>
+		<input type="hidden" name="MAX_FILE_SIZE" value="2097152"/>
 		<div class="alert alert-warning" role="warning">
 			<div class="row">
-				<div class="col-sm-3"><h4 id="uploadCase"><span class="glyphicon glyphicon-upload" aria-hidden="true"></span><span class="sr-only">Warning:</span> Select file to upload &gt;&gt;&gt;</h4></div>
-				<div class="col-sm-6"><input type="file" name="fileToUpload" id="fileToUpload"></div>
-				<div class="col-sm-3"><button name="submit" class="btn btn-warning btn-xs" value="uploading">Upload Package</button></div>
+				<div class="col-sm-3" style="margin-top: 7px;"><h4 id="uploadCase"><span class="glyphicon glyphicon-file" aria-hidden="true"></span><span class="sr-only">Warning:</span> Select file to upload</h4></div>
+        <!-- <div class="col-sm-8" style="margin-top: 7px;"><input type="file" name="fileToUpload" id="fileToUpload"></div> -->
+				<div class="col-sm-6">
+          <div class="input-group">
+            <span class="input-group-btn">
+              <span class="btn btn-warning btn-file">Browse&hellip; <input type="file" name="fileToUpload" id="fileToUpload"></span>
+            </span>
+            <input type="text" class="form-control" readonly>
+          </div>
+        </div>
+				<div class="col-sm-3 text-right"><button name="submit" class="btn btn-warning" value="uploading" style="width:196px"><i class="glyphicon glyphicon-upload"></i> Upload Package</button></div>
 			</div>
 		</div>
 	    </form>
+      <script>
+      $(document).on('change', '.btn-file :file', function() {
+  var input = $(this),
+      numFiles = input.get(0).files ? input.get(0).files.length : 1,
+      label = input.val().replace(/\\/g, '/').replace(/.*\//, '');
+  input.trigger('fileselect', [numFiles, label]);
+});
+
+$(document).ready( function() {
+    $('.btn-file :file').on('fileselect', function(event, numFiles, label) {
+
+        var input = $(this).parents('.input-group').find(':text'),
+            log = numFiles > 1 ? numFiles + ' files selected' : label;
+
+        if( input.length ) {
+            input.val(log);
+        } else {
+            if( log ) alert(log);
+        }
+
+    });
+});
+      </script>
 <?php
 	if ($handle = opendir($dir)) {
 		echo '		<table role="presentation" class="table table-striped"><tbody class="files">';
 		while (false !== ($file = readdir($handle))) {
 			if ($file != "." && $file != ".." && $file != ".gitignore") {
+        $tempMessageOutput = shell_exec("/usr/bin/unzip -c \"".$dir.$file."\" sexigraf-master/updateRunner.xml");
+        preg_match('/\s*<version>(?<version>.*)<\/version>/', $tempMessageOutput, $matches);
 				echo '		<tr class="template-download fade in">';
 				echo '        <td><span class="preview"></span></td>';
 				echo '        <td><p class="name">'.$file.'</p></td>';
+				echo '        <td><p class="name">Version: ' . (($matches) ? $matches['version'] : 'Unknown') . '</p></td>';
 				echo '        <td><p class="size">'.humanFileSize(filesize($dir.$file),"KB").'</p></td>';
 				echo '        <td style="width:220px"><form class="form" style="display:inline;" action="'. htmlspecialchars($_SERVER["PHP_SELF"]) . '" method="post">';
 				echo '        	  <input type="hidden" name="input-file" value="' . $file . '">';
@@ -49,7 +83,7 @@ $dir = "/var/www/admin/files/";
 				echo '        </form></td></tr>';
 		    }
 		}
-		closedir($handle); 
+		closedir($handle);
 		echo '    	</tbody></table>';
 	}
 	if ($_SERVER['REQUEST_METHOD'] == 'POST') {
