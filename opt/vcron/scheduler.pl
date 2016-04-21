@@ -26,7 +26,7 @@ $Util::script_version = "0.1";
 $ENV{'PERL_LWP_SSL_VERIFY_HOSTNAME'} = 0;
 Log::Log4perl::init('/etc/log4perl.conf');
 
-my $logger = Log::Log4perl->get_logger('sexiaudit.vcronScheduler');
+my $logger = Log::Log4perl->get_logger('sexiauditor.vcronScheduler');
 my $filename = "/var/www/.vmware/credstore/vicredentials.xml";
 my $s_item;
 my @server_list;
@@ -151,6 +151,10 @@ my $rootSessions = $docSessions->createElement("sessions");
 my $xmlLicenses = "$xmlPath/licenses-global.xml";
 my $docLicenses = XML::LibXML::Document->new('1.0', 'utf-8');
 my $rootLicenses = $docLicenses->createElement("licenses");
+### vCenter Certificates
+my $xmlCertificates = "$xmlPath/certificates-global.xml";
+my $docCertificates = XML::LibXML::Document->new('1.0', 'utf-8');
+my $rootCertificates = $docCertificates->createElement("certificates");
 
 
 ###########################################################
@@ -161,6 +165,7 @@ my %actions = ( inventory => \&inventory,
                 vcLicenceReport => \&licenseReport,
                 vcPermissionReport => \&dummy,
                 vcTerminateSession => \&dummy,
+								vcCertificatesReport => \&certificatesReport,
                 clusterConfigurationIssues => \&dummy,
                 clusterAdmissionControl => \&dummy,
                 clusterHAStatus => \&dummy,
@@ -172,6 +177,10 @@ my %actions = ( inventory => \&inventory,
                 clusterTPSSavings => \&dummy,
                 clusterAutoSlotSize => \&dummy,
                 clusterProfile => \&dummy,
+                hostMaintenanceMode => \&dummy,
+                hostRebootrequired => \&dummy,
+                hostFQDNHostnameMismatch => \&dummy,
+                hostPowerManagementPolicy => \&dummy,
                 vmSnapshotsage => \&dummy,
                 vmphantomsnapshot => \&dummy,
                 vmballoonzipswap => \&dummy,
@@ -280,7 +289,7 @@ foreach $s_item (@server_list) {
 	#my $view_ComputeResource = Vim::find_entity_views(view_type => 'ComputeResource');
 	#$logger->info("[INFO] End retrieving ComputeResource objects");
 	$logger->info("[INFO][OBJECTS] Start retrieving HostSystem objects");
-	$view_HostSystem = Vim::find_entity_views(view_type => 'HostSystem', properties => ['name', 'summary.config.product.fullName', 'summary.hardware.model', 'summary.hardware.cpuModel', 'summary.hardware.memorySize', 'summary.hardware.numCpuPkgs', 'summary.hardware.numCpuCores', 'summary.hardware.cpuMhz', 'configManager.storageSystem']);
+	$view_HostSystem = Vim::find_entity_views(view_type => 'HostSystem', properties => ['name', 'summary.config.product.fullName', 'summary.hardware.model', 'summary.hardware.cpuModel', 'summary.hardware.memorySize', 'summary.hardware.numCpuPkgs', 'summary.hardware.numCpuCores', 'summary.hardware.cpuMhz', 'configManager.storageSystem', 'runtime.inMaintenanceMode', 'summary.rebootRequired', 'config.network.dnsConfig.hostName', 'config.powerSystemInfo.currentPolicy.shortName']);
 	$logger->info("[INFO][OBJECTS] End retrieving HostSystem objects");
 	$logger->info("[INFO][OBJECTS] Start retrieving DistributedVirtualPortgroup objects");
 	$view_DistributedVirtualPortgroup = Vim::find_entity_views(view_type => 'DistributedVirtualPortgroup', properties => ['name', 'vm', 'config.numPorts', 'config.autoExpand', 'tag']);
@@ -299,12 +308,12 @@ foreach $s_item (@server_list) {
 	$logger->info("[INFO][OBJECTS] End retrieving VirtualMachine objects");
 	# hastables creation to speed later queries
 	foreach my $cluster_view (@$view_ClusterComputeResource) {
-        my $cluster_name = lc ($cluster_view->name);
+		my $cluster_name = lc ($cluster_view->name);
 		$h_cluster{%$cluster_view{'mo_ref'}->value} = $cluster_name;
 		my $cluster_hosts_views = Vim::find_entity_views(view_type => 'HostSystem', begin_entity => $cluster_view , properties => [ 'name' ]);
 		foreach my $cluster_host_view (@$cluster_hosts_views) {
-           	my $host_name = lc ($cluster_host_view->{'name'});
-		    $h_host{%$cluster_host_view{'mo_ref'}->value} = $host_name;
+    	my $host_name = lc ($cluster_host_view->{'name'});
+	    $h_host{%$cluster_host_view{'mo_ref'}->value} = $host_name;
 			$h_hostcluster{%$cluster_host_view{'mo_ref'}->value} = %$cluster_view{'mo_ref'}->value;
 		}
 	}
@@ -316,6 +325,9 @@ foreach $s_item (@server_list) {
 			$h_host{$StandaloneResourceVMHost[0][0]->{'mo_ref'}->value} = $StandaloneResourceVMHostName;
 		}
 	}
+	#
+	# certificatesReport();
+	# exit;
 
 	for my $key ( keys(%$href) ) {
 		# using dispatch table to call dynamically named subroutine
@@ -378,10 +390,16 @@ foreach $s_item (@server_list) {
 sub xmlDump {
 	my ($docXML, $obj, $xmlObject, $xmlFile) = @_;
 	if ($docXML->findvalue("count(//".$obj.")") > 0) {
-		$docXML->toFile($xmlObject, 2) or $logger->error("[ERROR] Unable to save file $xmlObject");
+		if ($docXML->toFile($xmlObject, 2)) {
+			$logger->info("[INFO][XMLDUMP] Saving file $xmlObject");
+		} else {
+			$logger->error("[ERROR][XMLDUMP] Unable to save file $xmlObject");
+		}
 		unlink($xmlFile);
 		symlink($xmlObject, $xmlFile);
 		chmod 0644, $xmlObject;
+	} else {
+		$logger->info("[DEBUG][XMLDUMP] No objects for type $obj");
 	}
 }
 
@@ -394,6 +412,7 @@ xmlDump($docSnapshots, "snapshot", $xmlSnapshots, "/opt/vcron/data/latest/snapsh
 xmlDump($docDistributedVirtualPortgroups, "distributedvirtualportgroup", $xmlDistributedVirtualPortgroups, "/opt/vcron/data/latest/distributedvirtualportgroups-global.xml");
 xmlDump($docSessions, "session", $xmlSessions, "/opt/vcron/data/latest/sessions-global.xml");
 xmlDump($docLicenses, "license", $xmlLicenses, "/opt/vcron/data/latest/licenses-global.xml");
+xmlDump($docCertificates, "certificate", $xmlCertificates, "/opt/vcron/data/latest/certificates-global.xml");
 
 my $ttbParser = XML::LibXML->new();
 $ttbParser->keep_blanks(0);
@@ -442,7 +461,7 @@ sub licenseReport {
     my $licMgr = Vim::get_view(mo_ref => Vim::get_service_content()->licenseManager);
     my $installedLicenses = $licMgr->licenses;
     my $vcentersdk = new URI::URL $licMgr->{'vim'}->{'service_url'};
-    
+
     foreach my $license (@$installedLicenses) {
         # we don't want evaluation license to be stored
         if ($license->editionKey ne 'eval') {
@@ -468,6 +487,32 @@ sub licenseReport {
     $docLicenses->setDocumentElement($rootLicenses);
 }
 
+sub certificatesReport {
+    # my $sessionMgr = Vim::get_view(mo_ref => Vim::get_service_content()->sessionManager);
+    # my $sessionList = eval {$sessionMgr->sessionList || []};
+    # my $currentSessionkey = $sessionMgr->currentSession->key;
+    # my $vcentersdk = new URI::URL $sessionMgr->{'vim'}->{'service_url'};
+		#
+    # foreach my $session (@$sessionList) {
+    #     my %h_session = (
+    #         loginTime => substr($session->loginTime, 0, 19),
+    #         vcenter => $vcentersdk->host,
+    #         userAgent => (defined($session->userAgent) ? $session->userAgent : 'N/A'),
+    #         ipAddress => (defined($session->ipAddress) ? $session->ipAddress : 'N/A'),
+    #         lastActiveTime => substr($session->lastActiveTime, 0, 19),
+    #         userName => $session->userName
+    #     );
+    #     my $sessionNode = $docSessions->createElement("session");
+    #     for my $sessionProperty (keys %h_session) {
+    #         my $sessionNodeProperty = $docSessions->createElement($sessionProperty);
+    #         my $value = $h_session{$sessionProperty};
+    #         $sessionNodeProperty->appendTextNode($value);
+    #         $sessionNode->appendChild($sessionNodeProperty);
+    #     }
+    #     $rootSessions->appendChild($sessionNode);
+    # }
+    # $docSessions->setDocumentElement($rootSessions);
+}
 
 sub inventory {
     vminventory( );
@@ -483,12 +528,12 @@ sub vminventory {
 		my @vm_pg_string = ();
 		my @vm_ip_string = ();
 		my @vm_mac = ();
-		foreach (@$vnics) { 
+		foreach (@$vnics) {
 			($_->macAddress) ? push(@vm_mac, $_->macAddress) : push(@vm_mac, "N/A");
 			($_->network) ? push(@vm_pg_string, $_->network) : push(@vm_pg_string, "N/A");
 			if ($_->ipConfig) {
 				my $ips = $_->ipConfig->ipAddress;
-				foreach (@$ips) { 
+				foreach (@$ips) {
 					if ($_->ipAddress and $_->prefixLength <= 32) {
 						push(@vm_ip_string, $_->ipAddress);
 					}
@@ -558,28 +603,28 @@ sub vminventory {
 			mac => join(',', @vm_mac),
 			guestOS => $vm_guestfullname,
 			guestId => $vm_guestId,
-			configGuestId => $vm_configGuestId, 
-            guestFamily =>  $vm_guestFamily,
-            moref => $vm_view->{'mo_ref'}->{'type'}."-".$vm_view->{'mo_ref'}->{'value'},
-            powerState => $vm_view->runtime->powerState->val,
-            fqdn => $vm_guestHostName,
-            removable => $removableExist,
-            hwversion => $vm_view->{'config.version'},
-            vmtools => $vm_toolsVersion,
-            consolidationNeeded => (defined($vm_view->runtime->consolidationNeeded) ? $vm_view->runtime->consolidationNeeded : 0),
-            cpuReservation => $vm_view->resourceConfig->cpuAllocation->reservation,
-            cpuLimit => $vm_view->resourceConfig->cpuAllocation->limit,
-            memReservation => $vm_view->resourceConfig->memoryAllocation->reservation,
-            memLimit => $vm_view->resourceConfig->memoryAllocation->limit,
-            cpuHotAddEnabled => (defined($vm_view->{'config.cpuHotAddEnabled'}) ? $vm_view->{'config.cpuHotAddEnabled'} : 0),
-            memHotAddEnabled => (defined($vm_view->{'config.memoryHotAddEnabled'}) ? $vm_view->{'config.memoryHotAddEnabled'} : 0),
-            sharedBus => $sharedBus,
-            multiwriter => $multiwriter,
-            swappedMemory => 1048576*$vm_view->{'summary.quickStats'}->swappedMemory,
-            balloonedMemory => 1048576*$vm_view->{'summary.quickStats'}->balloonedMemory,
-            compressedMemory => 1024*$vm_view->{'summary.quickStats'}->compressedMemory,
-            connectionState => $vm_view->runtime->connectionState->val,
-            phantomSnapshot => $phantomSnapshot
+			configGuestId => $vm_configGuestId,
+      guestFamily =>  $vm_guestFamily,
+      moref => $vm_view->{'mo_ref'}->{'type'}."-".$vm_view->{'mo_ref'}->{'value'},
+      powerState => $vm_view->runtime->powerState->val,
+      fqdn => $vm_guestHostName,
+      removable => $removableExist,
+      hwversion => $vm_view->{'config.version'},
+      vmtools => $vm_toolsVersion,
+      consolidationNeeded => (defined($vm_view->runtime->consolidationNeeded) ? $vm_view->runtime->consolidationNeeded : 0),
+      cpuReservation => $vm_view->resourceConfig->cpuAllocation->reservation,
+      cpuLimit => $vm_view->resourceConfig->cpuAllocation->limit,
+      memReservation => $vm_view->resourceConfig->memoryAllocation->reservation,
+      memLimit => $vm_view->resourceConfig->memoryAllocation->limit,
+      cpuHotAddEnabled => (defined($vm_view->{'config.cpuHotAddEnabled'}) ? $vm_view->{'config.cpuHotAddEnabled'} : 0),
+      memHotAddEnabled => (defined($vm_view->{'config.memoryHotAddEnabled'}) ? $vm_view->{'config.memoryHotAddEnabled'} : 0),
+      sharedBus => $sharedBus,
+      multiwriter => $multiwriter,
+      swappedMemory => 1048576*$vm_view->{'summary.quickStats'}->swappedMemory,
+      balloonedMemory => 1048576*$vm_view->{'summary.quickStats'}->balloonedMemory,
+      compressedMemory => 1024*$vm_view->{'summary.quickStats'}->compressedMemory,
+      connectionState => $vm_view->runtime->connectionState->val,
+      phantomSnapshot => $phantomSnapshot
 		);
 		my $vmNode = $docVMs->createElement("vm");
 		for my $vmProperty (keys %h_vm) {
@@ -624,6 +669,10 @@ sub hostinventory {
             lunpathcount => $lunpathcount,
             sharedmemory => 0,
             bandwidthcapacity => 0,
+						inmaintenancemode => $host_view->{'runtime.inMaintenanceMode'},
+						hostname => $host_view->{'config.network.dnsConfig.hostName'},
+						rebootrequired => $host_view->{'summary.rebootRequired'},
+						powerpolicy => $host_view->{'config.powerSystemInfo.currentPolicy.shortName'},
             cluster => (defined($h_hostcluster{$host_view->{'mo_ref'}->{'value'}}) ? $h_cluster{$h_hostcluster{$host_view->{'mo_ref'}->{'value'}}} : 'Standalone'),
             moref => $host_view->{'mo_ref'}->{'type'}."-".$host_view->{'mo_ref'}->{'value'}
         );
