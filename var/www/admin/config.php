@@ -18,7 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     foreach (array_keys($_POST) as $postKey) {
         $xmlSettings->xpath('/settings/setting[id="' . $postKey . '"]')[0]->value = $_POST[$postKey];
     }
-    
+
     if ($xmlSettings->asXML( $xmlSettingsFile )) {
         echo '      <div class="alert alert-success" role="alert"><span class="glyphicon glyphicon-ok" aria-hidden="true"></span><span class="sr-only">Success:</span> Settings successfully saved</div>';
         echo "      <script type=\"text/javascript\">$(window).load(function(){ setTimeout(function(){ $('.alert').fadeOut() }, 2000); });</script>";
@@ -71,6 +71,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 			case 'monthly':
 				echo '			  <select name="' . $setting->id . '" class="form-control">';
 				for ($month = 1; $month <= 31; $month++) { echo '			  	<option value="' . $month . '"' . ($month == $setting->value ? " selected" : "") . '>' . addOrdinalNumberSuffix($month) . '</option>'; }
+				echo '			  </select>';
+				break;
+			case 'powerList':
+				echo '			  <select name="' . $setting->id . '" class="form-control">';
+				foreach ($powerChoice as $key => $value) { echo '			  	<option value="' . $key . '"' . ($key == $setting->value ? " selected" : "") . '>' . $value . '</option>'; }
 				echo '			  </select>';
 				break;
 			default:
