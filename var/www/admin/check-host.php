@@ -125,11 +125,18 @@ $check = new SexiCheck();
                             'order' => '[ 1, "asc" ]',
                             'columnDefs' => '{ "orderable": false, className: "dt-body-right", "targets": [ 0 ] }']);
   }
-?>
 
-  <h2>Host Hardware Status</h2>
+  if($h_settings['hostHardwareStatus'] != 'off') {
+    $check->displayCheck([  'xmlFile' => "$xmlStartPath$xmlSelectedPath/hardwarestatus-global.xml",
+                            'xpathQuery' => "/hardwarestatus/hardwarestate",
+                            'title' => 'Host Hardware Status',
+                            'description' => 'Details can be found in the Hardware Status tab.',
+                            'thead' => array('State', 'Issue', 'Type', 'Name', 'vCenter'),
+                            'tbody' => array('"<td>" . $this->alarmStatus[(string) $entry->issuestate] . "</td>"', '"<td>" . $entry->issuename . "</td>"', '"<td>" . $entry->issuetype . "</td>"', '"<td>" . $entry->name . "</td>"', '"<td>" . $entry->vcenter . "</td>"'),
+                            'order' => '[ 3, "asc" ]',
+                            'columnDefs' => '{ "orderable": false, className: "dt-body-right", "targets": [ 0 ] }']);
+  }
 
-<?php
   if($h_settings['hostRebootrequired'] != 'off' && $h_settings['inventory'] != 'off') {
     $check->displayCheck([  'xmlFile' => "$xmlStartPath$xmlSelectedPath/hosts-global.xml",
                             'xpathQuery' => "/hosts/host[rebootrequired='true']",
