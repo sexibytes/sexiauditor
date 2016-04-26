@@ -109,12 +109,17 @@ $check = new SexiCheck();
 	<h2>Host NTP Check</h2>
 	<h2>Host DNS Check</h2>
 	<h2>Host Syslog Check</h2>
-	<h2>Host configuration issues</h2>
-
-
-
 
 <?php
+  if($h_settings['hostConfigurationIssues'] != 'off') {
+    $check->displayCheck([  'xmlFile' => "$xmlStartPath$xmlSelectedPath/configurationissues-global.xml",
+                            'xpathQuery' => "/configurationissues/configurationissue",
+                            'title' => 'Host configuration issues',
+                            'description' => 'The following configuration issues have been registered against Hosts in vCenter.',
+                            'thead' => array('Issue', 'Name', 'Cluster', 'vCenter'),
+                            'tbody' => array('"<td>" . $entry->configissue . "</td>"', '"<td>" . $entry->name . "</td>"', '"<td>" . $entry->cluster . "</td>"', '"<td>" . $entry->vcenter . "</td>"')]);
+  }
+
   if($h_settings['alarms'] != 'off') {
     $check->displayCheck([  'xmlFile' => "$xmlStartPath$xmlSelectedPath/alarms-global.xml",
                             'xpathQuery' => "/alarms/alarm[entity_type='HostSystem']",
