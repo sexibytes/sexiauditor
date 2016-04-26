@@ -155,6 +155,14 @@ my $rootLicenses = $docLicenses->createElement("licenses");
 my $xmlCertificates = "$xmlPath/certificates-global.xml";
 my $docCertificates = XML::LibXML::Document->new('1.0', 'utf-8');
 my $rootCertificates = $docCertificates->createElement("certificates");
+### Hardware Status error
+my $xmlHardwareStatus = "$xmlPath/hardwarestatus-global.xml";
+my $docHardwareStatus = XML::LibXML::Document->new('1.0', 'utf-8');
+my $rootHardwareStatus = $docHardwareStatus->createElement("hardwarestatus");
+### Hardware Status error
+my $xmlConfigurationIssues = "$xmlPath/configurationissues-global.xml";
+my $docConfigurationIssues = XML::LibXML::Document->new('1.0', 'utf-8');
+my $rootConfigurationIssues = $docConfigurationIssues->createElement("configurationissues");
 
 
 ###########################################################
@@ -181,6 +189,8 @@ my %actions = ( inventory => \&inventory,
                 hostRebootrequired => \&dummy,
                 hostFQDNHostnameMismatch => \&dummy,
                 hostPowerManagementPolicy => \&dummy,
+                hostHardwareStatus => \&getHardwareStatus,
+								hostConfigurationIssues => \&getConfigurationIssue,
                 vmSnapshotsage => \&dummy,
                 vmphantomsnapshot => \&dummy,
                 vmballoonzipswap => \&dummy,
@@ -234,6 +244,7 @@ if ($purgeThreshold ne 0) {
 VMware::VICredStore::init (filename => $filename) or $logger->logdie ("[ERROR] Unable to initialize Credential Store.");
 @server_list = VMware::VICredStore::get_hosts ();
 foreach $s_item (@server_list) {
+	if (index($s_item, "vctparemea") ne 0){next;}
 	$logger->info("[INFO][VCENTER] Start processing vCenter $s_item");
 	my $normalizedServerName = $s_item;
 	@user_list = VMware::VICredStore::get_usernames (server => $s_item);
@@ -289,7 +300,7 @@ foreach $s_item (@server_list) {
 	#my $view_ComputeResource = Vim::find_entity_views(view_type => 'ComputeResource');
 	#$logger->info("[INFO] End retrieving ComputeResource objects");
 	$logger->info("[INFO][OBJECTS] Start retrieving HostSystem objects");
-	$view_HostSystem = Vim::find_entity_views(view_type => 'HostSystem', properties => ['name', 'summary.config.product.fullName', 'summary.hardware.model', 'summary.hardware.cpuModel', 'summary.hardware.memorySize', 'summary.hardware.numCpuPkgs', 'summary.hardware.numCpuCores', 'summary.hardware.cpuMhz', 'configManager.storageSystem', 'runtime.inMaintenanceMode', 'summary.rebootRequired', 'config.network.dnsConfig.hostName', 'config.powerSystemInfo.currentPolicy.shortName']);
+	$view_HostSystem = Vim::find_entity_views(view_type => 'HostSystem', properties => ['name', 'summary.config.product.fullName', 'summary.hardware.model', 'summary.hardware.cpuModel', 'summary.hardware.memorySize', 'summary.hardware.numCpuPkgs', 'summary.hardware.numCpuCores', 'summary.hardware.cpuMhz', 'configManager.storageSystem', 'runtime.inMaintenanceMode', 'summary.rebootRequired', 'config.network.dnsConfig.hostName', 'config.powerSystemInfo.currentPolicy.shortName', 'configManager.healthStatusSystem', 'configIssue', 'configManager.advancedOption']);
 	$logger->info("[INFO][OBJECTS] End retrieving HostSystem objects");
 	$logger->info("[INFO][OBJECTS] Start retrieving DistributedVirtualPortgroup objects");
 	$view_DistributedVirtualPortgroup = Vim::find_entity_views(view_type => 'DistributedVirtualPortgroup', properties => ['name', 'vm', 'config.numPorts', 'config.autoExpand', 'tag']);
@@ -413,6 +424,8 @@ xmlDump($docDistributedVirtualPortgroups, "distributedvirtualportgroup", $xmlDis
 xmlDump($docSessions, "session", $xmlSessions, "/opt/vcron/data/latest/sessions-global.xml");
 xmlDump($docLicenses, "license", $xmlLicenses, "/opt/vcron/data/latest/licenses-global.xml");
 xmlDump($docCertificates, "certificate", $xmlCertificates, "/opt/vcron/data/latest/certificates-global.xml");
+xmlDump($docHardwareStatus, "hardwarestate", $xmlHardwareStatus, "/opt/vcron/data/latest/hardwarestatus-global.xml");
+xmlDump($docConfigurationIssues, "configurationissue", $xmlConfigurationIssues, "/opt/vcron/data/latest/configurationissues-global.xml");
 
 my $ttbParser = XML::LibXML->new();
 $ttbParser->keep_blanks(0);
@@ -645,16 +658,17 @@ sub vminventory {
 
 sub hostinventory {
     foreach my $host_view (@$view_HostSystem) {
-        my $storageSys = Vim::get_view(mo_ref => $host_view->{'configManager.storageSystem'}, properties => ['storageDeviceInfo']);
+		    my $storageSys = Vim::get_view(mo_ref => $host_view->{'configManager.storageSystem'}, properties => ['storageDeviceInfo']);
         my $lunpathcount = 0;
         my $lunpaths = eval{$storageSys->storageDeviceInfo->multipathInfo->lun || []};
         $lunpathcount = 0+@$lunpaths;
-        foreach my $lunpath (@$lunpaths) {
-#            if ($device->can('isa') && $device->isa('HostScsiDisk')) {
-#            if ($device->model =~ /Logical Volume/) {
-                $lunpathcount++;
-#            }
-        }
+        foreach my $lunpath (@$lunpaths) { $lunpathcount++; }
+      	my $advOpt = Vim::get_view(mo_ref => $host_view->{'configManager.advancedOption'});
+				my $syslog_target = '';
+      	eval {
+					$syslog_target = $advOpt->QueryOptions(name => 'Syslog.global.logHost');
+					$syslog_target = @$syslog_target[0]->value;
+				};
         my $vcentersdk = new URI::URL $host_view->{'vim'}->{'service_url'};
         my %h_host = (
             name => $host_view->name,
@@ -669,10 +683,11 @@ sub hostinventory {
             lunpathcount => $lunpathcount,
             sharedmemory => 0,
             bandwidthcapacity => 0,
+						syslog_target => $syslog_target,
 						inmaintenancemode => $host_view->{'runtime.inMaintenanceMode'},
 						hostname => $host_view->{'config.network.dnsConfig.hostName'},
 						rebootrequired => $host_view->{'summary.rebootRequired'},
-						powerpolicy => $host_view->{'config.powerSystemInfo.currentPolicy.shortName'},
+						powerpolicy => (defined($host_view->{'config.powerSystemInfo.currentPolicy.shortName'}) ? $host_view->{'config.powerSystemInfo.currentPolicy.shortName'} : 'off'),
             cluster => (defined($h_hostcluster{$host_view->{'mo_ref'}->{'value'}}) ? $h_cluster{$h_hostcluster{$host_view->{'mo_ref'}->{'value'}}} : 'Standalone'),
             moref => $host_view->{'mo_ref'}->{'type'}."-".$host_view->{'mo_ref'}->{'value'}
         );
@@ -749,6 +764,85 @@ sub datastoreinventory {
     $docDatastores->setDocumentElement($rootDatastores);
 }
 
+sub getHardwareStatus {
+	foreach my $host_view (@$view_HostSystem) {
+	    my $healthStatusSystem = Vim::get_view(mo_ref => $host_view->{'configManager.healthStatusSystem'});
+	    my $vcentersdk = new URI::URL $host_view->{'vim'}->{'service_url'};
+			my @h_hwissues = ();
+			my %h_hwissue;
+			if ($healthStatusSystem->runtime) {
+				if ($healthStatusSystem->runtime->hardwareStatusInfo) {
+					my $cpuStatus = $healthStatusSystem->runtime->hardwareStatusInfo->cpuStatusInfo;
+					foreach(@$cpuStatus) {
+						if(lc($_->status->key) ne 'green' && lc($_->status->key) ne 'unknown') {
+							%h_hwissue = (
+	                type => "cpu",
+	                name => $_->name,
+	                state => lc($_->status->key)
+	            );
+							push( @h_hwissues, \%h_hwissue );
+						}
+					}
+					my $memStatus = $healthStatusSystem->runtime->hardwareStatusInfo->memoryStatusInfo;
+					foreach(@$memStatus) {
+						if(lc($_->status->key) ne 'green' && lc($_->status->key) ne 'unknown') {
+							%h_hwissue = (
+	                type => "memory",
+	                name => $_->name,
+	                state => lc($_->status->key)
+	            );
+							push( @h_hwissues, \%h_hwissue );
+						}
+					}
+					my $storageStatus = $healthStatusSystem->runtime->hardwareStatusInfo->storageStatusInfo;
+					foreach(@$storageStatus) {
+						if(lc($_->status->key) ne 'green' && lc($_->status->key) ne 'unknown') {
+							%h_hwissue = (
+	                type => "storage",
+	                name => $_->name,
+	                state => lc($_->status->key)
+	            );
+							push( @h_hwissues, \%h_hwissue );
+						}
+					}
+				}
+				if($healthStatusSystem->runtime->systemHealthInfo) {
+					my $sensorInfo = $healthStatusSystem->runtime->systemHealthInfo->numericSensorInfo;
+					foreach(@$sensorInfo) {
+						if($_->healthState && lc($_->healthState->key) ne 'green' && lc($_->healthState->key) ne 'unknown') {
+							%h_hwissue = (
+									type => $_->sensorType,
+									name => $_->name,
+									state => lc($_->healthState->key)
+							);
+							push( @h_hwissues, \%h_hwissue );
+						}
+					}
+				}
+			}
+			foreach my $hwissue (@h_hwissues) {
+		    my %h_hardwarestatus = (
+          name => $host_view->name,
+					issuetype => $hwissue->{'type'},
+					issuename => $hwissue->{'name'},
+					issuestate => $hwissue->{'state'},
+          cluster => (defined($h_hostcluster{$host_view->{'mo_ref'}->{'value'}}) ? $h_cluster{$h_hostcluster{$host_view->{'mo_ref'}->{'value'}}} : 'Standalone'),
+          vcenter => $vcentersdk->host,
+		      moref => $host_view->{'mo_ref'}->{'type'}."-".$host_view->{'mo_ref'}->{'value'}
+		    );
+		    my $hardwareStatusNode = $docHardwareStatus->createElement("hardwarestate");
+		    for my $hardwareStatusProperty (keys %h_hardwarestatus) {
+		        my $hardwareStatusNodeProperty = $docHardwareStatus->createElement($hardwareStatusProperty);
+		        my $value = $h_hardwarestatus{$hardwareStatusProperty};
+		        $hardwareStatusNodeProperty->appendTextNode($value);
+		        $hardwareStatusNode->appendChild($hardwareStatusNodeProperty);
+		    }
+		    $rootHardwareStatus->appendChild($hardwareStatusNode);
+			}
+	}
+	$docHardwareStatus->setDocumentElement($rootHardwareStatus);
+}
+
 sub getAlarms {
     foreach my $datacenter_view (@$view_Datacenter) {
         next if(!defined($datacenter_view->triggeredAlarmState));
@@ -809,6 +903,32 @@ sub getSnapshots {
             getSnapshots($_,$vcenterURL,$vmname);
         }
     }
+}
+
+sub getConfigurationIssue {
+	foreach my $host_view (@$view_HostSystem) {
+		my $vcentersdk = new URI::URL $host_view->{'vim'}->{'service_url'};
+		foreach ($host_view->configIssue) {
+			if (defined(@$_[0])) {
+				my %h_configurationissue = (
+					name => $host_view->name,
+					configissue => @$_[0]->fullFormattedMessage,
+					cluster => (defined($h_hostcluster{$host_view->{'mo_ref'}->{'value'}}) ? $h_cluster{$h_hostcluster{$host_view->{'mo_ref'}->{'value'}}} : 'Standalone'),
+					vcenter => $vcentersdk->host,
+					moref => $host_view->{'mo_ref'}->{'type'}."-".$host_view->{'mo_ref'}->{'value'}
+				);
+				my $configurationIssueNode = $docConfigurationIssues->createElement("configurationissue");
+				for my $configurationIssueProperty (keys %h_configurationissue) {
+						my $configurationIssueNodeProperty = $docConfigurationIssues->createElement($configurationIssueProperty);
+						my $value = $h_configurationissue{$configurationIssueProperty};
+						$configurationIssueNodeProperty->appendTextNode($value);
+						$configurationIssueNode->appendChild($configurationIssueNodeProperty);
+				}
+				$rootConfigurationIssues->appendChild($configurationIssueNode);
+			}
+		}
+		$docConfigurationIssues->setDocumentElement($rootConfigurationIssues);
+	}
 }
 
 sub dvpginventory {
