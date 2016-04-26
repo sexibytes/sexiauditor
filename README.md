@@ -1,2 +1,2 @@
-# sexiaudit
-SexiAudit is a vSphere centric audit appliance.
+# sexiauditor
+SexiAuditor is a vSphere centric audit appliance.
