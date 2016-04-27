@@ -78,6 +78,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 				foreach ($powerChoice as $key => $value) { echo '			  	<option value="' . $key . '"' . ($key == $setting->value ? " selected" : "") . '>' . $value . '</option>'; }
 				echo '			  </select>';
 				break;
+			case 'servicePolicy':
+				echo '			  <select name="' . $setting->id . '" class="form-control">';
+				foreach ($servicePolicyChoice as $key => $value) { echo '			  	<option value="' . $key . '"' . ($key == $setting->value ? " selected" : "") . '>' . $value . '</option>'; }
+				echo '			  </select>';
+				break;
 			default:
 				echo '			  <input type="' . $setting->type . '" class="form-control" name="' . $setting->id . '" id="' . $setting->id . '" value="' . $setting->value . '">';
 				break;
