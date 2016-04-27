@@ -105,12 +105,52 @@ $check = new SexiCheck();
 	<h2>Host LUN Path Dead</h2>
 	<h2>Host Profile Compliance</h2>
 	<h2>Host LocalSwapDatastore Compliance</h2>
-	<h2>Host SSH/shell/lockdown check</h2>
-	<h2>Host NTP Check</h2>
-	<h2>Host DNS Check</h2>
-	<h2>Host Syslog Check</h2>
 
 <?php
+  if($h_settings['hostSshShellLockdown'] != 'off' && $h_settings['inventory'] != 'off') {
+    $currentSshPolicy = $h_modulesettings['hostSSHPolicy'];
+    $currentShellPolicy = $h_modulesettings['hostShellPolicy'];
+    $check->displayCheck([  'xmlFile' => "$xmlStartPath$xmlSelectedPath/hosts-global.xml",
+                            'xpathQuery' => "/hosts/host[(ssh_policy!='$currentSshPolicy' and ssh_policy!='') or (shell_policy!='$currentShellPolicy' and shell_policy!='')]",
+                            'title' => 'Host SSH-Shell-lockdown check',
+                            'description' => 'The following displays host that not match the selected ssh/shell/lockdown policy.',
+                            'thead' => array('Name', 'Cluster', 'SSH Policy', 'Desired SSH Policy', 'Shell Policy', 'Desired Shell Policy', 'Lockdown', 'vCenter'),
+                            'tbody' => array('"<td>".$entry->name."</td>"', '"<td>".$entry->cluster."</td>"', '"<td>".$this->servicePolicyChoice[(string) $entry->ssh_policy]."</td>"', '"<td>'.$servicePolicyChoice[$currentSshPolicy].'</td>"', '"<td>".$this->servicePolicyChoice[(string) $entry->shell_policy]."</td>"', '"<td>'.$servicePolicyChoice[$currentShellPolicy].'</td>"', '"<td></td>"', '"<td>".$entry->vcenter."</td>"')]);
+  }
+
+  if($h_settings['hostNTPCheck'] != 'off' && $h_settings['inventory'] != 'off') {
+    $check->displayCheck([  'xmlFile' => "$xmlStartPath$xmlSelectedPath/hosts-global.xml",
+                            'xpathQuery' => "/hosts/host",
+                            'title' => 'Host NTP Check',
+                            'description' => 'The following hosts have mismatch NTP configuration.',
+                            'typeCheck' => 'majorityPerCluster',
+                            'majorityProperty' => 'ntpservers',
+                            'thead' => array('Cluster Name', 'Majority NTP', 'Host Name', 'NTP Servers', 'vCenter'),
+                            'tbody' => array('"<td>" . $entry->cluster . "</td>"', '"<td>" . $majorityGroup . "</td>"', '"<td>" . $entry->name . "</td>"', '"<td>" . str_replace(";", "<br />", $entry->ntpservers) . "</td>"', '"<td>" . $entry->vcenter . "</td>"')]);
+  }
+
+  if($h_settings['hostDNSCheck'] != 'off' && $h_settings['inventory'] != 'off') {
+    $check->displayCheck([  'xmlFile' => "$xmlStartPath$xmlSelectedPath/hosts-global.xml",
+                            'xpathQuery' => "/hosts/host",
+                            'title' => 'Host DNS Check',
+                            'description' => 'The following hosts have mismatch DNS configuration.',
+                            'typeCheck' => 'majorityPerCluster',
+                            'majorityProperty' => 'dnsservers',
+                            'thead' => array('Cluster Name', 'Majority DNS', 'Host Name', 'DNS Servers', 'vCenter'),
+                            'tbody' => array('"<td>" . $entry->cluster . "</td>"', '"<td>" . $majorityGroup . "</td>"', '"<td>" . $entry->name . "</td>"', '"<td>" . str_replace(";", "<br />", $entry->dnsservers) . "</td>"', '"<td>" . $entry->vcenter . "</td>"')]);
+  }
+
+  if($h_settings['hostSyslogCheck'] != 'off' && $h_settings['inventory'] != 'off') {
+    $check->displayCheck([  'xmlFile' => "$xmlStartPath$xmlSelectedPath/hosts-global.xml",
+                            'xpathQuery' => "/hosts/host",
+                            'title' => 'Host Syslog Check',
+                            'description' => 'The following hosts do not have the correct Syslog settings which may cause issues if ESXi hosts experience issues and logs need to be investigated.',
+                            'typeCheck' => 'majorityPerCluster',
+                            'majorityProperty' => 'syslog_target',
+                            'thead' => array('Cluster Name', 'Majority Syslog', 'Host Name', 'Syslog Target', 'vCenter'),
+                            'tbody' => array('"<td>" . $entry->cluster . "</td>"', '"<td>" . $majorityGroup . "</td>"', '"<td>" . $entry->name . "</td>"', '"<td>" . $entry->syslog_target . "</td>"', '"<td>" . $entry->vcenter . "</td>"')]);
+  }
+
   if($h_settings['hostConfigurationIssues'] != 'off') {
     $check->displayCheck([  'xmlFile' => "$xmlStartPath$xmlSelectedPath/configurationissues-global.xml",
                             'xpathQuery' => "/configurationissues/configurationissue",
