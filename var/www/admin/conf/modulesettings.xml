@@ -19,9 +19,15 @@
 	<type>monthly</type>
   </setting>
   <setting>
+    <id>powerSystemInfo</id>
+    <label>Choose the desired Power Management Policy for ESX</label>
+    <value>off</value>
+	  <type>powerList</type>
+  </setting>
+  <setting>
     <id>thresholdHistory</id>
     <label>Number of days before data is purged (0 to disabled)</label>
-    <value>0</value>
+    <value>7</value>
 	<type>number</type>
   </setting>
   <setting>
@@ -41,6 +47,18 @@
     <label>Number of days before a session is defined as 'old'</label>
     <value>2</value>
 	<type>number</type>
+  </setting>
+  <setting>
+    <id>hostSSHPolicy</id>
+    <label>Choose the desired policy for SSH service</label>
+    <value>on</value>
+	<type>servicePolicy</type>
+  </setting>
+  <setting>
+    <id>hostShellPolicy</id>
+    <label>Choose the desired policy for Shell service</label>
+    <value>on</value>
+	<type>servicePolicy</type>
   </setting>
   <setting>
     <id>datastoreFreeSpaceThreshold</id>
@@ -69,19 +87,19 @@
   <setting>
     <id>smtpAddress</id>
     <label>SMTP server address (IP, or FQDN) to forward email to</label>
-    <value>xxx</value>
+    <value>smtp-goss.fr.world.socgen</value>
 	  <type>text</type>
   </setting>
   <setting>
     <id>senderMail</id>
     <label>Sender email to be used for report export feature</label>
-    <value>xxx</value>
+    <value>BCO_VCenter-2@socgen.com</value>
 	<type>email</type>
   </setting>
   <setting>
     <id>recipientMail</id>
     <label>Recipient email to be used for report export feature</label>
-    <value>xxx</value>
+    <value>frederic.c.martin-ext@socgen.com</value>
 	<type>email</type>
   </setting>
   <setting>
