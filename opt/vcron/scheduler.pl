@@ -16,6 +16,10 @@ use File::Path qw( make_path );
 use Switch;
 use Getopt::Long;
 
+
+use Socket;
+
+
 # TODO
 # check for multiple run, prevent simultaneous execution
 
@@ -191,6 +195,9 @@ my %actions = ( inventory => \&inventory,
                 hostPowerManagementPolicy => \&dummy,
                 hostHardwareStatus => \&getHardwareStatus,
 								hostConfigurationIssues => \&getConfigurationIssue,
+								hostSyslogCheck => \&dummy,
+								hostDNSCheck => \&dummy,
+								hostNTPCheck => \&dummy,
                 vmSnapshotsage => \&dummy,
                 vmphantomsnapshot => \&dummy,
                 vmballoonzipswap => \&dummy,
@@ -244,7 +251,6 @@ if ($purgeThreshold ne 0) {
 VMware::VICredStore::init (filename => $filename) or $logger->logdie ("[ERROR] Unable to initialize Credential Store.");
 @server_list = VMware::VICredStore::get_hosts ();
 foreach $s_item (@server_list) {
-	if (index($s_item, "vctparemea") ne 0){next;}
 	$logger->info("[INFO][VCENTER] Start processing vCenter $s_item");
 	my $normalizedServerName = $s_item;
 	@user_list = VMware::VICredStore::get_usernames (server => $s_item);
@@ -300,7 +306,7 @@ foreach $s_item (@server_list) {
 	#my $view_ComputeResource = Vim::find_entity_views(view_type => 'ComputeResource');
 	#$logger->info("[INFO] End retrieving ComputeResource objects");
 	$logger->info("[INFO][OBJECTS] Start retrieving HostSystem objects");
-	$view_HostSystem = Vim::find_entity_views(view_type => 'HostSystem', properties => ['name', 'summary.config.product.fullName', 'summary.hardware.model', 'summary.hardware.cpuModel', 'summary.hardware.memorySize', 'summary.hardware.numCpuPkgs', 'summary.hardware.numCpuCores', 'summary.hardware.cpuMhz', 'configManager.storageSystem', 'runtime.inMaintenanceMode', 'summary.rebootRequired', 'config.network.dnsConfig.hostName', 'config.powerSystemInfo.currentPolicy.shortName', 'configManager.healthStatusSystem', 'configIssue', 'configManager.advancedOption']);
+	$view_HostSystem = Vim::find_entity_views(view_type => 'HostSystem', properties => ['name', 'config.dateTimeInfo.ntpConfig.server', 'config.network.dnsConfig', 'config.powerSystemInfo.currentPolicy.shortName', 'configIssue', 'configManager.advancedOption', 'configManager.healthStatusSystem', 'configManager.storageSystem', 'configManager.serviceSystem', 'runtime.inMaintenanceMode', 'summary.config.product.fullName', 'summary.hardware.cpuMhz', 'summary.hardware.cpuModel', 'summary.hardware.memorySize', 'summary.hardware.model', 'summary.hardware.numCpuCores', 'summary.hardware.numCpuPkgs', 'summary.rebootRequired']);
 	$logger->info("[INFO][OBJECTS] End retrieving HostSystem objects");
 	$logger->info("[INFO][OBJECTS] Start retrieving DistributedVirtualPortgroup objects");
 	$view_DistributedVirtualPortgroup = Vim::find_entity_views(view_type => 'DistributedVirtualPortgroup', properties => ['name', 'vm', 'config.numPorts', 'config.autoExpand', 'tag']);
@@ -657,50 +663,68 @@ sub vminventory {
 }
 
 sub hostinventory {
-    foreach my $host_view (@$view_HostSystem) {
-		    my $storageSys = Vim::get_view(mo_ref => $host_view->{'configManager.storageSystem'}, properties => ['storageDeviceInfo']);
-        my $lunpathcount = 0;
-        my $lunpaths = eval{$storageSys->storageDeviceInfo->multipathInfo->lun || []};
-        $lunpathcount = 0+@$lunpaths;
-        foreach my $lunpath (@$lunpaths) { $lunpathcount++; }
-      	my $advOpt = Vim::get_view(mo_ref => $host_view->{'configManager.advancedOption'});
-				my $syslog_target = '';
-      	eval {
-					$syslog_target = $advOpt->QueryOptions(name => 'Syslog.global.logHost');
-					$syslog_target = @$syslog_target[0]->value;
-				};
-        my $vcentersdk = new URI::URL $host_view->{'vim'}->{'service_url'};
-        my %h_host = (
-            name => $host_view->name,
-            vcenter => $vcentersdk->host,
-            numcpu => $host_view->{'summary.hardware.numCpuPkgs'},
-            numcpucore => $host_view->{'summary.hardware.numCpuCores'},
-            cpumhz => $host_view->{'summary.hardware.cpuMhz'},
-            cputype => $host_view->{'summary.hardware.cpuModel'},
-            memory => $host_view->{'summary.hardware.memorySize'},
-            esxbuild => $host_view->{'summary.config.product.fullName'},
-            model => $host_view->{'summary.hardware.model'},
-            lunpathcount => $lunpathcount,
-            sharedmemory => 0,
-            bandwidthcapacity => 0,
-						syslog_target => $syslog_target,
-						inmaintenancemode => $host_view->{'runtime.inMaintenanceMode'},
-						hostname => $host_view->{'config.network.dnsConfig.hostName'},
-						rebootrequired => $host_view->{'summary.rebootRequired'},
-						powerpolicy => (defined($host_view->{'config.powerSystemInfo.currentPolicy.shortName'}) ? $host_view->{'config.powerSystemInfo.currentPolicy.shortName'} : 'off'),
-            cluster => (defined($h_hostcluster{$host_view->{'mo_ref'}->{'value'}}) ? $h_cluster{$h_hostcluster{$host_view->{'mo_ref'}->{'value'}}} : 'Standalone'),
-            moref => $host_view->{'mo_ref'}->{'type'}."-".$host_view->{'mo_ref'}->{'value'}
-        );
-        my $hostNode = $docHosts->createElement("host");
-        for my $hostProperty (keys %h_host) {
-            my $hostNodeProperty = $docHosts->createElement($hostProperty);
-            my $value = $h_host{$hostProperty};
-            $hostNodeProperty->appendTextNode($value);
-            $hostNode->appendChild($hostNodeProperty);
-        }
-        $rootHosts->appendChild($hostNode);
+  foreach my $host_view (@$view_HostSystem) {
+		my $serviceSys = Vim::get_view(mo_ref => $host_view->{'configManager.serviceSystem'}, properties => ['serviceInfo']);
+    my $services = $serviceSys->serviceInfo->service;
+		my $service_ssh = 'off';
+		my $service_shell = 'off';
+    foreach(@$services) {
+      if($_->key eq 'TSM-SSH') {
+				$service_ssh = $_->policy;
+      } elsif($_->key eq 'TSM') {
+				$service_shell = $_->policy;
+			}
     }
-    $docHosts->setDocumentElement($rootHosts);
+		my $dnsservers = $host_view->{'config.network.dnsConfig'}->address;
+		my @sorted_dnsservers = map { $_->[1] } sort { $a->[0] <=> $b->[0] } map {[ unpack('N',inet_aton($_)), $_ ]} @$dnsservers;
+		my $ntpservers = $host_view->{'config.dateTimeInfo.ntpConfig.server'};
+    my $storageSys = Vim::get_view(mo_ref => $host_view->{'configManager.storageSystem'}, properties => ['storageDeviceInfo']);
+    my $lunpathcount = 0;
+    my $lunpaths = eval{$storageSys->storageDeviceInfo->multipathInfo->lun || []};
+    $lunpathcount = 0+@$lunpaths;
+    foreach my $lunpath (@$lunpaths) { $lunpathcount++; }
+  	my $advOpt = Vim::get_view(mo_ref => $host_view->{'configManager.advancedOption'});
+		my $syslog_target = '';
+  	eval {
+			$syslog_target = $advOpt->QueryOptions(name => 'Syslog.global.logHost');
+			$syslog_target = @$syslog_target[0]->value;
+		};
+    my $vcentersdk = new URI::URL $host_view->{'vim'}->{'service_url'};
+    my %h_host = (
+      name => $host_view->name,
+      vcenter => $vcentersdk->host,
+      numcpu => $host_view->{'summary.hardware.numCpuPkgs'},
+      numcpucore => $host_view->{'summary.hardware.numCpuCores'},
+      cpumhz => $host_view->{'summary.hardware.cpuMhz'},
+      cputype => $host_view->{'summary.hardware.cpuModel'},
+      memory => $host_view->{'summary.hardware.memorySize'},
+      esxbuild => $host_view->{'summary.config.product.fullName'},
+      model => $host_view->{'summary.hardware.model'},
+      lunpathcount => $lunpathcount,
+      sharedmemory => 0,
+      bandwidthcapacity => 0,
+			ssh_policy => $service_ssh,
+			shell_policy => $service_shell,
+			syslog_target => $syslog_target,
+			ntpservers => join(';', sort @$ntpservers),
+			dnsservers => join(';', @sorted_dnsservers),
+			inmaintenancemode => $host_view->{'runtime.inMaintenanceMode'},
+			hostname => $host_view->{'config.network.dnsConfig'}->hostName,
+			rebootrequired => $host_view->{'summary.rebootRequired'},
+			powerpolicy => (defined($host_view->{'config.powerSystemInfo.currentPolicy.shortName'}) ? $host_view->{'config.powerSystemInfo.currentPolicy.shortName'} : 'off'),
+      cluster => (defined($h_hostcluster{$host_view->{'mo_ref'}->{'value'}}) ? $h_cluster{$h_hostcluster{$host_view->{'mo_ref'}->{'value'}}} : 'Standalone'),
+      moref => $host_view->{'mo_ref'}->{'type'}."-".$host_view->{'mo_ref'}->{'value'}
+    );
+    my $hostNode = $docHosts->createElement("host");
+    for my $hostProperty (keys %h_host) {
+      my $hostNodeProperty = $docHosts->createElement($hostProperty);
+      my $value = $h_host{$hostProperty};
+      $hostNodeProperty->appendTextNode($value);
+      $hostNode->appendChild($hostNodeProperty);
+    }
+    $rootHosts->appendChild($hostNode);
+  }
+  $docHosts->setDocumentElement($rootHosts);
 }
 
 sub clusterinventory {
