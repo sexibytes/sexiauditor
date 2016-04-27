@@ -4,6 +4,7 @@ $achievementFile = "/var/www/admin/achievements.txt";
 $credstoreFile = "/var/www/.vmware/credstore/vicredentials.xml";
 $xmlStartPath = "/opt/vcron/data/";
 $powerChoice = array("static" => "High performance", "dynamic" => "Balanced", "low" => "Low power", "custom" => "Custom", "off" => "Not supported (BIOS config)");
+$servicePolicyChoice = array("off" => "Start and stop manually", "on" => "Start and stop with host", "automatic" => "Start and stop automatically");
 $alarmStatus = array("unknown" => '<i class="glyphicon glyphicon-question-sign"></i>', "green" => '<i class="glyphicon glyphicon-ok-sign alarm-green"></i>', "yellow" => '<i class="glyphicon glyphicon-exclamation-sign alarm-yellow"></i>', "red" => '<i class="glyphicon glyphicon-remove-sign alarm-red"></i>');
 
 function humanFileSize($size,$unit="") {
@@ -139,7 +140,11 @@ class SexiCheck {
   private $columnDefs;
   private $h_modulesettings = array();
   private $powerChoice;
+  private $servicePolicyChoice;
   private $alarmStatus;
+  private $header;
+  private $body;
+  private $footer;
   // private $h_settings = array();
   private $achievementFile = "/var/www/admin/achievements.txt";
   private $xmlSettingsFile = "/var/www/admin/conf/modulesettings.xml";
@@ -158,8 +163,10 @@ class SexiCheck {
       // }
       global $powerChoice;
       global $alarmStatus;
+      global $servicePolicyChoice;
       $this->powerChoice = $powerChoice;
       $this->alarmStatus = $alarmStatus;
+      $this->servicePolicyChoice = $servicePolicyChoice;
     }
   }
 
@@ -173,6 +180,8 @@ class SexiCheck {
       'tbody' => array(),
       'order' => null,
       'columnDefs' => null,
+      'typeCheck' => null,
+      'majorityProperty' => null,
     ];
     extract($args);
     $this->xmlFile = $xmlFile;
@@ -183,29 +192,66 @@ class SexiCheck {
     $this->tbody = $tbody;
     $this->order = $order;
     $this->columnDefs = $columnDefs;
+    $this->typeCheck = $typeCheck;
+    $this->majorityProperty = $majorityProperty;
+    $this->header = "";
+    $this->body = "";
+    $this->footer = "";
 
     if (is_readable($this->xmlFile)) {
       $xmlContent = simplexml_load_file($this->xmlFile);
     	$xpathFull = $xmlContent->xpath($this->xpathQuery);
     	if (count($xpathFull) > 0) {
-        echo '              <h2 class="text-danger"><i class="glyphicon glyphicon-exclamation-sign"></i> ' . $this->title . '</h2>'."\n";
-        echo '              <div class="alert alert-warning" role="alert"><i>' . $this->description . '</i></div>'."\n";
-        echo '              <div class="col-lg-12">'."\n";
-        echo '                <table id="' . preg_replace('/\s+/', '', strtolower($this->title)) . '" class="table table-hover">
-                <thead><tr>'."\n";
+        $this->header .= '              <h2 class="text-danger"><i class="glyphicon glyphicon-exclamation-sign"></i> ' . $this->title . '</h2>'."\n";
+        $this->header .= '              <div class="alert alert-warning" role="alert"><i>' . $this->description . '</i></div>'."\n";
+        $this->header .= '              <div class="col-lg-12">'."\n";
+        $this->header .= '                <table id="' . preg_replace('/\s+/', '', strtolower($this->title)) . '" class="table table-hover">'."\n";
+        $this->header .= '                <thead><tr>'."\n";
         foreach ($this->thead as $thead) {
-          echo '                    <th>' . $thead . '</th>'."\n";
+          $this->header .= '                    <th>' . $thead . '</th>'."\n";
         }
-        echo '                  </thead>
-                <tbody>'."\n";
-        foreach ($xpathFull as $entry) {
-    		  echo '                    <tr>';
-          foreach ($this->tbody as $column) {
-            eval("echo $column;");
-          }
-          echo '</tr>'."\n";
+        $this->header .= '                  </thead>'."\n";
+        $this->header .= '                <tbody>'."\n";
+        $entries = 0;
+        switch ($this->typeCheck) {
+    			case 'majorityPerCluster':
+          	foreach (array_diff(array_count_values(array_map("strval", $xmlContent->xpath("/hosts/host/vcenter"))), array("1")) as  $key_vcenter => $value_vcenter) {
+          		foreach (array_diff(array_count_values(array_map("strval", $xmlContent->xpath("/hosts/host[vcenter='".$key_vcenter."']/cluster"))), array("1")) as  $key_cluster => $value_cluster) {
+          			if ($key_cluster == 'Standalone') { continue; }
+          			$majorityGroup = array_diff(array_count_values(array_map("strval", $xmlContent->xpath("/hosts/host[vcenter='".$key_vcenter."' and cluster='".$key_cluster."']/".$this->majorityProperty))), array("1"));
+          			if (count($majorityGroup) < 1) {
+                  $majorityGroup = '';
+                } else {
+                  arsort($majorityGroup);
+                  $majorityGroup = array_keys($majorityGroup)[0];
+                }
+          			foreach ($xmlContent->xpath("/hosts/host[vcenter='".$key_vcenter."' and cluster='".$key_cluster."' and ".$this->majorityProperty."!='".$majorityGroup."']") as $entry) {
+                  $this->body .= '                    <tr>';
+                  foreach ($this->tbody as $column) {
+                    $entries++;
+                    $this->body .= eval("return $column;");
+                  }
+                  $this->body .= '</tr>'."\n";
+          			}
+              }
+        		}
+            if ($entries == 0) {
+              $this->header = '';
+              $this->body = '              <h2 class="text-success"><i class="glyphicon glyphicon-ok-sign"></i> ' . $this->title . ' <small>' . rand_line($this->achievementFile) . '</small></h2>';
+            }
+            break;
+          default:
+            foreach ($xpathFull as $entry) {
+              $entries++;
+              $this->body .= '                    <tr>';
+              foreach ($this->tbody as $column) {
+                $this->body .= eval("return $column;");
+              }
+              $this->body .= '</tr>'."\n";
+            }
         }
-        echo '                  </tbody>
+        if ($entries > 0) {
+          $this->footer .= '                  </tbody>
             </table>
             </div>
             <script type="text/javascript">
@@ -215,19 +261,23 @@ class SexiCheck {
                         "smart": false,
                         "regex": true
                     },';
-        if (!is_null($this->order)) { echo '          "order": [' . $this->order . '],'; }
-        if (!is_null($this->columnDefs)) { echo '          "columnDefs": [' . $this->columnDefs . '],'; }
-        echo '
+          if (!is_null($this->order)) { $this->footer .= '          "order": [' . $this->order . '],'; }
+          if (!is_null($this->columnDefs)) { $this->footer .= '          "columnDefs": [' . $this->columnDefs . '],'; }
+          $this->footer .= '
                 } );
              } );
             </script>
             <hr class="divider-dashed" />'."\n";
+        }
       } elseif ($this->h_modulesettings['showEmpty'] == 'enable') {
-        echo '              <h2 class="text-success"><i class="glyphicon glyphicon-ok-sign"></i> ' . $this->title . ' <small>' . rand_line($this->achievementFile) . '</small></h2>';
-      } else {
-        echo '          <div class="alert alert-danger" role="alert"><span class="glyphicon glyphicon-ok" aria-hidden="true"></span><span class="sr-only">Error:</span> File <?php echo $xmlLicenseFile; ?> is not existant or not readable. Please check for <a href="/admin/sandbox.php">module selection</a> and/or wait for scheduler</div>';
+        $this->body .= '              <h2 class="text-success"><i class="glyphicon glyphicon-ok-sign"></i> ' . $this->title . ' <small>' . rand_line($this->achievementFile) . '</small></h2>';
       }
+    } else {
+      $this->body .= '          <div class="alert alert-danger" role="alert"><span class="glyphicon glyphicon-ok" aria-hidden="true"></span><span class="sr-only">Error:</span> File <?php echo $xmlLicenseFile; ?> is not existant or not readable. Please check for <a href="/admin/sandbox.php">module selection</a> and/or wait for scheduler</div>';
     }
+    echo $this->header;
+    echo $this->body;
+    echo $this->footer;
   }
 }
 
