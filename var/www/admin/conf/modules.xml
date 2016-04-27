@@ -30,6 +30,13 @@
 			<version>0.1</version>
 			<description>[Action] Kill vCenter session older than (x)days.</description>
 		</module>
+		<module>
+			<id>vcCertificatesReport</id>
+			<type>report</type>
+			<name>Certificate Report</name>
+			<version>0.1</version>
+			<description>Display soon-to-be-expired certificates for all vCenter components (SSO, WebClient, ...).</description>
+		</module>
 	</category>
 	<category>
 		<name>Cluster</name>
@@ -135,7 +142,7 @@
 			<description>LocalSwapDatastore Compliance report.</description>
 		</module>
 		<module>
-			<id>hostSSHshelllockdown</id>
+			<id>hostSshShellLockdown</id>
 			<type>report</type>
 			<name>SSH/shell/lockdown check</name>
 			<version>0.1</version>
@@ -145,56 +152,56 @@
 			<id>hostNTPCheck</id>
 			<type>report</type>
 			<name>NTP Check</name>
-			<version>0.1</version>
+			<version>1.0</version>
 			<description>NTP Check report.</description>
 		</module>
 		<module>
 			<id>hostDNSCheck</id>
 			<type>report</type>
 			<name>DNS Check</name>
-			<version>0.1</version>
+			<version>1.0</version>
 			<description>DNS Check report.</description>
 		</module>
 		<module>
 			<id>hostSyslogCheck</id>
 			<type>report</type>
 			<name>Syslog Check</name>
-			<version>0.1</version>
+			<version>1.0</version>
 			<description>Syslog Check report.</description>
 		</module>
 		<module>
-			<id>hostconfigurationissues</id>
+			<id>hostConfigurationIssues</id>
 			<type>report</type>
 			<name>configuration issues</name>
-			<version>0.1</version>
+			<version>1.0</version>
 			<description>configuration issues report.</description>
 		</module>
 		<module>
 			<id>hostHardwareStatus</id>
 			<type>report</type>
 			<name>Hardware Status</name>
-			<version>0.1</version>
+			<version>1.0</version>
 			<description>Hardware Status report.</description>
 		</module>
 		<module>
 			<id>hostRebootrequired</id>
 			<type>report</type>
 			<name>Reboot required</name>
-			<version>0.1</version>
+			<version>1.0</version>
 			<description>Reboot required report.</description>
 		</module>
 		<module>
-			<id>hostFQDNhostnamemismatch</id>
+			<id>hostFQDNHostnameMismatch</id>
 			<type>report</type>
 			<name>FQDN/hostname mismatch</name>
-			<version>0.1</version>
+			<version>1.0</version>
 			<description>FQDN/hostname mismatch report.</description>
 		</module>
 		<module>
-			<id>hostmaintenancemode</id>
+			<id>hostMaintenanceMode</id>
 			<type>report</type>
-			<name>maintenance mode</name>
-			<version>0.1</version>
+			<name>Maintenance Mode</name>
+			<version>1.0</version>
 			<description>maintenance mode report.</description>
 		</module>
 		<module>
