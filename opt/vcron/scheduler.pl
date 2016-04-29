@@ -198,6 +198,7 @@ my %actions = ( inventory => \&inventory,
 								hostSyslogCheck => \&dummy,
 								hostDNSCheck => \&dummy,
 								hostNTPCheck => \&dummy,
+								hostSshShell => \&dummy,
                 vmSnapshotsage => \&dummy,
                 vmphantomsnapshot => \&dummy,
                 vmballoonzipswap => \&dummy,
@@ -680,9 +681,14 @@ sub hostinventory {
 		my $ntpservers = $host_view->{'config.dateTimeInfo.ntpConfig.server'};
     my $storageSys = Vim::get_view(mo_ref => $host_view->{'configManager.storageSystem'}, properties => ['storageDeviceInfo']);
     my $lunpathcount = 0;
-    my $lunpaths = eval{$storageSys->storageDeviceInfo->multipathInfo->lun || []};
-    $lunpathcount = 0+@$lunpaths;
-    foreach my $lunpath (@$lunpaths) { $lunpathcount++; }
+    my $lundeadpathcount = 0;
+    my $luns = eval{$storageSys->storageDeviceInfo->multipathInfo->lun || []};
+    foreach my $lun (@$luns) {
+			$lunpathcount += (0+@{$lun->path});
+			foreach my $path (@{$lun->path}) {
+				if ($path->{pathState} eq "dead") { $lundeadpathcount++; }
+			}
+		}
   	my $advOpt = Vim::get_view(mo_ref => $host_view->{'configManager.advancedOption'});
 		my $syslog_target = '';
   	eval {
@@ -701,6 +707,7 @@ sub hostinventory {
       esxbuild => $host_view->{'summary.config.product.fullName'},
       model => $host_view->{'summary.hardware.model'},
       lunpathcount => $lunpathcount,
+      deadlunpathcount => $lundeadpathcount,
       sharedmemory => 0,
       bandwidthcapacity => 0,
 			ssh_policy => $service_ssh,
