@@ -14,7 +14,7 @@ if (is_writable($xmlFile)) {
 	exit;
 }
 
-$xmlSettingsFile = "conf/settings.xml";
+$xmlSettingsFile = "conf/moduleschedules.xml";
 if (is_writable($xmlSettingsFile)) {
 	$xmlSettings = simplexml_load_file($xmlSettingsFile);
 } else {
@@ -55,7 +55,7 @@ if (!$domxml->save($xmlSettingsFile)) {
     font-style: italic;
     font-size: small;
 }
-</style>	
+</style>
 	<div class="container"><br/>
 		<div class="panel panel-primary">
 			<div class="panel-heading"><h3 class="panel-title">Modules Selector Notes</h3></div>
