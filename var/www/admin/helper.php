@@ -1,11 +1,20 @@
 <?php
-
+#########################
+# VARIABLE EDITION ZONE #
+#########################
 $achievementFile = "/var/www/admin/achievements.txt";
 $credstoreFile = "/var/www/.vmware/credstore/vicredentials.xml";
+$xmlSettingsFile = "/var/www/admin/conf/settings.xml";
+$xmlModulesFile = "/var/www/admin/conf/modules.xml";
+$xmlModuleSchedulesFile = "/var/www/admin/conf/moduleschedules.xml";
+$xmlConfigsFile = "/var/www/admin/conf/configs.xml";
 $xmlStartPath = "/opt/vcron/data/";
 $powerChoice = array("static" => "High performance", "dynamic" => "Balanced", "low" => "Low power", "custom" => "Custom", "off" => "Not supported (BIOS config)");
 $servicePolicyChoice = array("off" => "Start and stop manually", "on" => "Start and stop with host", "automatic" => "Start and stop automatically");
 $alarmStatus = array("unknown" => '<i class="glyphicon glyphicon-question-sign"></i>', "green" => '<i class="glyphicon glyphicon-ok-sign alarm-green"></i>', "yellow" => '<i class="glyphicon glyphicon-exclamation-sign alarm-yellow"></i>', "red" => '<i class="glyphicon glyphicon-remove-sign alarm-red"></i>');
+#############################
+# VARIABLE EDITION END ZONE #
+#############################
 
 function humanFileSize($size,$unit="") {
         if( (!$unit && $size >= 1<<30) || $unit == "GB")
@@ -138,36 +147,66 @@ class SexiCheck {
   private $tbody = array();
   private $order;
   private $columnDefs;
-  private $h_modulesettings = array();
+  private $h_configs = array();
+  private $h_modules = array();
+  private $h_moduleschedules = array();
   private $powerChoice;
   private $servicePolicyChoice;
   private $alarmStatus;
   private $header;
   private $body;
   private $footer;
-  // private $h_settings = array();
-  private $achievementFile = "/var/www/admin/achievements.txt";
-  private $xmlSettingsFile = "/var/www/admin/conf/modulesettings.xml";
+  private $achievementFile;
+  private $xmlConfigsFile;
+  private $xmlModulesFile;
+  private $xmlModuleSchedulesFile;
 
   public function __construct() {
-    if (is_readable($this->xmlSettingsFile)) {
-      $xmlSettings = simplexml_load_file($this->xmlSettingsFile);
-      # hash table initialization with settings XML file
-      foreach ($xmlSettings->xpath('/settings/setting') as $setting) {
-        $this->h_modulesettings[(string) $setting->id] = (string) $setting->value;
-      }
+    global $achievementFile;
+    global $xmlConfigsFile;
+    global $xmlModulesFile;
+    global $xmlModuleSchedulesFile;
+    $this->achievementFile = $achievementFile;
+    $this->xmlConfigsFile = $xmlConfigsFile;
+    $this->xmlModulesFile = $xmlModulesFile;
+    $this->xmlModuleSchedulesFile = $xmlModuleSchedulesFile;
 
+    if (is_readable($this->xmlConfigsFile)) {
+      $xmlConfigs = simplexml_load_file($this->xmlConfigsFile);
       # hash table initialization with settings XML file
-      // foreach ($xmlSettings->xpath('/modules/module') as $module) {
-      //   $this->h_settings[(string) $module->id] = (string) $module->schedule;
-      // }
-      global $powerChoice;
-      global $alarmStatus;
-      global $servicePolicyChoice;
-      $this->powerChoice = $powerChoice;
-      $this->alarmStatus = $alarmStatus;
-      $this->servicePolicyChoice = $servicePolicyChoice;
+      foreach ($xmlConfigs->xpath('/configs/config') as $config) {
+        $this->h_configs[(string) $config->id] = (string) $config->value;
+      }
+    } else {
+      throw new Exception('File ' . $this->xmlConfigsFile . ' is not existant or not readable');
     }
+
+    if (is_readable($this->xmlModulesFile)) {
+      $xmlModules = simplexml_load_file($this->xmlModulesFile);
+      # hash table initialization with settings XML file
+      foreach ($xmlModules->xpath('/modules/module') as $module) {
+        $this->h_modules[(string) $module->id] = (string) $module->value;
+      }
+    } else {
+      throw new Exception('File ' . $this->xmlModulesFile . ' is not existant or not readable');
+    }
+
+    if (is_readable($this->xmlModuleSchedulesFile)) {
+      $xmlModuleSchedules = simplexml_load_file($this->xmlModuleSchedulesFile);
+      # hash table initialization with settings XML file
+      foreach ($xmlModuleSchedules->xpath('/modules/module') as $module) {
+        $this->h_moduleschedules[(string) $module->id] = (string) $module->schedule;
+      }
+    } else {
+      throw new Exception('File ' . $this->xmlModuleSchedulesFile . ' is not existant or not readable');
+    }
+
+    global $powerChoice;
+    global $alarmStatus;
+    global $servicePolicyChoice;
+    $this->powerChoice = $powerChoice;
+    $this->alarmStatus = $alarmStatus;
+    $this->servicePolicyChoice = $servicePolicyChoice;
   }
 
   public function displayCheck($args) {
@@ -202,16 +241,16 @@ class SexiCheck {
       $xmlContent = simplexml_load_file($this->xmlFile);
     	$xpathFull = $xmlContent->xpath($this->xpathQuery);
     	if (count($xpathFull) > 0) {
-        $this->header .= '              <h2 class="text-danger"><i class="glyphicon glyphicon-exclamation-sign"></i> ' . $this->title . '</h2>'."\n";
-        $this->header .= '              <div class="alert alert-warning" role="alert"><i>' . $this->description . '</i></div>'."\n";
-        $this->header .= '              <div class="col-lg-12">'."\n";
-        $this->header .= '                <table id="' . preg_replace('/\s+/', '', strtolower($this->title)) . '" class="table table-hover">'."\n";
-        $this->header .= '                <thead><tr>'."\n";
+        $this->header .= '    <h2 class="text-danger"><i class="glyphicon glyphicon-exclamation-sign"></i> ' . $this->title . '</h2>'."\n";
+        $this->header .= '    <div class="alert alert-warning" role="alert"><i>' . $this->description . '</i></div>'."\n";
+        $this->header .= '    <div class="col-lg-12">'."\n";
+        $this->header .= '      <table id="' . preg_replace('/\s+/', '', strtolower($this->title)) . '" class="table table-hover">'."\n";
+        $this->header .= '        <thead><tr>'."\n";
         foreach ($this->thead as $thead) {
-          $this->header .= '                    <th>' . $thead . '</th>'."\n";
+          $this->header .= '          <th>' . $thead . '</th>'."\n";
         }
-        $this->header .= '                  </thead>'."\n";
-        $this->header .= '                <tbody>'."\n";
+        $this->header .= '        </tr></thead>'."\n";
+        $this->header .= '        <tbody>'."\n";
         $entries = 0;
         switch ($this->typeCheck) {
     			case 'majorityPerCluster':
@@ -226,7 +265,7 @@ class SexiCheck {
                   $majorityGroup = array_keys($majorityGroup)[0];
                 }
           			foreach ($xmlContent->xpath("/hosts/host[vcenter='".$key_vcenter."' and cluster='".$key_cluster."' and ".$this->majorityProperty."!='".$majorityGroup."']") as $entry) {
-                  $this->body .= '                    <tr>';
+                  $this->body .= '          <tr>';
                   foreach ($this->tbody as $column) {
                     $entries++;
                     $this->body .= eval("return $column;");
@@ -237,13 +276,13 @@ class SexiCheck {
         		}
             if ($entries == 0) {
               $this->header = '';
-              $this->body = '              <h2 class="text-success"><i class="glyphicon glyphicon-ok-sign"></i> ' . $this->title . ' <small>' . rand_line($this->achievementFile) . '</small></h2>';
+              $this->body = '    <h2 class="text-success"><i class="glyphicon glyphicon-ok-sign"></i> ' . $this->title . ' <small>' . str_replace(array("\n", "\t", "\r"), '', (rand_line($this->achievementFile))) . '</small></h2>'."\n";
             }
             break;
           default:
             foreach ($xpathFull as $entry) {
               $entries++;
-              $this->body .= '                    <tr>';
+              $this->body .= '          <tr>';
               foreach ($this->tbody as $column) {
                 $this->body .= eval("return $column;");
               }
@@ -251,33 +290,44 @@ class SexiCheck {
             }
         }
         if ($entries > 0) {
-          $this->footer .= '                  </tbody>
-            </table>
-            </div>
-            <script type="text/javascript">
-            $(document).ready( function () {
-                $("#' . preg_replace('/\s+/', '', strtolower($this->title)) . '").DataTable( {
-                    "search": {
-                        "smart": false,
-                        "regex": true
-                    },';
-          if (!is_null($this->order)) { $this->footer .= '          "order": [' . $this->order . '],'; }
-          if (!is_null($this->columnDefs)) { $this->footer .= '          "columnDefs": [' . $this->columnDefs . '],'; }
-          $this->footer .= '
-                } );
-             } );
-            </script>
-            <hr class="divider-dashed" />'."\n";
+          $this->footer .= '        </tbody>
+      </table>
+    </div>
+    <script type="text/javascript">
+    $(document).ready( function () {
+      $("#' . preg_replace('/\s+/', '', strtolower($this->title)) . '").DataTable( {
+        "search": {
+          "smart": false,
+          "regex": true
+        },'."\n";
+          if (!is_null($this->order)) { $this->footer .= '        "order": [' . $this->order . '],'."\n"; }
+          if (!is_null($this->columnDefs)) { $this->footer .= '        "columnDefs": [' . $this->columnDefs . '],'."\n"; }
+          $this->footer .= '      } );
+    } );
+    </script>
+    <hr class="divider-dashed" />'."\n";
         }
-      } elseif ($this->h_modulesettings['showEmpty'] == 'enable') {
-        $this->body .= '              <h2 class="text-success"><i class="glyphicon glyphicon-ok-sign"></i> ' . $this->title . ' <small>' . rand_line($this->achievementFile) . '</small></h2>';
+      } elseif ($this->h_configs['showEmpty'] == 'enable') {
+        $this->body = '    <h2 class="text-success"><i class="glyphicon glyphicon-ok-sign"></i> ' . $this->title . ' <small>' . str_replace(array("\n", "\t", "\r"), '', (rand_line($this->achievementFile))) . '</small></h2>'."\n";
       }
     } else {
-      $this->body .= '          <div class="alert alert-danger" role="alert"><span class="glyphicon glyphicon-ok" aria-hidden="true"></span><span class="sr-only">Error:</span> File <?php echo $xmlLicenseFile; ?> is not existant or not readable. Please check for <a href="/admin/sandbox.php">module selection</a> and/or wait for scheduler</div>';
+      $this->body .= '    <div class="alert alert-danger" role="alert">
+      <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+      <span class="sr-only">Error:</span>
+      File ' . $this->xmlFile . ' is not existant or not readable. Please check for <a href="/admin/sandbox.php">module selection</a> and/or wait for scheduler
+    </div>'."\n";
     }
     echo $this->header;
     echo $this->body;
     echo $this->footer;
+  }
+
+  public function getModuleSchedule($module) {
+    return $this->h_moduleschedules[$module];
+  }
+
+  public function getConfig($config) {
+    return $this->h_configs[$config];
   }
 }
 
