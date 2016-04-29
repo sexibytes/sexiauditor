@@ -142,11 +142,11 @@
 			<description>LocalSwapDatastore Compliance report.</description>
 		</module>
 		<module>
-			<id>hostSshShellLockdown</id>
+			<id>hostSshShell</id>
 			<type>report</type>
-			<name>SSH/shell/lockdown check</name>
+			<name>SSH/shell check</name>
 			<version>0.1</version>
-			<description>SSH/shell/lockdown check report.</description>
+			<description>SSH/shell check report.</description>
 		</module>
 		<module>
 			<id>hostNTPCheck</id>
