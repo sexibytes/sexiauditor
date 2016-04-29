@@ -5,7 +5,7 @@ $title = "Module Settings";
 require("header.php");
 require("helper.php");
 
-$xmlSettingsFile = "/var/www/admin/conf/modulesettings.xml";
+$xmlSettingsFile = "/var/www/admin/conf/configs.xml";
 if (is_writeable($xmlSettingsFile)) {
     $xmlSettings = simplexml_load_file($xmlSettingsFile);
 } else {
@@ -16,7 +16,7 @@ if (is_writeable($xmlSettingsFile)) {
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     foreach (array_keys($_POST) as $postKey) {
-        $xmlSettings->xpath('/settings/setting[id="' . $postKey . '"]')[0]->value = $_POST[$postKey];
+        $xmlSettings->xpath('/configs/config[id="' . $postKey . '"]')[0]->value = $_POST[$postKey];
     }
 
     if ($xmlSettings->asXML( $xmlSettingsFile )) {
@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <h1>Modules Settings</h1>
 		<form class="form-horizontal" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>" method="post">
 <?php
-    foreach ($xmlSettings->xpath("/settings/setting") as $setting) {
+    foreach ($xmlSettings->xpath("/configs/config") as $setting) {
         echo '		  <div class="form-group">
 			<label for="' . $setting->id . '" class="col-sm-6 control-label">' . $setting->label . '</label>
 			<div class="col-sm-4">';
