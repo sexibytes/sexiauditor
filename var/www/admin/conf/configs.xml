@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configs>
+  <config>
+    <id>dailySchedule</id>
+    <label>Choose the hour used for daily schedule (appliance use UTC format)</label>
+    <value>8</value>
+	<type>daily</type>
+  </config>
+  <config>
+    <id>weeklySchedule</id>
+    <label>Choose the day used for weekly schedule</label>
+    <value>6</value>
+	<type>weekly</type>
+  </config>
+  <config>
+    <id>monthlySchedule</id>
+    <label>Choose the day used for monthly schedule (beware of short/long months)</label>
+    <value>6</value>
+	<type>monthly</type>
+  </config>
+  <config>
+    <id>powerSystemInfo</id>
+    <label>Choose the desired Power Management Policy for ESX</label>
+    <value>off</value>
+	  <type>powerList</type>
+  </config>
+  <config>
+    <id>thresholdHistory</id>
+    <label>Number of days before data is purged (0 to disabled)</label>
+    <value>7</value>
+	<type>number</type>
+  </config>
+  <config>
+    <id>thresholdCPURatio</id>
+    <label>Threshold for vCPU/pCPU ratio check</label>
+    <value>2</value>
+	<type>number</type>
+  </config>
+  <config>
+    <id>showPlainLicense</id>
+    <label>Display plain license in License Report instead of '####'</label>
+    <value>disable</value>
+	<type>boolean</type>
+  </config>
+  <config>
+    <id>vcSessionAge</id>
+    <label>Number of days before a session is defined as 'old'</label>
+    <value>2</value>
+	<type>number</type>
+  </config>
+  <config>
+    <id>hostSSHPolicy</id>
+    <label>Choose the desired policy for SSH service</label>
+    <value>on</value>
+	<type>servicePolicy</type>
+  </config>
+  <config>
+    <id>hostShellPolicy</id>
+    <label>Choose the desired policy for Shell service</label>
+    <value>on</value>
+	<type>servicePolicy</type>
+  </config>
+  <config>
+    <id>datastoreFreeSpaceThreshold</id>
+    <label>Datastore free space threshold %</label>
+    <value>30</value>
+	<type>number</type>
+  </config>
+  <config>
+    <id>datastoreOverallocation</id>
+    <label>Datastore OverAllocation %</label>
+    <value>30</value>
+	<type>number</type>
+  </config>
+  <config>
+    <id>networkDVSVSSportsfree</id>
+    <label>Threshold of free port for DVS needed</label>
+    <value>123</value>
+	<type>number</type>
+  </config>
+  <config>
+    <id>vmSnapshotAge</id>
+    <label>Number of days before a snapshot is defined as 'old'</label>
+    <value>98</value>
+	<type>number</type>
+  </config>
+  <config>
+    <id>smtpAddress</id>
+    <label>SMTP server address (IP, or FQDN) to forward email to</label>
+    <value>smtp.xxx</value>
+	  <type>text</type>
+  </config>
+  <config>
+    <id>senderMail</id>
+    <label>Sender email to be used for report export feature</label>
+    <value>xxx-2@xxx.com</value>
+	<type>email</type>
+  </config>
+  <config>
+    <id>recipientMail</id>
+    <label>Recipient email to be used for report export feature</label>
+    <value>frederic.c.martin-ext@xxx.com</value>
+	<type>email</type>
+  </config>
+  <config>
+    <id>pdfAuthor</id>
+    <label>Username that will be used as the 'Author' of generated PDFs</label>
+    <value>Gordon Freeman</value>
+	<type>text</type>
+  </config>
+  <config>
+    <id>showEmpty</id>
+    <label>Show checks that return empty values (ie when there is nothing to report)</label>
+    <value>enable</value>
+	<type>boolean</type>
+  </config>
+  <config>
+    <id>showAuthors</id>
+    <label>Show authors page of generated PDF's, be aware that disabling it may kill some kitten...</label>
+    <value>enable</value>
+	<type>boolean</type>
+  </config>
+</configs>
