@@ -32,93 +32,75 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST'){
     $selectedDate = DateTime::createFromFormat('Ymd', $scannedDirectories[0])->format('Y/m/d');
 }
 
-$xmlSettingsFile = "/var/www/admin/conf/settings.xml";
-if (is_readable($xmlSettingsFile)) {
-    $xmlSettings = simplexml_load_file($xmlSettingsFile);
-} else {
-    exit('  <div class="alert alert-danger" role="alert"><span class="glyphicon glyphicon-ok" aria-hidden="true"></span><span class="sr-only">Error:</span> File ' . $xmlSettingsFile . ' is not existant or not readable</div>');
+# Main class loading
+try {
+  $check = new SexiCheck();
+} catch (Exception $e) {
+  # Any exception will be ending the script, we want exception-free run
+  exit('  <div class="alert alert-danger" role="alert"><span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span><span class="sr-only">Error:</span> ' . $e->getMessage() . '</div>');
 }
 
-# hash table initialization with settings XML file
-$h_settings = array();
-foreach ($xmlSettings->xpath('/modules/module') as $module) { $h_settings[(string) $module->id] = (string) $module->schedule; }
-
-$xmlSettingsFile = "/var/www/admin/conf/modulesettings.xml";
-if (is_readable($xmlSettingsFile)) {
-    $xmlSettings = simplexml_load_file($xmlSettingsFile);
-} else {
-    exit('  <div class="alert alert-danger" role="alert"><span class="glyphicon glyphicon-ok" aria-hidden="true"></span><span class="sr-only">Error:</span> File ' . $xmlSettingsFile . ' is not existant or not readable</div>');
-}
-
-# hash table initialization with settings XML file
-$h_modulesettings = array();
-foreach ($xmlSettings->xpath('/settings/setting') as $setting) { $h_modulesettings[(string) $setting->id] = (string) $setting->value; }
-
-$check = new SexiCheck();
 ?>
-    <div style="padding-top: 10px; padding-bottom: 10px;" class="container">
-	<div class="row">
-		<div class="col-lg-10 alert alert-info" style="margin-top: 20px; text-align: center;">
-			<h1 style="margin-top: 10px;">Host Checks on <?php echo DateTime::createFromFormat('Y/m/d', $selectedDate)->format('l jS F Y'); ?></h1>
-		</div>
-
-		<div class="alert col-lg-2">
-			<form action="check-host.php" style="margin-top: 5px;" method="post">
-			<div class="form-group" style="margin-bottom: 5px;">
-				<!-- <label for="datetimepicker11">Select your date:</label> -->
-				<div class='input-group date' id='datetimepicker11'>
-					<input type='text' class="form-control" name="selectedDate" readonly />
-					<span class="input-group-addon">
-						<span class="glyphicon glyphicon-calendar">
-						</span>
-					</span>
-				</div>
-			</div>
-			<button type="submit" class="btn btn-default" style="width: 100%">Select this date</button>
-			<script type="text/javascript">
-			$(function () {
-				$('#datetimepicker11').datetimepicker({
-					ignoreReadonly: true,
-					format: 'YYYY/MM/DD',
-					showTodayButton: true,
-					defaultDate: <?php echo "\"$selectedDate\""; ?>,
-					enabledDates: [
+  <div style="padding-top: 10px; padding-bottom: 10px;" class="container">
+    <div class="row">
+      <div class="col-lg-10 alert alert-info" style="margin-top: 20px; text-align: center;">
+        <h1 style="margin-top: 10px;">Host Checks on <?php echo DateTime::createFromFormat('Y/m/d', $selectedDate)->format('l jS F Y'); ?></h1>
+      </div>
+      <div class="alert col-lg-2">
+        <form action="check-host.php" style="margin-top: 5px;" method="post">
+          <div class="form-group" style="margin-bottom: 5px;">
+            <div class='input-group date' id='datetimepicker11'>
+              <input type='text' class="form-control" name="selectedDate" readonly />
+              <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-default" style="width: 100%">Select this date</button>
+          <script type="text/javascript">
+          $(function () {
+            $('#datetimepicker11').datetimepicker({
+              ignoreReadonly: true,
+              format: 'YYYY/MM/DD',
+              showTodayButton: true,
+              defaultDate: <?php echo "\"$selectedDate\""; ?>,
+              enabledDates: [
 <?php
     foreach ($scannedDirectories as $xmlDirectory) {
-        echo '                  "' . DateTime::createFromFormat('Ymd', $xmlDirectory)->format('Y/m/d H:i') . '",' . "\n";
+        echo '                "' . DateTime::createFromFormat('Ymd', $xmlDirectory)->format('Y/m/d H:i') . '",' . "\n";
     }
 ?>
-                ]
+              ]
             });
-        });
-			</script>
-			</form>
-		</div>
-	</div>
+          });
+          </script>
+        </form>
+      </div>
+    </div>
+
 <?php
-    # TODO
-    # initialise objects if at least one module is active
-    # Display bootstrap Success Panel if no result per module instead of empty dataTable
-
-
+  if($check->getModuleSchedule('hostLUNPathDead') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
+    $check->displayCheck([  'xmlFile' => "$xmlStartPath$xmlSelectedPath/hosts-global.xml",
+                            'xpathQuery' => "/hosts/host[lundeadpathcount!=0]",
+                            'title' => 'Host LUN Path Dead',
+                            'description' => 'Dead LUN Paths may cause issues with storage performance or be an indication of loss of redundancy.',
+                            'thead' => array('Name', 'Dead LUN path', 'LUN Path', 'Cluster', 'vCenter'),
+                            'tbody' => array('"<td>".$entry->name."</td>"', '"<td>".$entry->deadlunpathcount."</td>"', '"<td>".$entry->lunpathcount."</td>"', '"<td>".$entry->cluster."</td>"', '"<td>".$entry->vcenter."</td>"')]);
+  }
 ?>
-	<h2>Host LUN Path Dead</h2>
-	<h2>Host Profile Compliance</h2>
-	<h2>Host LocalSwapDatastore Compliance</h2>
-
+    <h2>Host Profile Compliance</h2>
+    <h2>Host LocalSwapDatastore Compliance</h2>
 <?php
-  if($h_settings['hostSshShellLockdown'] != 'off' && $h_settings['inventory'] != 'off') {
-    $currentSshPolicy = $h_modulesettings['hostSSHPolicy'];
-    $currentShellPolicy = $h_modulesettings['hostShellPolicy'];
+  if($check->getModuleSchedule('hostSshShell') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
+    $currentSshPolicy = $check->getConfig('hostSSHPolicy');
+    $currentShellPolicy = $check->getConfig('hostShellPolicy');
     $check->displayCheck([  'xmlFile' => "$xmlStartPath$xmlSelectedPath/hosts-global.xml",
                             'xpathQuery' => "/hosts/host[(ssh_policy!='$currentSshPolicy' and ssh_policy!='') or (shell_policy!='$currentShellPolicy' and shell_policy!='')]",
-                            'title' => 'Host SSH-Shell-lockdown check',
-                            'description' => 'The following displays host that not match the selected ssh/shell/lockdown policy.',
-                            'thead' => array('Name', 'Cluster', 'SSH Policy', 'Desired SSH Policy', 'Shell Policy', 'Desired Shell Policy', 'Lockdown', 'vCenter'),
-                            'tbody' => array('"<td>".$entry->name."</td>"', '"<td>".$entry->cluster."</td>"', '"<td>".$this->servicePolicyChoice[(string) $entry->ssh_policy]."</td>"', '"<td>'.$servicePolicyChoice[$currentSshPolicy].'</td>"', '"<td>".$this->servicePolicyChoice[(string) $entry->shell_policy]."</td>"', '"<td>'.$servicePolicyChoice[$currentShellPolicy].'</td>"', '"<td></td>"', '"<td>".$entry->vcenter."</td>"')]);
+                            'title' => 'Host SSH-Shell check',
+                            'description' => 'The following displays host that not match the selected ssh/shell policy.',
+                            'thead' => array('Name', 'Cluster', 'SSH Policy', 'Desired SSH Policy', 'Shell Policy', 'Desired Shell Policy', 'vCenter'),
+                            'tbody' => array('"<td>".$entry->name."</td>"', '"<td>".$entry->cluster."</td>"', '"<td>".$this->servicePolicyChoice[(string) $entry->ssh_policy]."</td>"', '"<td>'.$servicePolicyChoice[$currentSshPolicy].'</td>"', '"<td>".$this->servicePolicyChoice[(string) $entry->shell_policy]."</td>"', '"<td>'.$servicePolicyChoice[$currentShellPolicy].'</td>"', '"<td>".$entry->vcenter."</td>"')]);
   }
 
-  if($h_settings['hostNTPCheck'] != 'off' && $h_settings['inventory'] != 'off') {
+  if($check->getModuleSchedule('hostNTPCheck') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
     $check->displayCheck([  'xmlFile' => "$xmlStartPath$xmlSelectedPath/hosts-global.xml",
                             'xpathQuery' => "/hosts/host",
                             'title' => 'Host NTP Check',
@@ -129,7 +111,7 @@ $check = new SexiCheck();
                             'tbody' => array('"<td>" . $entry->cluster . "</td>"', '"<td>" . $majorityGroup . "</td>"', '"<td>" . $entry->name . "</td>"', '"<td>" . str_replace(";", "<br />", $entry->ntpservers) . "</td>"', '"<td>" . $entry->vcenter . "</td>"')]);
   }
 
-  if($h_settings['hostDNSCheck'] != 'off' && $h_settings['inventory'] != 'off') {
+  if($check->getModuleSchedule('hostDNSCheck') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
     $check->displayCheck([  'xmlFile' => "$xmlStartPath$xmlSelectedPath/hosts-global.xml",
                             'xpathQuery' => "/hosts/host",
                             'title' => 'Host DNS Check',
@@ -140,7 +122,7 @@ $check = new SexiCheck();
                             'tbody' => array('"<td>" . $entry->cluster . "</td>"', '"<td>" . $majorityGroup . "</td>"', '"<td>" . $entry->name . "</td>"', '"<td>" . str_replace(";", "<br />", $entry->dnsservers) . "</td>"', '"<td>" . $entry->vcenter . "</td>"')]);
   }
 
-  if($h_settings['hostSyslogCheck'] != 'off' && $h_settings['inventory'] != 'off') {
+  if($check->getModuleSchedule('hostSyslogCheck') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
     $check->displayCheck([  'xmlFile' => "$xmlStartPath$xmlSelectedPath/hosts-global.xml",
                             'xpathQuery' => "/hosts/host",
                             'title' => 'Host Syslog Check',
@@ -151,7 +133,7 @@ $check = new SexiCheck();
                             'tbody' => array('"<td>" . $entry->cluster . "</td>"', '"<td>" . $majorityGroup . "</td>"', '"<td>" . $entry->name . "</td>"', '"<td>" . $entry->syslog_target . "</td>"', '"<td>" . $entry->vcenter . "</td>"')]);
   }
 
-  if($h_settings['hostConfigurationIssues'] != 'off') {
+  if($check->getModuleSchedule('hostConfigurationIssues') != 'off') {
     $check->displayCheck([  'xmlFile' => "$xmlStartPath$xmlSelectedPath/configurationissues-global.xml",
                             'xpathQuery' => "/configurationissues/configurationissue",
                             'title' => 'Host configuration issues',
@@ -160,7 +142,7 @@ $check = new SexiCheck();
                             'tbody' => array('"<td>" . $entry->configissue . "</td>"', '"<td>" . $entry->name . "</td>"', '"<td>" . $entry->cluster . "</td>"', '"<td>" . $entry->vcenter . "</td>"')]);
   }
 
-  if($h_settings['alarms'] != 'off') {
+  if($check->getModuleSchedule('alarms') != 'off') {
     $check->displayCheck([  'xmlFile' => "$xmlStartPath$xmlSelectedPath/alarms-global.xml",
                             'xpathQuery' => "/alarms/alarm[entity_type='HostSystem']",
                             'title' => 'Host Alarms',
@@ -171,7 +153,7 @@ $check = new SexiCheck();
                             'columnDefs' => '{ "orderable": false, className: "dt-body-right", "targets": [ 0 ] }']);
   }
 
-  if($h_settings['hostHardwareStatus'] != 'off') {
+  if($check->getModuleSchedule('hostHardwareStatus') != 'off') {
     $check->displayCheck([  'xmlFile' => "$xmlStartPath$xmlSelectedPath/hardwarestatus-global.xml",
                             'xpathQuery' => "/hardwarestatus/hardwarestate",
                             'title' => 'Host Hardware Status',
@@ -182,7 +164,7 @@ $check = new SexiCheck();
                             'columnDefs' => '{ "orderable": false, className: "dt-body-right", "targets": [ 0 ] }']);
   }
 
-  if($h_settings['hostRebootrequired'] != 'off' && $h_settings['inventory'] != 'off') {
+  if($check->getModuleSchedule('hostRebootrequired') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
     $check->displayCheck([  'xmlFile' => "$xmlStartPath$xmlSelectedPath/hosts-global.xml",
                             'xpathQuery' => "/hosts/host[rebootrequired='true']",
                             'title' => 'Host Reboot required',
@@ -191,7 +173,7 @@ $check = new SexiCheck();
                             'tbody' => array('"<td>" . $entry->name . "</td>"', '"<td>" . $entry->vcenter . "</td>"')]);
   }
 
-  if($h_settings['hostFQDNHostnameMismatch'] != 'off' && $h_settings['inventory'] != 'off') {
+  if($check->getModuleSchedule('hostFQDNHostnameMismatch') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
     $check->displayCheck([  'xmlFile' => "$xmlStartPath$xmlSelectedPath/hosts-global.xml",
                             'xpathQuery' => "/hosts/host[not(starts-with(translate(name, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), translate(hostname, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')))]",
                             'title' => 'Host FQDN and hostname mismatch',
@@ -200,7 +182,7 @@ $check = new SexiCheck();
                             'tbody' => array('"<td>".$entry->name."</td>"', '"<td>".$entry->hostname."</td>"', '"<td>".$entry->cluster."</td>"', '"<td>".$entry->vcenter."</td>"')]);
   }
 
-  if($h_settings['hostMaintenanceMode'] != 'off' && $h_settings['inventory'] != 'off') {
+  if($check->getModuleSchedule('hostMaintenanceMode') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
     $check->displayCheck([  'xmlFile' => "$xmlStartPath$xmlSelectedPath/hosts-global.xml",
                             'xpathQuery' => "/hosts/host[inmaintenancemode='true']",
                             'title' => 'Host in maintenance mode',
@@ -209,8 +191,8 @@ $check = new SexiCheck();
                             'tbody' => array('"<td><img src=\"images/vc-hostInMaintenance.gif\"> ".$entry->name."</td>"', '"<td>".$entry->cluster."</td>"', '"<td>".$entry->vcenter."</td>"')]);
   }
 
-  if($h_settings['hostPowerManagementPolicy'] != 'off' && $h_settings['inventory'] != 'off') {
-    $currentPolicy = $h_modulesettings['powerSystemInfo'];
+  if($check->getModuleSchedule('hostPowerManagementPolicy') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
+    $currentPolicy = $check->getConfig('powerSystemInfo');
     $check->displayCheck([  'xmlFile' => "$xmlStartPath$xmlSelectedPath/hosts-global.xml",
                             'xpathQuery' => "/hosts/host[powerpolicy!='$currentPolicy' and powerpolicy!='']",
                             'title' => 'Host PowerManagement Policy',
@@ -219,8 +201,6 @@ $check = new SexiCheck();
                             'tbody' => array('"<td>".$entry->name."</td>"', '"<td>".$entry->cluster."</td>"', '"<td>".$this->powerChoice[(string) $entry->powerpolicy]."</td>"', '"<td>'.$powerChoice[$currentPolicy].'</td>"', '"<td>".$entry->vcenter."</td>"')]);
   }
   ?>
-
-	<h2>Host ballooning/zip/swap ==> perfManager?</h2>
-
-  	</div>
+    <h2>Host ballooning/zip/swap ==> perfManager?</h2>
+  </div>
 <?php require("footer.php"); ?>
