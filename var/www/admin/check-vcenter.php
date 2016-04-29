@@ -28,80 +28,55 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST'){
         }
     }
 } else {
-    $xmlSelectedPath = $scannedDirectories[0];
+    $xmlSelectedPath = "latest";
     $selectedDate = DateTime::createFromFormat('Ymd', $scannedDirectories[0])->format('Y/m/d');
 }
 
-$xmlSettingsFile = "/var/www/admin/conf/settings.xml";
-if (is_readable($xmlSettingsFile)) {
-    $xmlSettings = simplexml_load_file($xmlSettingsFile);
-} else {
-    exit('  <div class="alert alert-danger" role="alert"><span class="glyphicon glyphicon-ok" aria-hidden="true"></span><span class="sr-only">Error:</span> File ' . $xmlSettingsFile . ' is not existant or not readable</div>');
+# Main class loading
+try {
+  $check = new SexiCheck();
+} catch (Exception $e) {
+  # Any exception will be ending the script, we want exception-free run
+  exit('  <div class="alert alert-danger" role="alert"><span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span><span class="sr-only">Error:</span> ' . $e->getMessage() . '</div>');
 }
-
-# hash table initialization with settings XML file
-$h_settings = array();
-foreach ($xmlSettings->xpath('/modules/module') as $module) { $h_settings[(string) $module->id] = (string) $module->schedule; }
-
-$xmlSettingsFile = "/var/www/admin/conf/modulesettings.xml";
-if (is_readable($xmlSettingsFile)) {
-    $xmlSettings = simplexml_load_file($xmlSettingsFile);
-} else {
-    exit('  <div class="alert alert-danger" role="alert"><span class="glyphicon glyphicon-ok" aria-hidden="true"></span><span class="sr-only">Error:</span> File ' . $xmlSettingsFile . ' is not existant or not readable</div>');
-}
-
-# hash table initialization with settings XML file
-$h_modulesettings = array();
-foreach ($xmlSettings->xpath('/settings/setting') as $setting) { $h_modulesettings[(string) $setting->id] = (string) $setting->value; }
 
 ?>
-    <div style="padding-top: 10px; padding-bottom: 10px;" class="container">
-	<div class="row">
-		<div class="col-lg-10 alert alert-info" style="margin-top: 20px; text-align: center;">
-			<h1 style="margin-top: 10px;">vCenter Checks on <?php echo DateTime::createFromFormat('Y/m/d', $selectedDate)->format('l jS F Y'); ?></h1>
-		</div>
-	
-		<div class="alert col-lg-2">
-			<form action="check-vcenter.php" style="margin-top: 5px;" method="post">
-			<div class="form-group" style="margin-bottom: 5px;">
-				<!-- <label for="datetimepicker11">Select your date:</label> -->
-				<div class='input-group date' id='datetimepicker11'>
-					<input type='text' class="form-control" name="selectedDate" readonly />
-					<span class="input-group-addon">
-						<span class="glyphicon glyphicon-calendar">
-						</span>
-					</span>
-				</div>
-			</div>
-			<button type="submit" class="btn btn-default" style="width: 100%">Select this date</button>
-			<script type="text/javascript">
-			$(function () {
-				$('#datetimepicker11').datetimepicker({
-					ignoreReadonly: true,
-					format: 'YYYY/MM/DD',
-					showTodayButton: true,
-					defaultDate: <?php echo "\"$selectedDate\""; ?>,
-					enabledDates: [
+  <div style="padding-top: 10px; padding-bottom: 10px;" class="container">
+    <div class="row">
+      <div class="col-lg-10 alert alert-info" style="margin-top: 20px; text-align: center;">
+        <h1 style="margin-top: 10px;">Host Checks on <?php echo DateTime::createFromFormat('Y/m/d', $selectedDate)->format('l jS F Y'); ?></h1>
+      </div>
+      <div class="alert col-lg-2">
+        <form action="check-host.php" style="margin-top: 5px;" method="post">
+          <div class="form-group" style="margin-bottom: 5px;">
+            <div class='input-group date' id='datetimepicker11'>
+              <input type='text' class="form-control" name="selectedDate" readonly />
+              <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-default" style="width: 100%">Select this date</button>
+          <script type="text/javascript">
+          $(function () {
+            $('#datetimepicker11').datetimepicker({
+              ignoreReadonly: true,
+              format: 'YYYY/MM/DD',
+              showTodayButton: true,
+              defaultDate: <?php echo "\"$selectedDate\""; ?>,
+              enabledDates: [
 <?php
     foreach ($scannedDirectories as $xmlDirectory) {
-        echo '                  "' . DateTime::createFromFormat('Ymd', $xmlDirectory)->format('Y/m/d H:i') . '",' . "\n";
+        echo '                "' . DateTime::createFromFormat('Ymd', $xmlDirectory)->format('Y/m/d H:i') . '",' . "\n";
     }
 ?>
-                ]
+              ]
             });
-        });
-			</script>
-			</form>
-		</div>
-	</div>
-<?php
-    # TODO
-    # initialise objects if at least one module is active
-    # Display bootstrap Success Panel if no result per module instead of empty dataTable
+          });
+          </script>
+        </form>
+      </div>
+    </div>
 
-
-?>
-<?php if($h_settings['vcSessionAge'] != 'off'): ?>
+<?php if($check->getModuleSchedule('vcSessionAge') != 'off'): ?>
 <?php
     $xmlSessionFile = "$xmlStartPath$xmlSelectedPath/sessions-global.xml";
     if (is_readable($xmlSessionFile)):
