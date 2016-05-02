@@ -253,7 +253,6 @@ if ($purgeThreshold ne 0) {
 VMware::VICredStore::init (filename => $filename) or $logger->logdie ("[ERROR] Unable to initialize Credential Store.");
 @server_list = VMware::VICredStore::get_hosts ();
 foreach $s_item (@server_list) {
-	if (index($s_item, "vctparemea") ne 0){next;}
 	$logger->info("[INFO][VCENTER] Start processing vCenter $s_item");
 	my $normalizedServerName = $s_item;
 	@user_list = VMware::VICredStore::get_usernames (server => $s_item);
