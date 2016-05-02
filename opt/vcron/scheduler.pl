@@ -40,8 +40,8 @@ my $password;
 my $url;
 my $href = ();
 my $xmlModuleFile = '/var/www/admin/conf/modules.xml';
-my $xmlSettingsFile = '/var/www/admin/conf/settings.xml';
-my $xmlModuleSettingsFile = '/var/www/admin/conf/modulesettings.xml';
+my $xmlModuleScheduleFile = '/var/www/admin/conf/moduleschedules.xml';
+my $xmlConfigsFile = '/var/www/admin/conf/configs.xml';
 my $schedulerTTBFile = '/opt/vcron/scheduler-ttb.xml';
 
 # Using --force switch will bypass scheduler and run every subroutine
@@ -61,30 +61,30 @@ my %h_hostcluster = ();
 
 # requiring both file to be readable
 (-r $xmlModuleFile) or $logger->logdie ("[ERROR] File $xmlModuleFile not available and/or readable, abort");
-(-r $xmlSettingsFile) or $logger->logdie ("[ERROR] File $xmlSettingsFile not available and/or readable, abort");
-(-r $xmlModuleSettingsFile) or $logger->logdie ("[ERROR] File $xmlModuleSettingsFile not available and/or readable, abort");
+(-r $xmlModuleScheduleFile) or $logger->logdie ("[ERROR] File $xmlModuleScheduleFile not available and/or readable, abort");
+(-r $xmlConfigsFile) or $logger->logdie ("[ERROR] File $xmlConfigsFile not available and/or readable, abort");
 (-w $schedulerTTBFile) or $logger->logdie ("[ERROR] File $schedulerTTBFile not available and/or writeable, abort");
 
 # modules and settings xml file initialize
 #my $parser = XML::LibXML->new();
 my $docModule = XML::LibXML->new->parse_file($xmlModuleFile);
-my $docSettings = XML::LibXML->new->parse_file($xmlSettingsFile);
-my $docModuleSettings = XML::LibXML->new->parse_file($xmlModuleSettingsFile);
+my $docModuleSchedules = XML::LibXML->new->parse_file($xmlModuleScheduleFile);
+my $docConfigs = XML::LibXML->new->parse_file($xmlConfigsFile);
 
 # Data purge threshold
 my $purgeThreshold = 0;
-$purgeThreshold = $docModuleSettings->findvalue("/settings/setting[id='thresholdHistory']/value");
+$purgeThreshold = $docConfigs->findvalue("//config[id='thresholdHistory']/value");
 
 # date schedule
-my $dailySchedule = ($docModuleSettings->exists("/settings/setting[id='dailySchedule']/value") ? $docModuleSettings->findvalue("/settings/setting[id='dailySchedule']/value") : 0);
-my $weeklySchedule = ($docModuleSettings->exists("/settings/setting[id='weeklySchedule']/value") ? $docModuleSettings->findvalue("/settings/setting[id='weeklySchedule']/value") : 0);
-my $monthlySchedule = ($docModuleSettings->exists("/settings/setting[id='monthlySchedule']/value") ? $docModuleSettings->findvalue("/settings/setting[id='monthlySchedule']/value") : 1);
+my $dailySchedule = ($docConfigs->exists("/configs/config[id='dailySchedule']/value") ? $docConfigs->findvalue("/configs/config[id='dailySchedule']/value") : 0);
+my $weeklySchedule = ($docConfigs->exists("/configs/config[id='weeklySchedule']/value") ? $docConfigs->findvalue("/configs/config[id='weeklySchedule']/value") : 0);
+my $monthlySchedule = ($docConfigs->exists("/configs/config[id='monthlySchedule']/value") ? $docConfigs->findvalue("/configs/config[id='monthlySchedule']/value") : 1);
 
 # browsing modules and fetching schedule
 $logger->info("[INFO] Start processing modules list");
 foreach my $node ($docModule->findnodes('/modules/category/module')) {
 	my $moduleName = $node->findvalue('./id');
-	my $scheduleModule = $docSettings->findvalue("/modules/module/id[text()='".$moduleName."']/../schedule");
+	my $scheduleModule = $docModuleSchedules->findvalue("/modules/module/id[text()='".$moduleName."']/../schedule");
 	if ($scheduleModule ne 'off') {
 		$href->{ $moduleName } = $scheduleModule;
 		$logger->info("[INFO] Found module $moduleName with schedule $scheduleModule");
@@ -199,6 +199,7 @@ my %actions = ( inventory => \&inventory,
 								hostDNSCheck => \&dummy,
 								hostNTPCheck => \&dummy,
 								hostSshShell => \&dummy,
+								hostLUNPathDead => \&dummy,
                 vmSnapshotsage => \&dummy,
                 vmphantomsnapshot => \&dummy,
                 vmballoonzipswap => \&dummy,
@@ -252,6 +253,7 @@ if ($purgeThreshold ne 0) {
 VMware::VICredStore::init (filename => $filename) or $logger->logdie ("[ERROR] Unable to initialize Credential Store.");
 @server_list = VMware::VICredStore::get_hosts ();
 foreach $s_item (@server_list) {
+	if (index($s_item, "vctparemea") ne 0){next;}
 	$logger->info("[INFO][VCENTER] Start processing vCenter $s_item");
 	my $normalizedServerName = $s_item;
 	@user_list = VMware::VICredStore::get_usernames (server => $s_item);
@@ -535,11 +537,12 @@ sub certificatesReport {
 }
 
 sub inventory {
-    vminventory( );
-    hostinventory( );
-    clusterinventory( );
-    datastoreinventory( );
-    dvpginventory( );
+	# cluster inventory must be done after vm and host ones, as it uses some of their data
+  vminventory( );
+  hostinventory( );
+  clusterinventory( );
+  datastoreinventory( );
+  dvpginventory( );
 }
 
 sub vminventory {
@@ -562,49 +565,49 @@ sub vminventory {
 				push(@vm_ip_string, "N/A");
 			}
 		}
-        my $vm_guestfullname = "Not Available";
-        if(defined($vm_view->guest) && defined($vm_view->guest->guestFullName)) { $vm_guestfullname = $vm_view->guest->guestFullName; }
-        my $vm_guestFamily = "Not Available";
-        if(defined($vm_view->guest) && defined($vm_view->guest->guestFamily)) { $vm_guestFamily = $vm_view->guest->guestFamily; }
-        my $vm_guestHostName = "Not Available";
-        if(defined($vm_view->guest) && defined($vm_view->guest->hostName)) { $vm_guestHostName = $vm_view->guest->hostName; }
-        my $vm_guestId = "Not Available";
-        if(defined($vm_view->guest) && defined($vm_view->guest->guestId)) { $vm_guestId = $vm_view->guest->guestId; }
-        my $vm_configGuestId = "Not Available";
-        if(defined($vm_view->{'config.guestId'})) { $vm_configGuestId = $vm_view->{'config.guestId'}; }
-        my $vm_toolsVersion = "Not Available";
-        if(defined($vm_view->guest) && defined($vm_view->guest->toolsVersion)) { $vm_toolsVersion = $vm_view->guest->toolsVersion; }
-        my $devices = $vm_view->{'config.hardware.device'};
-        my $removableExist = 0;
-        foreach my $device (@$devices) {
-            if(($device->isa('VirtualFloppy') or $device->isa('VirtualCdrom')) and $device->connectable->connected) {
-                $removableExist = 1;
-                last;
-            }
+    my $vm_guestfullname = "Not Available";
+    if(defined($vm_view->guest) && defined($vm_view->guest->guestFullName)) { $vm_guestfullname = $vm_view->guest->guestFullName; }
+    my $vm_guestFamily = "Not Available";
+    if(defined($vm_view->guest) && defined($vm_view->guest->guestFamily)) { $vm_guestFamily = $vm_view->guest->guestFamily; }
+    my $vm_guestHostName = "Not Available";
+    if(defined($vm_view->guest) && defined($vm_view->guest->hostName)) { $vm_guestHostName = $vm_view->guest->hostName; }
+    my $vm_guestId = "Not Available";
+    if(defined($vm_view->guest) && defined($vm_view->guest->guestId)) { $vm_guestId = $vm_view->guest->guestId; }
+    my $vm_configGuestId = "Not Available";
+    if(defined($vm_view->{'config.guestId'})) { $vm_configGuestId = $vm_view->{'config.guestId'}; }
+    my $vm_toolsVersion = "Not Available";
+    if(defined($vm_view->guest) && defined($vm_view->guest->toolsVersion)) { $vm_toolsVersion = $vm_view->guest->toolsVersion; }
+    my $devices = $vm_view->{'config.hardware.device'};
+    my $removableExist = 0;
+    foreach my $device (@$devices) {
+      if(($device->isa('VirtualFloppy') or $device->isa('VirtualCdrom')) and $device->connectable->connected) {
+        $removableExist = 1;
+        last;
+      }
+    }
+    my $sharedBus = 0;
+    foreach my $device (@$devices) {
+      if(($device->isa('VirtualSCSIController')) and $device->sharedBus->val ne 'noSharing') {
+        $sharedBus = 1;
+        last;
+      }
+    }
+    my $multiwriter = 0;
+    foreach(@{$vm_view->{'config.extraConfig'}}) {
+      if ($_->key =~ /scsi.*sharing/ && $_->value eq 'multi-writer') {
+        $multiwriter = 1;
+        last;
+     }
+    }
+    my $phantomSnapshot = 0;
+    if (!$vm_view->snapshot) {
+      foreach my $device (@$devices) {
+        if ($device->isa('VirtualDisk') && $device->backing->fileName =~ /-\d{6}\.vmdk/i) {
+          $phantomSnapshot = 1;
+          last;
         }
-        my $sharedBus = 0;
-        foreach my $device (@$devices) {
-            if(($device->isa('VirtualSCSIController')) and $device->sharedBus->val ne 'noSharing') {
-                $sharedBus = 1;
-                last;
-            }
-        }
-        my $multiwriter = 0;
-        foreach(@{$vm_view->{'config.extraConfig'}}) {
-            if ($_->key =~ /scsi.*sharing/ && $_->value eq 'multi-writer') {
-                $multiwriter = 1;
-                last;
-           }
-        }
-        my $phantomSnapshot = 0;
-        if (!$vm_view->snapshot) {
-            foreach my $device (@$devices) {
-                if ($device->isa('VirtualDisk') && $device->backing->fileName =~ /-\d{6}\.vmdk/i) {
-                    $phantomSnapshot = 1;
-                    last;
-                }
-            }
-        }
+      }
+    }
 		my $vcentersdk = new URI::URL $vm_view->{'vim'}->{'service_url'};
 		my %h_vm = (
 			name => $vm_view->name,
@@ -735,36 +738,41 @@ sub hostinventory {
 }
 
 sub clusterinventory {
-    foreach my $cluster_view (@$view_ClusterComputeResource) {
-        my $lastconfigissue = 0;
-        my $lastconfigissuetime = 0;
-        if (defined($cluster_view->configIssue)){
-            foreach my $issue ( sort {$b->key cmp $a->key} @{$cluster_view->configIssue}) {
-                $lastconfigissue = $issue->fullFormattedMessage;
-                $lastconfigissuetime = substr($issue->createdTime, 0, 19);
-                last;
-            }
-        }
-        my $vcentersdk = new URI::URL $cluster_view->{'vim'}->{'service_url'};
-        my %h_cluster = (
-            name => $cluster_view->name,
-            vcenter => $vcentersdk->host,
-            vmotion => $cluster_view->summary->numVmotions,
-            dasenabled => (defined($cluster_view->summary->dasData) ? 1 : 0),
-            lastconfigissue => $lastconfigissue,
-            lastconfigissuetime => $lastconfigissuetime,
-            moref => $cluster_view->{'mo_ref'}->{'type'}."-".$cluster_view->{'mo_ref'}->{'value'}
-        );
-        my $clusterNode = $docClusters->createElement("cluster");
-        for my $clusterProperty (keys %h_cluster) {
-            my $clusterNodeProperty = $docClusters->createElement($clusterProperty);
-            my $value = $h_cluster{$clusterProperty};
-            $clusterNodeProperty->appendTextNode($value);
-            $clusterNode->appendChild($clusterNodeProperty);
-        }
-        $rootClusters->appendChild($clusterNode);
+  foreach my $cluster_view (@$view_ClusterComputeResource) {
+    my $lastconfigissue = 0;
+    my $lastconfigissuetime = 0;
+    if (defined($cluster_view->configIssue)){
+      foreach my $issue ( sort {$b->key cmp $a->key} @{$cluster_view->configIssue}) {
+        $lastconfigissue = $issue->fullFormattedMessage;
+        $lastconfigissuetime = substr($issue->createdTime, 0, 19);
+        last;
+      }
     }
-    $docClusters->setDocumentElement($rootClusters);
+		my $vcpu = $docVMs->findvalue("sum(/vms/vm[cluster=\'".lc($cluster_view->name)."\']/numcpu)");
+		my $pcpu = $docHosts->findvalue("sum(/hosts/host[cluster=\'".lc($cluster_view->name)."\']/numcpucore)");
+    my $vcentersdk = new URI::URL $cluster_view->{'vim'}->{'service_url'};
+    my %h_cluster = (
+      name => $cluster_view->name,
+      vcenter => $vcentersdk->host,
+      vmotion => $cluster_view->summary->numVmotions,
+      dasenabled => (defined($cluster_view->summary->dasData) ? 1 : 0),
+      lastconfigissue => $lastconfigissue,
+      lastconfigissuetime => $lastconfigissuetime,
+			vcpu => $vcpu,
+			pcpu => $pcpu,
+			vp_cpuratio => (($vcpu gt 0 && $pcpu gt 0) ? ($vcpu / $pcpu) : 0),
+      moref => $cluster_view->{'mo_ref'}->{'type'}."-".$cluster_view->{'mo_ref'}->{'value'}
+    );
+    my $clusterNode = $docClusters->createElement("cluster");
+    for my $clusterProperty (keys %h_cluster) {
+      my $clusterNodeProperty = $docClusters->createElement($clusterProperty);
+      my $value = $h_cluster{$clusterProperty};
+      $clusterNodeProperty->appendTextNode($value);
+      $clusterNode->appendChild($clusterNodeProperty);
+    }
+    $rootClusters->appendChild($clusterNode);
+  }
+  $docClusters->setDocumentElement($rootClusters);
 }
 
 sub datastoreinventory {
