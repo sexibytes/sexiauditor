@@ -12,6 +12,7 @@ $xmlStartPath = "/opt/vcron/data/";
 $powerChoice = array("static" => "High performance", "dynamic" => "Balanced", "low" => "Low power", "custom" => "Custom", "off" => "Not supported (BIOS config)");
 $servicePolicyChoice = array("off" => "Start and stop manually", "on" => "Start and stop with host", "automatic" => "Start and stop automatically");
 $alarmStatus = array("unknown" => '<i class="glyphicon glyphicon-question-sign"></i>', "green" => '<i class="glyphicon glyphicon-ok-sign alarm-green"></i>', "yellow" => '<i class="glyphicon glyphicon-exclamation-sign alarm-yellow"></i>', "red" => '<i class="glyphicon glyphicon-remove-sign alarm-red"></i>');
+$userAgent = array("Perl" => '<img src="images/logo-perl.png" title="VI Perl" />', 'Client' => '<img src="images/logo-viclient.png" title="VMware VI Client" />', 'Mozilla' => '<img src="images/logo-chrome.png" title="Browser" />', 'java' => '<img src="images/logo-java.png" title="VMware vim-java" />', "PowerCLI" => '<img src="images/logo-powercli.png" title="PowerCLI" />');
 #############################
 # VARIABLE EDITION END ZONE #
 #############################
@@ -160,6 +161,10 @@ class SexiCheck {
   private $xmlConfigsFile;
   private $xmlModulesFile;
   private $xmlModuleSchedulesFile;
+  private $selectedDate;
+  private $xmlSelectedPath;
+  private $scannedDirectories;
+  private $xmlStartPath;
 
   public function __construct() {
     global $achievementFile;
@@ -207,6 +212,24 @@ class SexiCheck {
     $this->powerChoice = $powerChoice;
     $this->alarmStatus = $alarmStatus;
     $this->servicePolicyChoice = $servicePolicyChoice;
+
+    global $xmlStartPath;
+    $this->xmlStartPath = $xmlStartPath;
+    $this->scannedDirectories = array_values(array_diff(scandir($xmlStartPath, SCANDIR_SORT_DESCENDING), array('..', '.', 'latest')));
+    if ($_SERVER['REQUEST_METHOD'] == 'POST'){
+      $this->selectedDate = $_POST["selectedDate"];
+      foreach ($this->scannedDirectories as $key => $value) {
+        if (strpos($value, str_replace("/","",$this->selectedDate)) === 0) {
+          $this->xmlSelectedPath = $value;
+          break;
+        }
+      }
+    } else {
+      $this->selectedDate = DateTime::createFromFormat('Ymd', $this->scannedDirectories[0])->format('Y/m/d');
+      $this->xmlSelectedPath = "latest";
+    }
+    # Header generation
+    $this->displayHeader($_SERVER['SCRIPT_NAME']);
   }
 
   public function displayCheck($args) {
@@ -221,9 +244,10 @@ class SexiCheck {
       'columnDefs' => null,
       'typeCheck' => null,
       'majorityProperty' => null,
+      'mismatchProperty' => null,
     ];
     extract($args);
-    $this->xmlFile = $xmlFile;
+    $this->xmlFile = $this->xmlStartPath.$this->xmlSelectedPath.'/'.$xmlFile;
     $this->xpathQuery = $xpathQuery;
     $this->title = $title;
     $this->description = $description;
@@ -233,6 +257,7 @@ class SexiCheck {
     $this->columnDefs = $columnDefs;
     $this->typeCheck = $typeCheck;
     $this->majorityProperty = $majorityProperty;
+    $this->mismatchProperty = $mismatchProperty;
     $this->header = "";
     $this->body = "";
     $this->footer = "";
@@ -257,7 +282,7 @@ class SexiCheck {
           	foreach (array_diff(array_count_values(array_map("strval", $xmlContent->xpath("/hosts/host/vcenter"))), array("1")) as  $key_vcenter => $value_vcenter) {
           		foreach (array_diff(array_count_values(array_map("strval", $xmlContent->xpath("/hosts/host[vcenter='".$key_vcenter."']/cluster"))), array("1")) as  $key_cluster => $value_cluster) {
           			if ($key_cluster == 'Standalone') { continue; }
-          			$majorityGroup = array_diff(array_count_values(array_map("strval", $xmlContent->xpath("/hosts/host[vcenter='".$key_vcenter."' and cluster='".$key_cluster."']/".$this->majorityProperty))), array("1"));
+          			$majorityGroup = array_diff(array_count_values(array_map("strval", $xmlContent->xpath("/hosts/host[vcenter='".$key_vcenter."' and cluster='".$key_cluster."']/".$this->majorityProperty))), array("0"));
           			if (count($majorityGroup) < 1) {
                   $majorityGroup = '';
                 } else {
@@ -278,6 +303,30 @@ class SexiCheck {
               $this->header = '';
               $this->body = '    <h2 class="text-success"><i class="glyphicon glyphicon-ok-sign"></i> ' . $this->title . ' <small>' . str_replace(array("\n", "\t", "\r"), '', (rand_line($this->achievementFile))) . '</small></h2>'."\n";
             }
+            break;
+          case 'mismatchPerCluster':
+          	foreach (array_diff(array_count_values(array_map("strval", $xmlContent->xpath("/hosts/host/vcenter"))), array("1")) as  $key_vcenter => $value_vcenter) {
+          		foreach (array_diff(array_count_values(array_map("strval", $xmlContent->xpath("/hosts/host[vcenter='".$key_vcenter."']/cluster"))), array("1")) as  $key_cluster => $value_cluster) {
+          			if ($key_cluster == 'Standalone') { continue; }
+          			$mismatchMatches = array_diff(array_count_values(array_map("strval", $xmlContent->xpath("/hosts/host[vcenter='".$key_vcenter."' and cluster='".$key_cluster."']/".$this->mismatchProperty))), array("1"));
+                if (count($mismatchMatches) > 1) {
+          				$compliance = '<i class="glyphicon glyphicon-remove-sign text-danger"></i>';
+            			$mismatchEntry = "*Mismatch* ";
+          			} else {
+          				$compliance = '<i class="glyphicon glyphicon-ok-sign text-success"></i>';
+            			$mismatchEntry = "";
+          			}
+          			foreach (array_diff(array_count_values(array_map("strval", $xmlContent->xpath("/hosts/host[vcenter='".$key_vcenter."' and cluster='".$key_cluster."']/".$this->mismatchProperty))), array("1")) as  $key_entry => $value_entry) {
+          				$mismatchEntry .= " $key_entry";
+          			}
+                $this->body .= '          <tr>';
+                foreach ($this->tbody as $column) {
+                  $entries++;
+                  $this->body .= eval("return $column;");
+                }
+                $this->body .= '</tr>'."\n";
+          		}
+        		}
             break;
           default:
             foreach ($xpathFull as $entry) {
@@ -312,9 +361,9 @@ class SexiCheck {
       }
     } else {
       $this->body .= '    <div class="alert alert-danger" role="alert">
-      <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+      <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
       <span class="sr-only">Error:</span>
-      File ' . $this->xmlFile . ' is not existant or not readable. Please check for <a href="/admin/sandbox.php">module selection</a> and/or wait for scheduler
+      File ' . $this->xmlFile . ' is not existant or not readable. Please check for <a href="moduleselector.php">module selection</a> and/or wait for scheduler
     </div>'."\n";
     }
     echo $this->header;
@@ -322,14 +371,76 @@ class SexiCheck {
     echo $this->footer;
   }
 
+  public function displayHeader($formPage) {
+    global $title;
+    $this->header = "";
+    $this->header .= '      <div style="padding-top: 10px; padding-bottom: 10px;" class="container">
+        <div class="row">
+          <div class="col-lg-10 alert alert-info" style="margin-top: 20px; text-align: center;">
+            <h1 style="margin-top: 10px;">'.$title.' on ' . DateTime::createFromFormat('Y/m/d', $this->selectedDate)->format('l jS F Y') . '</h1>
+          </div>
+          <div class="alert col-lg-2">
+            <form action="' . $formPage . '" style="margin-top: 5px;" method="post">
+              <div class="form-group" style="margin-bottom: 5px;">
+                <div class="input-group date" id="datetimepicker11">
+                  <input type="text" class="form-control" name="selectedDate" readonly />
+                  <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
+                </div>
+              </div>
+              <button type="submit" class="btn btn-default" style="width: 100%">Select this date</button>
+              <script type="text/javascript">'."\n";
+    $this->header .= "              $(function () {
+                $('#datetimepicker11').datetimepicker({
+                  ignoreReadonly: true,
+                  format: 'YYYY/MM/DD',
+                  showTodayButton: true,
+                  defaultDate: \"" . $this->selectedDate . "\",
+                  enabledDates: [\n";
+    foreach ($this->scannedDirectories as $xmlDirectory) {
+      $this->header .= '                "' . DateTime::createFromFormat('Ymd', $xmlDirectory)->format('Y/m/d H:i') . '",' . "\n";
+    }
+    $this->header .= '                  ]
+                });
+              });
+              </script>
+            </form>
+          </div>
+        </div>'."\n";
+    echo $this->header;
+  }
+
   public function getModuleSchedule($module) {
     return $this->h_moduleschedules[$module];
   }
 
   public function getConfig($config) {
-    return $this->h_configs[$config];
+    if (array_key_exists($config, $this->h_configs)) {
+      return $this->h_configs[$config];
+    } else {
+      return "undefined";
+    }
+  }
+
+  public function getUserAgent($useragentPattern) {
+    global $userAgent;
+    if ($useragentPattern == 'VI Perl') {
+      return $userAgent['Perl'];
+    } elseif (preg_match("/^VMware VI Client/", $useragentPattern)) {
+      return $userAgent['Client'];
+    } elseif (preg_match("/^Mozilla/", $useragentPattern)) {
+      return $userAgent['Mozilla'];
+    } elseif (preg_match("/^VMware vim-java/", $useragentPattern)) {
+      return $userAgent['java'];
+    } elseif (preg_match("/^PowerCLI/", $useragentPattern)) {
+      return $userAgent['PowerCLI'];
+    } else {
+      return "undefined";
+    }
+  }
+
+  public function getSumValue() {
+    # code...
   }
 }
-
 
 ?>
