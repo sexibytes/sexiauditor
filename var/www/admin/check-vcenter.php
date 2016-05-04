@@ -28,11 +28,10 @@ try {
 
 if($check->getModuleSchedule('vcSessionAge') != 'off') {
   $check->displayCheck([  'xmlFile' => "sessions-global.xml",
-                          'xpathQuery' => "/sessions/session",
-                          'title' => 'Session Age',
-                          'description' => 'The following displays vCenter sessions that exceed the maximum session age (' . $check->getConfig('vcSessionAge') . ' days).',
+                          'xpathQuery' => "/sessions/session[age>" . $check->getConfig('vcSessionAge') . "]",
+                          "id" => "VCSESSIONAGE",
                           'thead' => array('Session Age', 'Last ActiveTime', 'UserName', 'ipAddress', 'UserAgent', 'vCenter'),
-                          'tbody' => array('"<td>".DateTime::createFromFormat("Y-m-d", substr($entry->lastActiveTime, 0, 10))->diff(new DateTime("now"))->format("%a")."</td>"', '"<td>".$entry->lastActiveTime."</td>"', '"<td>".$entry->userName."</td>"', '"<td>".$entry->ipAddress."</td>"', '"<td>".$this->getUserAgent($entry->userAgent)."</td>"', '"<td>".$entry->vcenter."</td>"'),
+                          'tbody' => array('"<td>".round($entry->age)."</td>"', '"<td>".$entry->lastActiveTime."</td>"', '"<td>".$entry->userName."</td>"', '"<td>".$entry->ipAddress."</td>"', '"<td>".$this->getUserAgent($entry->userAgent)."</td>"', '"<td>".$entry->vcenter."</td>"'),
                           'order' => '[ 0, "desc" ]',
                           'columnDefs' => '{ "orderable": false, className: "dt-body-center", "targets": [ 4 ] }']);
 }
@@ -40,8 +39,7 @@ if($check->getModuleSchedule('vcSessionAge') != 'off') {
 if($check->getModuleSchedule('vcLicenceReport') != 'off') {
   $check->displayCheck([  'xmlFile' => "licenses-global.xml",
                           'xpathQuery' => "/licenses/license",
-                          'title' => 'License Report',
-                          'description' => 'The following displays vCenter licenses.',
+                          "id" => "VCLICENCEREPORT",
                           'thead' => array('Name', 'Unit', 'Total', 'Used', 'licenseKey', 'vCenter'),
                           'tbody' => array('"<td>".$entry->name."</td>"', '"<td>".$entry->costUnit."</td>"', '"<td>".$entry->total."</td>"', '"<td>".$entry->used."</td>"', '"<td>".'.(($check->getConfig('showPlainLicense') == 'disable') ? 'substr($entry->licenseKey, 0, 5) . "-#####-#####-#####-" . substr($entry->licenseKey, -5)' : '$entry->licenseKey').'."</td>"', '"<td>".$entry->vcenter."</td>"')]);
 }
