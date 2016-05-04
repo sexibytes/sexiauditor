@@ -29,8 +29,7 @@ try {
 if($check->getModuleSchedule('hostLUNPathDead') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
   $check->displayCheck([  'xmlFile' => "hosts-global.xml",
                           'xpathQuery' => "/hosts/host[lundeadpathcount!=0]",
-                          'title' => 'Host LUN Path Dead',
-                          'description' => 'Dead LUN Paths may cause issues with storage performance or be an indication of loss of redundancy.',
+                          "id" => "HOSTLUNPATHDEAD",
                           'thead' => array('Name', 'Dead LUN path', 'LUN Path', 'Cluster', 'vCenter'),
                           'tbody' => array('"<td>".$entry->name."</td>"', '"<td>".$entry->deadlunpathcount."</td>"', '"<td>".$entry->lunpathcount."</td>"', '"<td>".$entry->cluster."</td>"', '"<td>".$entry->vcenter."</td>"')]);
 }
@@ -43,8 +42,7 @@ if($check->getModuleSchedule('hostSshShell') != 'off' && $check->getModuleSchedu
   $currentShellPolicy = $check->getConfig('hostShellPolicy');
   $check->displayCheck([  'xmlFile' => "hosts-global.xml",
                           'xpathQuery' => "/hosts/host[(ssh_policy!='$currentSshPolicy' and ssh_policy!='') or (shell_policy!='$currentShellPolicy' and shell_policy!='')]",
-                          'title' => 'Host SSH-Shell check',
-                          'description' => 'The following displays host that not match the selected ssh/shell policy.',
+                          "id" => "HOSTSSHSHELL",
                           'thead' => array('Name', 'Cluster', 'SSH Policy', 'Desired SSH Policy', 'Shell Policy', 'Desired Shell Policy', 'vCenter'),
                           'tbody' => array('"<td>".$entry->name."</td>"', '"<td>".$entry->cluster."</td>"', '"<td>".$this->servicePolicyChoice[(string) $entry->ssh_policy]."</td>"', '"<td>'.$servicePolicyChoice[$currentSshPolicy].'</td>"', '"<td>".$this->servicePolicyChoice[(string) $entry->shell_policy]."</td>"', '"<td>'.$servicePolicyChoice[$currentShellPolicy].'</td>"', '"<td>".$entry->vcenter."</td>"')]);
 }
@@ -52,8 +50,7 @@ if($check->getModuleSchedule('hostSshShell') != 'off' && $check->getModuleSchedu
 if($check->getModuleSchedule('hostNTPCheck') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
   $check->displayCheck([  'xmlFile' => "hosts-global.xml",
                           'xpathQuery' => "/hosts/host",
-                          'title' => 'Host NTP Check',
-                          'description' => 'The following hosts have mismatch NTP configuration.',
+                          "id" => "HOSTNTPCHECK",
                           'typeCheck' => 'majorityPerCluster',
                           'majorityProperty' => 'ntpservers',
                           'thead' => array('Cluster Name', 'Majority NTP', 'Host Name', 'NTP Servers', 'vCenter'),
@@ -63,8 +60,7 @@ if($check->getModuleSchedule('hostNTPCheck') != 'off' && $check->getModuleSchedu
 if($check->getModuleSchedule('hostDNSCheck') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
   $check->displayCheck([  'xmlFile' => "hosts-global.xml",
                           'xpathQuery' => "/hosts/host",
-                          'title' => 'Host DNS Check',
-                          'description' => 'The following hosts have mismatch DNS configuration.',
+                          "id" => "HOSTDNSCHECK",
                           'typeCheck' => 'majorityPerCluster',
                           'majorityProperty' => 'dnsservers',
                           'thead' => array('Cluster Name', 'Majority DNS', 'Host Name', 'DNS Servers', 'vCenter'),
@@ -74,8 +70,7 @@ if($check->getModuleSchedule('hostDNSCheck') != 'off' && $check->getModuleSchedu
 if($check->getModuleSchedule('hostSyslogCheck') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
   $check->displayCheck([  'xmlFile' => "hosts-global.xml",
                           'xpathQuery' => "/hosts/host",
-                          'title' => 'Host Syslog Check',
-                          'description' => 'The following hosts do not have the correct Syslog settings which may cause issues if ESXi hosts experience issues and logs need to be investigated.',
+                          "id" => "HOSTSYSLOGCHECK",
                           'typeCheck' => 'majorityPerCluster',
                           'majorityProperty' => 'syslog_target',
                           'thead' => array('Cluster Name', 'Majority Syslog', 'Host Name', 'Syslog Target', 'vCenter'),
@@ -85,8 +80,7 @@ if($check->getModuleSchedule('hostSyslogCheck') != 'off' && $check->getModuleSch
 if($check->getModuleSchedule('hostConfigurationIssues') != 'off') {
   $check->displayCheck([  'xmlFile' => "configurationissues-global.xml",
                           'xpathQuery' => "/configurationissues/configurationissue",
-                          'title' => 'Host configuration issues',
-                          'description' => 'The following configuration issues have been registered against Hosts in vCenter.',
+                          "id" => "HOSTCONFIGURATIONISSUES",
                           'thead' => array('Issue', 'Name', 'Cluster', 'vCenter'),
                           'tbody' => array('"<td>" . $entry->configissue . "</td>"', '"<td>" . $entry->name . "</td>"', '"<td>" . $entry->cluster . "</td>"', '"<td>" . $entry->vcenter . "</td>"')]);
 }
@@ -94,8 +88,7 @@ if($check->getModuleSchedule('hostConfigurationIssues') != 'off') {
 if($check->getModuleSchedule('alarms') != 'off') {
   $check->displayCheck([  'xmlFile' => "alarms-global.xml",
                           'xpathQuery' => "/alarms/alarm[entity_type='HostSystem']",
-                          'title' => 'Host Alarms',
-                          'description' => 'This module will display triggered alarms on Host objects level with status and time of creation.',
+                          "id" => "ALARMSHOST",
                           'thead' => array('Status', 'Alarm', 'Date', 'Name', 'vCenter'),
                           'tbody' => array('"<td>" . $this->alarmStatus[(string) $entry->status] . "</td>"', '"<td>" . $entry->name . "</td>"', '"<td>" . $entry->time . "</td>"', '"<td>" . $entry->entity . "</td>"', '"<td>" . $entry->vcenter . "</td>"'),
                           'order' => '[ 1, "asc" ]',
@@ -105,8 +98,7 @@ if($check->getModuleSchedule('alarms') != 'off') {
 if($check->getModuleSchedule('hostHardwareStatus') != 'off') {
   $check->displayCheck([  'xmlFile' => "hardwarestatus-global.xml",
                           'xpathQuery' => "/hardwarestatus/hardwarestate",
-                          'title' => 'Host Hardware Status',
-                          'description' => 'Details can be found in the Hardware Status tab.',
+                          "id" => "HOSTHARDWARESTATUS",
                           'thead' => array('State', 'Issue', 'Type', 'Name', 'vCenter'),
                           'tbody' => array('"<td>" . $this->alarmStatus[(string) $entry->issuestate] . "</td>"', '"<td>" . $entry->issuename . "</td>"', '"<td>" . $entry->issuetype . "</td>"', '"<td>" . $entry->name . "</td>"', '"<td>" . $entry->vcenter . "</td>"'),
                           'order' => '[ 3, "asc" ]',
@@ -116,8 +108,7 @@ if($check->getModuleSchedule('hostHardwareStatus') != 'off') {
 if($check->getModuleSchedule('hostRebootrequired') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
   $check->displayCheck([  'xmlFile' => "hosts-global.xml",
                           'xpathQuery' => "/hosts/host[rebootrequired='true']",
-                          'title' => 'Host Reboot required',
-                          'description' => 'The following displays host that required reboot (after some configuration update for instance).',
+                          "id" => "HOSTREBOOTREQUIRED",
                           'thead' => array('Name', 'vCenter'),
                           'tbody' => array('"<td>" . $entry->name . "</td>"', '"<td>" . $entry->vcenter . "</td>"')]);
 }
@@ -125,8 +116,7 @@ if($check->getModuleSchedule('hostRebootrequired') != 'off' && $check->getModule
 if($check->getModuleSchedule('hostFQDNHostnameMismatch') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
   $check->displayCheck([  'xmlFile' => "hosts-global.xml",
                           'xpathQuery' => "/hosts/host[not(starts-with(translate(name, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), translate(hostname, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')))]",
-                          'title' => 'Host FQDN and hostname mismatch',
-                          'description' => 'The following displays host that have FQDN and hostname mismatch.',
+                          "id" => "HOSTFQDNHOSTNAMEMISMATCH",
                           'thead' => array('FQDN', 'Hostname', 'Cluster', 'vCenter'),
                           'tbody' => array('"<td>".$entry->name."</td>"', '"<td>".$entry->hostname."</td>"', '"<td>".$entry->cluster."</td>"', '"<td>".$entry->vcenter."</td>"')]);
 }
@@ -134,8 +124,7 @@ if($check->getModuleSchedule('hostFQDNHostnameMismatch') != 'off' && $check->get
 if($check->getModuleSchedule('hostMaintenanceMode') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
   $check->displayCheck([  'xmlFile' => "hosts-global.xml",
                           'xpathQuery' => "/hosts/host[inmaintenancemode='true']",
-                          'title' => 'Host in maintenance mode',
-                          'description' => 'The following displays host that are in maintenance mode.',
+                          "id" => "HOSTMAINTENANCEMODE",
                           'thead' => array('Name', 'Cluster', 'vCenter'),
                           'tbody' => array('"<td><img src=\"images/vc-hostInMaintenance.gif\"> ".$entry->name."</td>"', '"<td>".$entry->cluster."</td>"', '"<td>".$entry->vcenter."</td>"')]);
 }
@@ -144,8 +133,7 @@ if($check->getModuleSchedule('hostPowerManagementPolicy') != 'off' && $check->ge
   $currentPolicy = $check->getConfig('powerSystemInfo');
   $check->displayCheck([  'xmlFile' => "hosts-global.xml",
                           'xpathQuery' => "/hosts/host[powerpolicy!='$currentPolicy' and powerpolicy!='']",
-                          'title' => 'Host PowerManagement Policy',
-                          'description' => 'The following displays host that not match the selected power management policy.',
+                          "id" => "HOSTPOWERMANAGEMENTPOLICY",
                           'thead' => array('Name', 'Cluster', 'Power Policy', 'Desired Power Policy', 'vCenter'),
                           'tbody' => array('"<td>".$entry->name."</td>"', '"<td>".$entry->cluster."</td>"', '"<td>".$this->powerChoice[(string) $entry->powerpolicy]."</td>"', '"<td>'.$powerChoice[$currentPolicy].'</td>"', '"<td>".$entry->vcenter."</td>"')]);
 }
