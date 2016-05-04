@@ -11,11 +11,14 @@ $xmlConfigsFile = "/var/www/admin/conf/configs.xml";
 $xmlStartPath = "/opt/vcron/data/";
 $powerChoice = array("static" => "High performance", "dynamic" => "Balanced", "low" => "Low power", "custom" => "Custom", "off" => "Not supported (BIOS config)");
 $servicePolicyChoice = array("off" => "Start and stop manually", "on" => "Start and stop with host", "automatic" => "Start and stop automatically");
+$langChoice = array("en" => "English");
 $alarmStatus = array("unknown" => '<i class="glyphicon glyphicon-question-sign"></i>', "green" => '<i class="glyphicon glyphicon-ok-sign alarm-green"></i>', "yellow" => '<i class="glyphicon glyphicon-exclamation-sign alarm-yellow"></i>', "red" => '<i class="glyphicon glyphicon-remove-sign alarm-red"></i>');
 $userAgent = array("Perl" => '<img src="images/logo-perl.png" title="VI Perl" />', 'Client' => '<img src="images/logo-viclient.png" title="VMware VI Client" />', 'Mozilla' => '<img src="images/logo-chrome.png" title="Browser" />', 'java' => '<img src="images/logo-java.png" title="VMware vim-java" />', "PowerCLI" => '<img src="images/logo-powercli.png" title="PowerCLI" />');
 #############################
 # VARIABLE EDITION END ZONE #
 #############################
+
+
 
 function humanFileSize($size,$unit="") {
         if( (!$unit && $size >= 1<<30) || $unit == "GB")
@@ -165,6 +168,8 @@ class SexiCheck {
   private $xmlSelectedPath;
   private $scannedDirectories;
   private $xmlStartPath;
+  private $lang;
+  private $langDef;
 
   public function __construct() {
     global $achievementFile;
@@ -206,6 +211,21 @@ class SexiCheck {
       throw new Exception('File ' . $this->xmlModuleSchedulesFile . ' is not existant or not readable');
     }
 
+    $this->lang = (defined($this->h_configs['lang'])) ? $this->h_configs['lang'] : 'en';
+    switch ($this->lang) {
+      case 'en':
+        $lang_file = 'lang.en.php';
+        break;
+      case 'fr':
+        $lang_file = 'lang.fr.php';
+        break;
+      default:
+      $lang_file = 'lang.en.php';
+    }
+
+    include_once 'locales/'.$lang_file;
+    $this->langDef = $lang;
+
     global $powerChoice;
     global $alarmStatus;
     global $servicePolicyChoice;
@@ -236,8 +256,8 @@ class SexiCheck {
     $args += [
       'xmlFile' => null,
       'xpathQuery' => null,
-      'title' => null,
-      'description' => null,
+      // 'title' => null,
+      // 'description' => null,
       'thead' => array(),
       'tbody' => array(),
       'order' => null,
@@ -245,12 +265,14 @@ class SexiCheck {
       'typeCheck' => null,
       'majorityProperty' => null,
       'mismatchProperty' => null,
+      'pivotProperty' => null,
+      'id' => null,
     ];
     extract($args);
     $this->xmlFile = $this->xmlStartPath.$this->xmlSelectedPath.'/'.$xmlFile;
     $this->xpathQuery = $xpathQuery;
-    $this->title = $title;
-    $this->description = $description;
+    // $this->title = $title;
+    // $this->description = $description;
     $this->thead = $thead;
     $this->tbody = $tbody;
     $this->order = $order;
@@ -258,18 +280,21 @@ class SexiCheck {
     $this->typeCheck = $typeCheck;
     $this->majorityProperty = $majorityProperty;
     $this->mismatchProperty = $mismatchProperty;
+    $this->pivotProperty = $pivotProperty;
+    $this->id = $id;
     $this->header = "";
     $this->body = "";
     $this->footer = "";
 
     if (is_readable($this->xmlFile)) {
+      // global $lang;
       $xmlContent = simplexml_load_file($this->xmlFile);
     	$xpathFull = $xmlContent->xpath($this->xpathQuery);
     	if (count($xpathFull) > 0) {
-        $this->header .= '    <h2 class="text-danger"><i class="glyphicon glyphicon-exclamation-sign"></i> ' . $this->title . '</h2>'."\n";
-        $this->header .= '    <div class="alert alert-warning" role="alert"><i>' . $this->description . '</i></div>'."\n";
+        $this->header .= '    <h2 class="text-danger" id="' . $this->id . '"><i class="glyphicon glyphicon-exclamation-sign"></i> ' . $this->langDef[$this->id]["title"] . '</h2>'."\n";
+        $this->header .= '    <div class="alert alert-warning" role="alert"><i>' . $this->langDef[$this->id]["description"] . '</i></div>'."\n";
         $this->header .= '    <div class="col-lg-12">'."\n";
-        $this->header .= '      <table id="' . preg_replace('/\s+/', '', strtolower($this->title)) . '" class="table table-hover">'."\n";
+        $this->header .= '      <table id="tab_' . $this->id . '" class="table table-hover">'."\n";
         $this->header .= '        <thead><tr>'."\n";
         foreach ($this->thead as $thead) {
           $this->header .= '          <th>' . $thead . '</th>'."\n";
@@ -277,6 +302,7 @@ class SexiCheck {
         $this->header .= '        </tr></thead>'."\n";
         $this->header .= '        <tbody>'."\n";
         $entries = 0;
+        # $this->body generation will depend on check type
         switch ($this->typeCheck) {
     			case 'majorityPerCluster':
           	foreach (array_diff(array_count_values(array_map("strval", $xmlContent->xpath("/hosts/host/vcenter"))), array("1")) as  $key_vcenter => $value_vcenter) {
@@ -301,7 +327,7 @@ class SexiCheck {
         		}
             if ($entries == 0) {
               $this->header = '';
-              $this->body = '    <h2 class="text-success"><i class="glyphicon glyphicon-ok-sign"></i> ' . $this->title . ' <small>' . str_replace(array("\n", "\t", "\r"), '', (rand_line($this->achievementFile))) . '</small></h2>'."\n";
+              $this->body = '    <h2 class="text-success" id="' . $this->id . '"><i class="glyphicon glyphicon-ok-sign"></i> ' . $this->langDef[$this->id]["title"] . ' <small>' . str_replace(array("\n", "\t", "\r"), '', (rand_line($this->achievementFile))) . '</small></h2>'."\n";
             }
             break;
           case 'mismatchPerCluster':
@@ -328,6 +354,14 @@ class SexiCheck {
           		}
         		}
             break;
+          case 'pivotTable':
+            $dataPivot = array_diff(array_count_values(array_map("strval", $xmlContent->xpath($this->xpathQuery))), array("1"));
+            arsort($dataPivot);
+            foreach ($dataPivot as $key => $value) {
+              $entries++;
+              $this->body .= '            <tr><td>' . $key . '</td><td>' . $value . '</td></tr>';
+            }
+            break;
           default:
             foreach ($xpathFull as $entry) {
               $entries++;
@@ -344,7 +378,7 @@ class SexiCheck {
     </div>
     <script type="text/javascript">
     $(document).ready( function () {
-      $("#' . preg_replace('/\s+/', '', strtolower($this->title)) . '").DataTable( {
+      $("#tab_' . $this->id . '").DataTable( {
         "search": {
           "smart": false,
           "regex": true
@@ -357,7 +391,7 @@ class SexiCheck {
     <hr class="divider-dashed" />'."\n";
         }
       } elseif ($this->h_configs['showEmpty'] == 'enable') {
-        $this->body = '    <h2 class="text-success"><i class="glyphicon glyphicon-ok-sign"></i> ' . $this->title . ' <small>' . str_replace(array("\n", "\t", "\r"), '', (rand_line($this->achievementFile))) . '</small></h2>'."\n";
+        $this->body = '    <h2 class="text-success" id="' . $this->id . '"><i class="glyphicon glyphicon-ok-sign"></i> ' . $this->langDef[$this->id]["title"] . ' <small>' . str_replace(array("\n", "\t", "\r"), '', (rand_line($this->achievementFile))) . '</small></h2>'."\n";
       }
     } else {
       $this->body .= '    <div class="alert alert-danger" role="alert">
@@ -394,10 +428,10 @@ class SexiCheck {
                   ignoreReadonly: true,
                   format: 'YYYY/MM/DD',
                   showTodayButton: true,
-                  defaultDate: \"" . $this->selectedDate . "\",
+                  defaultDate: moment(\"" . $this->selectedDate . "\", \"YYYY/MM/DD\"),
                   enabledDates: [\n";
     foreach ($this->scannedDirectories as $xmlDirectory) {
-      $this->header .= '                "' . DateTime::createFromFormat('Ymd', $xmlDirectory)->format('Y/m/d H:i') . '",' . "\n";
+      $this->header .= '                   moment("' . DateTime::createFromFormat('Ymd', $xmlDirectory)->format('Y/m/d H:i') . '", "YYYY/MM/DD HH:ii"),' . "\n";
     }
     $this->header .= '                  ]
                 });
@@ -405,7 +439,8 @@ class SexiCheck {
               </script>
             </form>
           </div>
-        </div>'."\n";
+        </div>
+        <div class="row" id="toc"><ul><li><strong>Inline TOC</strong> <i class="glyphicon glyphicon-chevron-right"></i><i class="glyphicon glyphicon-chevron-right"></i></li></ul></div>'."\n";
     echo $this->header;
   }
 
