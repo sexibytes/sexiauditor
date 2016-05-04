@@ -83,6 +83,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 				foreach ($servicePolicyChoice as $key => $value) { echo '			  	<option value="' . $key . '"' . ($key == $setting->value ? " selected" : "") . '>' . $value . '</option>'; }
 				echo '			  </select>';
 				break;
+			case 'language':
+				echo '			  <select name="' . $setting->id . '" class="form-control">';
+				foreach ($langChoice as $key => $value) { echo '			  	<option value="' . $key . '"' . ($key == $setting->value ? " selected" : "") . '>' . $value . '</option>'; }
+				echo '			  </select>';
+				break;
 			default:
 				echo '			  <input type="' . $setting->type . '" class="form-control" name="' . $setting->id . '" id="' . $setting->id . '" value="' . $setting->value . '">';
 				break;
