@@ -2,22 +2,22 @@
 
 use strict;
 use warnings;
-use VMware::VIRuntime;
-use VMware::VICredStore;
-use JSON;
+
 use Data::Dumper;
 use Date::Format qw(time2str);
-use URI::URL;
+use File::Path qw( make_path );
+use Getopt::Long;
+use JSON;
 use Log::Log4perl qw(:easy);
 use Number::Bytes::Human qw(format_bytes);
 use POSIX qw(strftime);
-use XML::LibXML;
-use File::Path qw( make_path );
-use Switch;
-use Getopt::Long;
-
-
 use Socket;
+use Switch;
+use Time::Piece;
+use URI::URL;
+use VMware::VIRuntime;
+use VMware::VICredStore;
+use XML::LibXML;
 
 
 # TODO
@@ -452,30 +452,33 @@ $docTTB->toFile($schedulerTTBFile,2);
 sub dummy { }
 
 sub sessionage {
-    my $sessionMgr = Vim::get_view(mo_ref => Vim::get_service_content()->sessionManager);
-    my $sessionList = eval {$sessionMgr->sessionList || []};
-    my $currentSessionkey = $sessionMgr->currentSession->key;
-    my $vcentersdk = new URI::URL $sessionMgr->{'vim'}->{'service_url'};
-
-    foreach my $session (@$sessionList) {
-        my %h_session = (
-            loginTime => substr($session->loginTime, 0, 19),
-            vcenter => $vcentersdk->host,
-            userAgent => (defined($session->userAgent) ? $session->userAgent : 'N/A'),
-            ipAddress => (defined($session->ipAddress) ? $session->ipAddress : 'N/A'),
-            lastActiveTime => substr($session->lastActiveTime, 0, 19),
-            userName => $session->userName
-        );
-        my $sessionNode = $docSessions->createElement("session");
-        for my $sessionProperty (keys %h_session) {
-            my $sessionNodeProperty = $docSessions->createElement($sessionProperty);
-            my $value = $h_session{$sessionProperty};
-            $sessionNodeProperty->appendTextNode($value);
-            $sessionNode->appendChild($sessionNodeProperty);
-        }
-        $rootSessions->appendChild($sessionNode);
+  my $sessionMgr = Vim::get_view(mo_ref => Vim::get_service_content()->sessionManager);
+  my $sessionList = eval {$sessionMgr->sessionList || []};
+  my $currentSessionkey = $sessionMgr->currentSession->key;
+  my $vcentersdk = new URI::URL $sessionMgr->{'vim'}->{'service_url'};
+  foreach my $session (@$sessionList) {
+		my $date1 = Time::Piece->strptime(substr($session->lastActiveTime, 0, 19), '%Y-%m-%dT%H:%M:%S');
+		my $date2 = localtime;
+		my $diff = $date2 - $date1;
+    my %h_session = (
+        loginTime => substr($session->loginTime, 0, 19),
+        vcenter => $vcentersdk->host,
+        userAgent => (defined($session->userAgent) ? $session->userAgent : 'N/A'),
+        ipAddress => (defined($session->ipAddress) ? $session->ipAddress : 'N/A'),
+        lastActiveTime => substr($session->lastActiveTime, 0, 19),
+				age => $diff->days,
+        userName => $session->userName
+    );
+    my $sessionNode = $docSessions->createElement("session");
+    for my $sessionProperty (keys %h_session) {
+        my $sessionNodeProperty = $docSessions->createElement($sessionProperty);
+        my $value = $h_session{$sessionProperty};
+        $sessionNodeProperty->appendTextNode($value);
+        $sessionNode->appendChild($sessionNodeProperty);
     }
-    $docSessions->setDocumentElement($rootSessions);
+    $rootSessions->appendChild($sessionNode);
+  }
+  $docSessions->setDocumentElement($rootSessions);
 }
 
 sub licenseReport {
@@ -775,31 +778,34 @@ sub clusterinventory {
 }
 
 sub datastoreinventory {
-    foreach my $datastore_view (@$view_Datastore) {
-        my $vcentersdk = new URI::URL $datastore_view->{'vim'}->{'service_url'};
-        my %h_datastore = (
-            name => $datastore_view->name,
-            vcenter => $vcentersdk->host,
-            size => $datastore_view->summary->capacity,
-            freespace => $datastore_view->summary->freeSpace,
-            uncommitted => (defined($datastore_view->summary->uncommitted) ? $datastore_view->summary->uncommitted : 0),
-            type => $datastore_view->summary->type,
-            accessible => $datastore_view->summary->accessible,
-            iormConfiguration => $datastore_view->iormConfiguration->enabled,
-            shared => $datastore_view->summary->multipleHostAccess,
-            maintenanceMode => (defined($datastore_view->summary->maintenanceMode) ? $datastore_view->summary->maintenanceMode : 'normal'),
-            moref => $datastore_view->{'mo_ref'}->{'type'}."-".$datastore_view->{'mo_ref'}->{'value'}
-        );
-        my $datastoreNode = $docDatastores->createElement("datastore");
-        for my $datastoreProperty (keys %h_datastore) {
-            my $datastoreNodeProperty = $docDatastores->createElement($datastoreProperty);
-            my $value = $h_datastore{$datastoreProperty};
-            $datastoreNodeProperty->appendTextNode($value);
-            $datastoreNode->appendChild($datastoreNodeProperty);
-        }
-        $rootDatastores->appendChild($datastoreNode);
+  foreach my $datastore_view (@$view_Datastore) {
+    my $vcentersdk = new URI::URL $datastore_view->{'vim'}->{'service_url'};
+		my $uncommitted = (defined($datastore_view->summary->uncommitted) ? $datastore_view->summary->uncommitted : 0);
+    my %h_datastore = (
+      name => $datastore_view->name,
+      vcenter => $vcentersdk->host,
+      size => $datastore_view->summary->capacity,
+			pct_free => int(($datastore_view->summary->freeSpace / $datastore_view->summary->capacity) * 100),
+			pct_overallocation => int((($datastore_view->summary->capacity - $datastore_view->summary->freeSpace + $uncommitted) * 100) / $datastore_view->summary->capacity),
+      freespace => $datastore_view->summary->freeSpace,
+      uncommitted => $uncommitted,
+      type => $datastore_view->summary->type,
+      accessible => $datastore_view->summary->accessible,
+      iormConfiguration => $datastore_view->iormConfiguration->enabled,
+      shared => $datastore_view->summary->multipleHostAccess,
+      maintenanceMode => (defined($datastore_view->summary->maintenanceMode) ? $datastore_view->summary->maintenanceMode : 'normal'),
+      moref => $datastore_view->{'mo_ref'}->{'type'}."-".$datastore_view->{'mo_ref'}->{'value'}
+    );
+    my $datastoreNode = $docDatastores->createElement("datastore");
+    for my $datastoreProperty (keys %h_datastore) {
+      my $datastoreNodeProperty = $docDatastores->createElement($datastoreProperty);
+      my $value = $h_datastore{$datastoreProperty};
+      $datastoreNodeProperty->appendTextNode($value);
+      $datastoreNode->appendChild($datastoreNodeProperty);
     }
-    $docDatastores->setDocumentElement($rootDatastores);
+    $rootDatastores->appendChild($datastoreNode);
+  }
+  $docDatastores->setDocumentElement($rootDatastores);
 }
 
 sub getHardwareStatus {
