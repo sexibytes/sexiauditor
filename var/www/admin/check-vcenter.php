@@ -43,6 +43,14 @@ if($check->getModuleSchedule('vcLicenceReport') != 'off') {
                           'thead' => array('Name', 'Unit', 'Total', 'Used', 'licenseKey', 'vCenter'),
                           'tbody' => array('"<td>".$entry->name."</td>"', '"<td>".$entry->costUnit."</td>"', '"<td>".$entry->total."</td>"', '"<td>".$entry->used."</td>"', '"<td>".'.(($check->getConfig('showPlainLicense') == 'disable') ? 'substr($entry->licenseKey, 0, 5) . "-#####-#####-#####-" . substr($entry->licenseKey, -5)' : '$entry->licenseKey').'."</td>"', '"<td>".$entry->vcenter."</td>"')]);
 }
+
+if($check->getModuleSchedule('vcCertificatesReport') != 'off') {
+  $check->displayCheck([  'xmlFile' => "certificates-global.xml",
+                          'xpathQuery' => "/certificates/certificate",
+                          "id" => "VCCERTIFICATESREPORT",
+                          'thead' => array('Type', 'URL', 'Trust Start', 'Trust End', 'Expiry', 'vCenter'),
+                          'tbody' => array('"<td>".$entry->type."</td>"', '"<td>".$entry->url."</td>"', '"<td>".$entry->start."</td>"', '"<td>".$entry->end."</td>"', '"<td>".$entry->expiry."</td>"', '"<td>".$entry->vcenter."</td>"')]);
+}
 ?>
     <h2>Permission report</h2>
 	</div>
