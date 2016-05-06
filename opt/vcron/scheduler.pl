@@ -5,10 +5,12 @@ use warnings;
 
 use Data::Dumper;
 use Date::Format qw(time2str);
+use Date::Parse;
 use File::Path qw( make_path );
 use Getopt::Long;
 use JSON;
 use Log::Log4perl qw(:easy);
+# use Net::SSL::ExpireDate;
 use Number::Bytes::Human qw(format_bytes);
 use POSIX qw(strftime);
 use Socket;
@@ -344,9 +346,6 @@ foreach $s_item (@server_list) {
 			$h_host{$StandaloneResourceVMHost[0][0]->{'mo_ref'}->value} = $StandaloneResourceVMHostName;
 		}
 	}
-	#
-	# certificatesReport();
-	# exit;
 
 	for my $key ( keys(%$href) ) {
 		# using dispatch table to call dynamically named subroutine
@@ -512,30 +511,38 @@ sub licenseReport {
 }
 
 sub certificatesReport {
-    # my $sessionMgr = Vim::get_view(mo_ref => Vim::get_service_content()->sessionManager);
-    # my $sessionList = eval {$sessionMgr->sessionList || []};
-    # my $currentSessionkey = $sessionMgr->currentSession->key;
-    # my $vcentersdk = new URI::URL $sessionMgr->{'vim'}->{'service_url'};
-		#
-    # foreach my $session (@$sessionList) {
-    #     my %h_session = (
-    #         loginTime => substr($session->loginTime, 0, 19),
-    #         vcenter => $vcentersdk->host,
-    #         userAgent => (defined($session->userAgent) ? $session->userAgent : 'N/A'),
-    #         ipAddress => (defined($session->ipAddress) ? $session->ipAddress : 'N/A'),
-    #         lastActiveTime => substr($session->lastActiveTime, 0, 19),
-    #         userName => $session->userName
-    #     );
-    #     my $sessionNode = $docSessions->createElement("session");
-    #     for my $sessionProperty (keys %h_session) {
-    #         my $sessionNodeProperty = $docSessions->createElement($sessionProperty);
-    #         my $value = $h_session{$sessionProperty};
-    #         $sessionNodeProperty->appendTextNode($value);
-    #         $sessionNode->appendChild($sessionNodeProperty);
-    #     }
-    #     $rootSessions->appendChild($sessionNode);
-    # }
-    # $docSessions->setDocumentElement($rootSessions);
+	my $vpxSetting = Vim::get_view(mo_ref => Vim::get_service_content()->setting);
+	my $vpxSettings = $vpxSetting->setting;
+	foreach(@$vpxSettings) {
+		# TODO missing webclient URL
+		if($_->key eq "VirtualCenter.VimApiUrl" or $_->key eq "VirtualCenter.VimWebServicesUrl" or $_->key eq "config.vpxd.sso.sts.uri" or $_->key eq "config.vpxd.sso.groupcheck.uri" or $_->key eq "config.vpxd.sso.admin.uri") {
+			my $urlToCheck = new URI::URL $_->value;
+			$urlToCheck = $urlToCheck->host . ":" . $urlToCheck->port;
+			my $command = `echo | openssl s_client -connect $urlToCheck 2>/dev/null | openssl x509 -noout -dates`;
+			my $vcentersdk = new URI::URL $vpxSetting->{'vim'}->{'service_url'};
+			$command =~ /^notBefore=(.*)$/m;
+			my $startDate = $1;
+			$command =~ /^notAfter=(.*)$/m;
+			my $endDate = $1;
+	    my %h_certificate = (
+				type => $_->key,
+	      url => $_->value,
+	      start => $startDate,
+	      end => $endDate,
+	      expiry => int((str2time($endDate) - time) / 86400),
+		    vcenter => $vcentersdk->host
+	    );
+	    my $certificateNode = $docCertificates->createElement("certificate");
+	    for my $certificateProperty (keys %h_certificate) {
+        my $certificateNodeProperty = $docCertificates->createElement($certificateProperty);
+        my $value = $h_certificate{$certificateProperty};
+        $certificateNodeProperty->appendTextNode($value);
+        $certificateNode->appendChild($certificateNodeProperty);
+	    }
+	    $rootCertificates->appendChild($certificateNode);
+		}
+	}
+	$docCertificates->setDocumentElement($rootCertificates);
 }
 
 sub inventory {
