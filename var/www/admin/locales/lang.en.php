@@ -10,6 +10,7 @@ $lang = array();
 # vcenter items
 $lang['VCSESSIONAGE'] = array("title" => "Session Age", "description" => 'The following displays vCenter sessions that exceed the maximum session age days).');
 $lang['VCLICENCEREPORT'] = array("title" => "License Report", "description" => 'The following displays vCenter licenses.');
+$lang['VCCERTIFICATESREPORT'] = array("title" => "Certificate Report", "description" => 'List of all certificates with their expiry date used in your vSphere platform.');
 
 # cluster items
 $lang['CLUSTERCONFIGURATIONISSUES'] = array('title' => 'Cluster with Configuration Issues','description' => 'The following clusters have HA configuration issues. This will impact your disaster recovery.');
