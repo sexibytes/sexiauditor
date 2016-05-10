@@ -91,6 +91,12 @@
         <type>number</type>
     </config>
     <config>
+        <id>timeToBuildCount</id>
+        <label>Number of entries 'Time To Build' page will display (0 for all)</label>
+        <value>100</value>
+        <type>number</type>
+    </config>
+    <config>
         <id>smtpAddress</id>
         <label>SMTP server address (IP, or FQDN) to forward email to</label>
         <value>smtp</value>
