@@ -54,7 +54,7 @@ if($check->getModuleSchedule('hostNTPCheck') != 'off' && $check->getModuleSchedu
                           'typeCheck' => 'majorityPerCluster',
                           'majorityProperty' => 'ntpservers',
                           'thead' => array('Cluster Name', 'Majority NTP', 'Host Name', 'NTP Servers', 'vCenter'),
-                          'tbody' => array('"<td>" . $entry->cluster . "</td>"', '"<td>" . $majorityGroup . "</td>"', '"<td>" . $entry->name . "</td>"', '"<td>" . str_replace(";", "<br />", $entry->ntpservers) . "</td>"', '"<td>" . $entry->vcenter . "</td>"')]);
+                          'tbody' => array('"<td>" . $entry->cluster . "</td>"', '"<td>" . str_replace(";", "<br />", $majorityGroup) . "</td>"', '"<td>" . $entry->name . "</td>"', '"<td>" . str_replace(";", "<br />", $entry->ntpservers) . "</td>"', '"<td>" . $entry->vcenter . "</td>"')]);
 }
 
 if($check->getModuleSchedule('hostDNSCheck') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
