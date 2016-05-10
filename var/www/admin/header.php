@@ -29,7 +29,8 @@
       <div class="">Beware of these awesome admin rights, with power comes great responsibility-ish !!!</div>
     </nav>
 <?php endif; ?>
-    <nav class="navbar navbar-default navbar-static-top" role="navigation" style="margin-bottom: 0">
+    <!-- <nav class="navbar navbar-default navbar-static-top" role="navigation" style="margin-bottom: 0"> -->
+    <nav class="navbar navbar-default navbar-fixed-top" role="navigation" style="margin-bottom: 0">
       <div class="navbar-brand">SexiAuditor</div>
       <ul class="nav navbar-top-links navbar-right">
         <li><a href="passwordupdate.php">Welcome <?php echo (isset($_SESSION['displayname']) ? $_SESSION['displayname'] : $_SESSION['username']) . ((isset($_SESSION['role']) && $_SESSION['role'] == 'admin') ? ' <i class="glyphicon glyphicon-star"></i>' : ''); ?></a></li>
