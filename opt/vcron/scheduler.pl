@@ -24,7 +24,7 @@ use XML::LibXML;
 
 # TODO
 # check for multiple run, prevent simultaneous execution
-
+# add option --debug to show verbose log in console
 
 my $start = time;
 
@@ -513,23 +513,33 @@ sub licenseReport {
 sub certificatesReport {
 	my $vpxSetting = Vim::get_view(mo_ref => Vim::get_service_content()->setting);
 	my $vpxSettings = $vpxSetting->setting;
+	my $vcentersdk = new URI::URL $vpxSetting->{'vim'}->{'service_url'};
 	foreach(@$vpxSettings) {
-		# TODO missing webclient URL
-		if($_->key eq "VirtualCenter.VimApiUrl" or $_->key eq "VirtualCenter.VimWebServicesUrl" or $_->key eq "config.vpxd.sso.sts.uri" or $_->key eq "config.vpxd.sso.groupcheck.uri" or $_->key eq "config.vpxd.sso.admin.uri") {
+		# Query SDK, WS, SSO uri
+		# if($_->key eq "VirtualCenter.VimApiUrl" or $_->key eq "VirtualCenter.VimWebServicesUrl" or $_->key eq "config.vpxd.sso.sts.uri" or $_->key eq "config.vpxd.sso.groupcheck.uri" or $_->key eq "config.vpxd.sso.admin.uri") {
+		if($_->key eq "VirtualCenter.VimApiUrl" or $_->key eq "config.vpxd.sso.admin.uri") {
 			my $urlToCheck = new URI::URL $_->value;
-			$urlToCheck = $urlToCheck->host . ":" . $urlToCheck->port;
-			my $command = `echo | openssl s_client -connect $urlToCheck 2>/dev/null | openssl x509 -noout -dates`;
-			my $vcentersdk = new URI::URL $vpxSetting->{'vim'}->{'service_url'};
-			$command =~ /^notBefore=(.*)$/m;
-			my $startDate = $1;
-			$command =~ /^notAfter=(.*)$/m;
-			my $endDate = $1;
+			my $startDate = 'Unreachable';
+			my $endDate = 'Unreachable';
+			my $expiry = 'Unreachable';
+			if (gethostbyname($urlToCheck->host) && $urlToCheck->host ne 'localhost') {
+				$urlToCheck = $urlToCheck->host . ":" . $urlToCheck->port;
+				# print(Dumper($urlToCheck));
+				my $command = `echo "QUIT" | timeout 3 openssl s_client -connect $urlToCheck 2>/dev/null | openssl x509 -noout -dates`;
+				print(Dumper($command));
+				exit;
+				$command =~ /^notBefore=(.*)$/m;
+				$startDate = $1;
+				$command =~ /^notAfter=(.*)$/m;
+				$endDate = $1;
+				$expiry = int(str2time($endDate) - time);
+			}
 	    my %h_certificate = (
 				type => $_->key,
 	      url => $_->value,
 	      start => $startDate,
 	      end => $endDate,
-	      expiry => int((str2time($endDate) - time) / 86400),
+	      expiry => $expiry,
 		    vcenter => $vcentersdk->host
 	    );
 	    my $certificateNode = $docCertificates->createElement("certificate");
@@ -542,6 +552,45 @@ sub certificatesReport {
 	    $rootCertificates->appendChild($certificateNode);
 		}
 	}
+
+	# print("aa\n");
+	# Query webclient uri
+# 	my $ua = LWP::UserAgent->new;
+# 	$ua->timeout(10);
+# 	$ua->show_progress(1);
+# 	print("bb\n");
+# 	my $response = $ua->get("https://" . $vcentersdk->host . "/vsphere-client/");
+# 	print(Dumper($response->request->uri));
+# exit;
+# 	my $req = new HTTP::Request(GET => "https://" . $vcentersdk->host . "/vsphere-client/");
+# 		print("cc\n");
+# 	my $res = $ua->request($req);
+# 		print("dd\n");
+# 	my $urlToCheck = new URI::URL ($res->request()->uri());
+# 		print("ee\n");
+# 	$urlToCheck = $urlToCheck->host . ":" . $urlToCheck->port;
+# 	my $command = `echo "QUIT" | timeout 3 openssl s_client -connect $urlToCheck 2>/dev/null | openssl x509 -noout -dates`;
+# 	print(Dumper($command));
+# 	$command =~ /^notBefore=(.*)$/m;
+# 	my $startDate = $1;
+# 	$command =~ /^notAfter=(.*)$/m;
+# 	my $endDate = $1;
+# 	my %h_certificate = (
+# 		type => "VirtualCenter.WebClient",
+# 		url => "" . $res->request()->uri(),
+# 		start => $startDate,
+# 		end => $endDate,
+# 		expiry => int(str2time($endDate) - time),
+# 		vcenter => $vcentersdk->host
+# 	);
+# 	my $certificateNode = $docCertificates->createElement("certificate");
+# 	for my $certificateProperty (keys %h_certificate) {
+# 		my $certificateNodeProperty = $docCertificates->createElement($certificateProperty);
+# 		my $value = $h_certificate{$certificateProperty};
+# 		$certificateNodeProperty->appendTextNode($value);
+# 		$certificateNode->appendChild($certificateNodeProperty);
+# 	}
+# 	$rootCertificates->appendChild($certificateNode);
 	$docCertificates->setDocumentElement($rootCertificates);
 }
 
@@ -690,7 +739,7 @@ sub hostinventory {
     }
 		my $dnsservers = $host_view->{'config.network.dnsConfig'}->address;
 		my @sorted_dnsservers = map { $_->[1] } sort { $a->[0] <=> $b->[0] } map {[ unpack('N',inet_aton($_)), $_ ]} @$dnsservers;
-		my $ntpservers = $host_view->{'config.dateTimeInfo.ntpConfig.server'};
+		my $ntpservers = $host_view->{'config.dateTimeInfo.ntpConfig.server'} || [];
     my $storageSys = Vim::get_view(mo_ref => $host_view->{'configManager.storageSystem'}, properties => ['storageDeviceInfo']);
     my $lunpathcount = 0;
     my $lundeadpathcount = 0;
