@@ -47,7 +47,10 @@ body {
 .php-file-tree .closed { font-style: normal; }
 .php-file-tree .pft-directory { list-style-image: url(../images/directory.png); }
 .php-file-tree LI.pft-file { list-style-image: url(../images/file.png); }
-#wrapper { width: 100%; }
+#wrapper {
+  width: 100%;
+  margin-bottom: 50px;
+}
 #page-wrapper {
   padding: 0 15px;
   min-height: 568px;
@@ -230,7 +233,7 @@ body {
 }
 .glyphicon-danger { color: #FF4536; }
 .table-hover>tbody>tr:hover {
-    background-color: #a8b3bd;
+    background-color: #fcf8e3;
     /*color: white;*/
 }
 .table { font-size: 14px;}
@@ -239,7 +242,8 @@ body {
 .alarm-yellow { color: #f0ad4e; }
 .divider-dashed {
     width: 60%;
-    border-top: 4px dashed #FF4536;
+    border-top: 2px dashed #FF4536;
+    margin-bottom: 50px;
 }
 h2.text-success { color: #9acb9a; }
 h2.text-success small {
@@ -384,15 +388,15 @@ input[readonly] {
 
 #back-to-top {
     position: fixed;
-    bottom: 40px;
+    bottom: 70px;
     right: 40px;
     z-index: 9999;
     width: 32px;
     height: 32px;
     text-align: center;
     line-height: 30px;
-    background: #f5f5f5;
-    color: #444;
+    background: #5e5e5e;
+    color: white;
     cursor: pointer;
     border: 0;
     border-radius: 2px;
@@ -400,5 +404,5 @@ input[readonly] {
     transition: opacity 0.2s ease-out;
 }
 #back-to-top:hover {
-    background: #e9ebec;
+    background: black;
 }
