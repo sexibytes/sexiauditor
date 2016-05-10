@@ -8,6 +8,7 @@ $xmlSettingsFile = "/var/www/admin/conf/settings.xml";
 $xmlModulesFile = "/var/www/admin/conf/modules.xml";
 $xmlModuleSchedulesFile = "/var/www/admin/conf/moduleschedules.xml";
 $xmlConfigsFile = "/var/www/admin/conf/configs.xml";
+$xmlTTBFile = "/opt/vcron/scheduler-ttb.xml";
 $xmlStartPath = "/opt/vcron/data/";
 $powerChoice = array("static" => "High performance", "dynamic" => "Balanced", "low" => "Low power", "custom" => "Custom", "off" => "Not supported (BIOS config)");
 $servicePolicyChoice = array("off" => "Start and stop manually", "on" => "Start and stop with host", "automatic" => "Start and stop automatically");
@@ -18,7 +19,18 @@ $userAgent = array("Perl" => '<img src="images/logo-perl.png" title="VI Perl" />
 # VARIABLE EDITION END ZONE #
 #############################
 
-
+function secondsToTime($inputSeconds) {
+  // var_dump($inputSeconds);
+  if ($inputSeconds != "Unreachable") {
+    // $then = new DateTime(date('Y-m-d H:i:s', time() + $inputSeconds));
+    // $now = new DateTime(date('Y-m-d H:i:s', time()));
+    // $diff = $then->diff($now);
+    // return ((($diff->y > 0) ? $diff->y . 'y ' : '') . (($diff->m > 0) ? $diff->m . 'm ' : '') . $diff->d . 'd');
+    return round($inputSeconds/86400);
+  } else {
+    return 0;
+  }
+}
 
 function humanFileSize($size,$unit="") {
         if( (!$unit && $size >= 1<<30) || $unit == "GB")
@@ -160,6 +172,7 @@ class SexiCheck {
   private $header;
   private $body;
   private $footer;
+  private $graph;
   private $achievementFile;
   private $xmlConfigsFile;
   private $xmlModulesFile;
@@ -285,6 +298,7 @@ class SexiCheck {
     $this->header = "";
     $this->body = "";
     $this->footer = "";
+    $this->graph = "";
 
     if (is_readable($this->xmlFile)) {
       // global $lang;
@@ -293,7 +307,12 @@ class SexiCheck {
     	if (count($xpathFull) > 0) {
         $this->header .= '    <h2 class="text-danger" id="' . $this->id . '"><i class="glyphicon glyphicon-exclamation-sign"></i> ' . $this->langDef[$this->id]["title"] . '</h2>'."\n";
         $this->header .= '    <div class="alert alert-warning" role="alert"><i>' . $this->langDef[$this->id]["description"] . '</i></div>'."\n";
-        $this->header .= '    <div class="col-lg-12">'."\n";
+        if ($this->typeCheck == "pivotTableGraphed") {
+          $this->header .= '    <div class="row">'."\n";
+          $this->header .= '    <div class="col-lg-4">'."\n";
+        } else {
+          $this->header .= '    <div class="col-lg-12">'."\n";
+        }
         $this->header .= '      <table id="tab_' . $this->id . '" class="table table-hover">'."\n";
         $this->header .= '        <thead><tr>'."\n";
         foreach ($this->thead as $thead) {
@@ -362,6 +381,55 @@ class SexiCheck {
               $this->body .= '            <tr><td>' . $key . '</td><td>' . $value . '</td></tr>';
             }
             break;
+          case 'pivotTableGraphed':
+            $dataPivot = array_diff(array_count_values(array_map("strval", $xmlContent->xpath($this->xpathQuery))), array("1"));
+            arsort($dataPivot);
+            $this->graph .= '<div id="graph_' . $this->id . '" class="col-lg-8" style="min-height: 550px;">sdf</div>'."\n";
+            $this->graph .= '            <script>
+            var option = {
+    tooltip : {
+        trigger: "item",
+        formatter: "{b}<br/>{c} ({d}%)"
+    },
+                toolbox: {
+                  show : true,
+                  feature : {
+                    mark : {show: false},
+                    dataView : {show: false},
+                    magicType: { show : true, title : { line : "Display with line", bar : "Display with bar" }, type : ["line", "bar"] },
+                    restore : {show: true},
+                    saveAsImage : {show: true}
+                  }
+                },
+                calculable : true,
+                series : [
+                    {
+                        name:' . $this->id . ',
+                        type:"pie",
+
+            ';
+
+
+            foreach ($dataPivot as $key => $value) {
+              $data[] = (object) array('value' => $value, 'name' => $key);
+              $entries++;
+              $this->body .= '            <tr><td>' . $key . '</td><td>' . $value . '</td></tr>';
+            }
+
+$this->graph .= '
+data: ' . json_encode($data, JSON_NUMERIC_CHECK) . '
+
+}
+]
+};
+                                    var ttbChart = echarts.init(document.getElementById("graph_' . $this->id . '"));
+                                    ttbChart.setTheme("macarons");
+                                    ttbChart.setOption(option);
+                                    </script>';
+
+
+            $this->graph .= '    </div><hr class="divider-dashed" />'."\n";
+            break;
           default:
             foreach ($xpathFull as $entry) {
               $entries++;
@@ -387,9 +455,9 @@ class SexiCheck {
           if (!is_null($this->columnDefs)) { $this->footer .= '        "columnDefs": [' . $this->columnDefs . '],'."\n"; }
           $this->footer .= '      } );
     } );
-    </script>
-    <hr class="divider-dashed" />'."\n";
+    </script>'."\n";
         }
+        if ($this->typeCheck != "pivotTableGraphed") { $this->footer .= '    <hr class="divider-dashed" />'."\n"; }
       } elseif ($this->h_configs['showEmpty'] == 'enable') {
         $this->body = '    <h2 class="text-success" id="' . $this->id . '"><i class="glyphicon glyphicon-ok-sign"></i> ' . $this->langDef[$this->id]["title"] . ' <small>' . str_replace(array("\n", "\t", "\r"), '', (rand_line($this->achievementFile))) . '</small></h2>'."\n";
       }
@@ -403,6 +471,7 @@ class SexiCheck {
     echo $this->header;
     echo $this->body;
     echo $this->footer;
+    if ($this->typeCheck == "pivotTableGraphed") { echo $this->graph; }
   }
 
   public function displayHeader($formPage) {
