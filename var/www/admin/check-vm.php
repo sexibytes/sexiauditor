@@ -15,8 +15,7 @@ $additionalScript = array(  'js/jquery.dataTables.min.js',
                             'js/file-size.js',
                             'js/moment.js',
                             'js/bootstrap-datetimepicker.js',
-                            'https://code.highcharts.com/highcharts.js',
-                            'https://code.highcharts.com/modules/exporting.js');
+                            'js/echarts-all-english-v2.js');
 require("header.php");
 require("helper.php");
 
@@ -27,79 +26,6 @@ try {
   # Any exception will be ending the script, we want exception-free run
   exit('  <div class="alert alert-danger" role="alert"><span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span><span class="sr-only">Error:</span> ' . $e->getMessage() . '</div>');
 }
-
-// // Load the fonts
-// Highcharts.createElement('link', {
-//    href: '//fonts.googleapis.com/css?family=Dosis:400,600',
-//    rel: 'stylesheet',
-//    type: 'text/css'
-// }, null, document.getElementsByTagName('head')[0]);
-//
-// Highcharts.theme = {
-//    colors: ["#7cb5ec", "#f7a35c", "#90ee7e", "#7798BF", "#aaeeee", "#ff0066", "#eeaaee",
-//       "#55BF3B", "#DF5353", "#7798BF", "#aaeeee"],
-//    chart: {
-//       backgroundColor: null,
-//       style: {
-//          fontFamily: "Dosis, sans-serif"
-//       }
-//    },
-//    title: {
-//       style: {
-//          fontSize: '16px',
-//          fontWeight: 'bold',
-//          textTransform: 'uppercase'
-//       }
-//    },
-//    tooltip: {
-//       borderWidth: 0,
-//       backgroundColor: 'rgba(219,219,216,0.8)',
-//       shadow: false
-//    },
-//    legend: {
-//       itemStyle: {
-//          fontWeight: 'bold',
-//          fontSize: '13px'
-//       }
-//    },
-//    xAxis: {
-//       gridLineWidth: 1,
-//       labels: {
-//          style: {
-//             fontSize: '12px'
-//          }
-//       }
-//    },
-//    yAxis: {
-//       minorTickInterval: 'auto',
-//       title: {
-//          style: {
-//             textTransform: 'uppercase'
-//          }
-//       },
-//       labels: {
-//          style: {
-//             fontSize: '12px'
-//          }
-//       }
-//    },
-//    plotOptions: {
-//       candlestick: {
-//          lineColor: '#404048'
-//       }
-//    },
-//
-//
-//    // General
-//    background2: '#F0F0EA'
-//
-// };
-//
-// // Apply the theme
-// Highcharts.setOptions(Highcharts.theme);
-//
-//
-//         });
 
 if($check->getModuleSchedule('vmSnapshotsage') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
   $check->displayCheck([  'xmlFile' => "snapshots-global.xml",
@@ -165,11 +91,11 @@ if($check->getModuleSchedule('vmcpuramhotadd') != 'off' && $check->getModuleSche
 
 if($check->getModuleSchedule('vmToolsPivot') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
   $check->displayCheck([  'xmlFile' => "vms-global.xml",
-                          'xpathQuery' => "/vms/vm/vmtools",
+                          'xpathQuery' => "/vms/vm[vmtools!='0' and vmtools!='Not Available']/vmtools",
                           "id" => "VMTOOLSPIVOT",
                           'title' => 'VM vmtools pivot table',
                           'description' => 'xxx',
-                          'typeCheck' => 'pivotTable',
+                          'typeCheck' => 'pivotTableGraphed',
                           'thead' => array('vmtools Version', 'Count'),
                           'order' => '[ 1, "desc" ]']);
 }
@@ -180,7 +106,7 @@ if($check->getModuleSchedule('vmvHardwarePivot') != 'off' && $check->getModuleSc
                           "id" => "VMVHARDWAREPIVOT",
                           'title' => 'VM vHardware pivot table',
                           'description' => 'xxx',
-                          'typeCheck' => 'pivotTable',
+                          'typeCheck' => 'pivotTableGraphed',
                           'thead' => array('vmtools Hardware', 'Count'),
                           'order' => '[ 1, "desc" ]']);
 }
@@ -302,196 +228,15 @@ if($check->getModuleSchedule('vmMisnamed') != 'off' && $check->getModuleSchedule
 
 if($check->getModuleSchedule('vmGuestPivot') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
   $check->displayCheck([  'xmlFile' => "vms-global.xml",
-                          'xpathQuery' => "/vms/vm/guestOS",
+                          'xpathQuery' => "/vms/vm[guestOS!='Not Available']/guestOS",
                           "id" => "VMGUESTPIVOT",
                           'title' => 'VM GuestId pivot table',
                           'description' => 'This module will display GuestOS pivot table and family repartition',
-                          'typeCheck' => 'pivotTable',
+                          'typeCheck' => 'pivotTableGraphed',
                           'thead' => array('GuestOS', 'Count'),
                           'order' => '[ 1, "desc" ]']);
 }
 ?>
-<!--
-<?php //if($h_settings['vmGuestPivot'] != 'off' && $h_settings['inventory'] != 'off'): ?>
-        <h2 class="text-danger"><i class="glyphicon glyphicon-exclamation-sign"></i> VM GuestId pivot table</h2>
-        <div class="alert alert-warning" role="alert"><i>This module will display GuestOS pivot table and family repartition.</i></div>
-<?php
-    // $dataWindows = array();
-    // $dataLinux = array();
-    // foreach (array_diff(array_count_values(array_map("strval", $xmlVM->xpath("/vms/vm/guestFamily"))), array("1")) as $key => $value) {
-    //     $dataTemp = null;
-    //     $dataTemp[] = $key;
-    //     $dataTemp[] = $value;
-    //     $data[] = $dataTemp;
-    // }
-    // foreach (array_diff(array_count_values(array_map("strval", $xmlVM->xpath("/vms/vm/guestFamily[text()='windowsGuest']/../guestOS"))), array("1")) as $key => $value) {
-    //     $key = str_replace("Microsoft ", "", trim(preg_split("/\(/", str_replace("\xC2\xA0", " ", $key))[0]));
-    //     if (array_key_exists($key, $dataWindows)) {
-    //         $dataWindows[$key] += $value;
-    //     } else {
-    //         $dataWindows[$key] = $value;
-    //     }
-    // }
-    // foreach ($dataWindows as $key => $value) { $dataWindowsHash[] = (object) array('data' => array($value), 'name' => $key); }
-    // foreach (array_diff(array_count_values(array_map("strval", $xmlVM->xpath("/vms/vm/guestFamily[text()='linuxGuest']/../guestOS"))), array("1")) as $key => $value) {
-    //     # remove non breaking space
-    //     $key = trim(preg_split("/\(/", str_replace("\xC2\xA0", " ", $key))[0]);
-    //     if (array_key_exists($key, $dataLinux)) {
-    //         $dataLinux[$key] += $value;
-    //     } else {
-    //         $dataLinux[$key] = $value;
-    //     }
-    // }
-    // foreach ($dataLinux as $key => $value) { $dataLinuxHash[] = (object) array('y' => $value, 'name' => $key); }
-?>
-        <div class="col-lg-6">
-        <table class="table table-hover">
-            <thead><tr>
-                <th>GuestOS</th>
-                <th>Count</th>
-            </thead>
-            <tbody>
-<?php
-    // $dataGuest = array_merge($dataWindows, $dataLinux);
-    // arsort($dataGuest);
-    // foreach ($dataGuest as $key => $value) {
-    //     echo '            <tr><td>' . $key . '</td><td>' . $value . '</td></tr>';
-    // }
-?>
-            </tbody>
-        </table>
-        </div>
-        <div class="col-lg-6">
-            <div id="containerVMGuestPivot" style="height: 300px"></div>
-            <div id="containerVMGuestWindows"></div>
-            <div id="containerVMGuestLinux"></div>
-        </div>
-        <script type="text/javascript">
-
-$(function () {
-    $('#containerVMGuestPivot').highcharts({
-            chart: {
-                plotBackgroundColor: null,
-                plotBorderWidth: null,
-                plotShadow: false,
-                //type: 'pie'
-            },
-            title: {
-                text: 'Guest Family',
-                align: 'center',
-                verticalAlign: 'middle',
-                y: 40
-            },
-            credits: false,
-            exporting: false,
-            tooltip: {
-                pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>'
-            },
-            plotOptions: {
-                pie: {
-                    dataLabels: {
-                        enabled: true,
-                        distance: -30,
-                        style: {
-                            fontWeight: 'bold',
-                            color: 'white',
-                            textShadow: '0px 1px 2px black'
-                        }
-                    },
-                    startAngle: -90,
-                    endAngle: 90,
-                    center: ['50%', '75%']
-                }
-            },
-            series: [{
-                type: 'pie',
-                innerSize: '50%',
-                name: 'GuestFamily',
-                data: <?php echo json_encode($data, JSON_NUMERIC_CHECK); ?>
-            }]
-    });
-
-    $('#containerVMGuestWindows').highcharts({
-        chart: {
-            type: 'column'
-        },
-        title: {
-            text: 'Monthly Average Rainfall'
-        },
-        subtitle: {
-            text: 'Source: WorldClimate.com'
-        },
-        xAxis: {
-            categories: [
-                ''
-            ],
-            crosshair: true
-        },
-        yAxis: {
-            min: 0,
-            title: {
-                text: ''
-            }
-        },
-        tooltip: {
-            headerFormat: '<span style="font-size:10px">{point.key}</span><table>',
-            pointFormat: '<tr><td style="color:{series.color};padding:0">{series.name}: </td>' +
-                '<td style="padding:0"><b>{point.y}</b></td></tr>',
-            footerFormat: '</table>',
-            shared: true,
-            useHTML: true
-        },
-        plotOptions: {
-            column: {
-                pointPadding: 0.2,
-                borderWidth: 0
-            }
-        },
-        series: <?php echo json_encode($dataWindowsHash, JSON_NUMERIC_CHECK); ?>
-    });
-
-    $('#containerVMGuestLinux').highcharts({
-            chart: {
-                plotBackgroundColor: null,
-                plotBorderWidth: null,
-                plotShadow: false,
-                type: 'pie'
-            },
-            title: { text: null },
-            credits: false,
-            exporting: false,
-            tooltip: { pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>' },
-            plotOptions: {
-                pie: {
-                    allowPointSelect: true,
-                    cursor: 'pointer',
-                    dataLabels: {
-                        enabled: true,
-                        format: '<b>{point.name}</b>: {point.percentage:.1f} %',
-                        style: { color: (Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black' }
-                    },
-                    showInLegend: false
-                }
-            },
-            series: [{
-                name: 'Brands',
-                colorByPoint: true,
-                data: <?php echo json_encode($dataLinuxHash, JSON_NUMERIC_CHECK); ?>
-            }]
-    });
-});
-
-</script>
-
-        <hr class="divider-dashed" />
-
-<?php //endif; ?>
- -->
-
-
-
-
-
 
 	</div>
 <?php require("footer.php"); ?>
