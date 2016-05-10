@@ -48,10 +48,10 @@ if($check->getModuleSchedule('vcCertificatesReport') != 'off') {
   $check->displayCheck([  'xmlFile' => "certificates-global.xml",
                           'xpathQuery' => "/certificates/certificate",
                           "id" => "VCCERTIFICATESREPORT",
-                          'thead' => array('Type', 'URL', 'Trust Start', 'Trust End', 'Expiry', 'vCenter'),
-                          'tbody' => array('"<td>".$entry->type."</td>"', '"<td>".$entry->url."</td>"', '"<td>".$entry->start."</td>"', '"<td>".$entry->end."</td>"', '"<td>".$entry->expiry."</td>"', '"<td>".$entry->vcenter."</td>"')]);
+                          'thead' => array('Type', 'URL', 'Trust Start', 'Trust End', 'Expiry (d)', 'vCenter'),
+                          'tbody' => array('"<td>".$entry->type."</td>"', '"<td>".$entry->url."</td>"', '"<td>".$entry->start."</td>"', '"<td>".$entry->end."</td>"', '"<td>".secondsToTime($entry->expiry)."</td>"', '"<td>".$entry->vcenter."</td>"'),
+                          'order' => '[ 4, "asc" ]']);
 }
 ?>
-    <h2>Permission report</h2>
 	</div>
 <?php require("footer.php"); ?>
