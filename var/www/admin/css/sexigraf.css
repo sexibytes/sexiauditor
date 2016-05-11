@@ -406,3 +406,107 @@ input[readonly] {
 #back-to-top:hover {
     background: black;
 }
+
+
+
+
+
+
+
+
+.tile-stats.tile-red {
+  background: #f56954;
+}
+.tile-stats.tile-red:hover {
+  background: #f4543c;
+}
+.tile-stats {
+  position: relative;
+  display: block;
+  background: #303641;
+  padding: 20px;
+  margin-bottom: 10px;
+  overflow: hidden;
+  -webkit-border-radius: 5px;
+  -webkit-background-clip: padding-box;
+  -moz-border-radius: 5px;
+  -moz-background-clip: padding;
+  border-radius: 5px;
+  background-clip: padding-box;
+  -webkit-transition: all 300ms ease-in-out;
+  -moz-transition: all 300ms ease-in-out;
+  -o-transition: all 300ms ease-in-out;
+  transition: all 300ms ease-in-out;
+}
+
+.tile-stats.tile-red .icon {
+  color: rgba(0, 0, 0, 0.1);
+}
+.tile-stats .icon {
+  color: rgba(0, 0, 0, 0.1);
+  position: absolute;
+  right: 5px;
+  bottom: 45px;
+  z-index: 1;
+}
+
+.tile-stats .icon i {
+  font-size: 100px;
+  line-height: 0;
+  margin: 0;
+  padding: 0;
+  vertical-align: bottom;
+}
+.tile-stats.tile-red .num, .tile-stats.tile-red h3, .tile-stats.tile-red p {
+  color: #fff;
+}
+.tile-stats .num {
+  font-size: 38px;
+  font-weight: bold;
+}
+.tile-stats .num, .tile-stats h3, .tile-stats p {
+  position: relative;
+  color: #fff;
+  z-index: 5;
+  margin: 0;
+  padding: 0;
+}
+.tile-stats h3 {
+  font-size: 18px;
+  margin-top: 5px;
+}
+.tile-stats p {
+  font-size: 11px;
+  margin-top: 5px;
+}
+.tile-stats .num, .tile-stats h3, .tile-stats p {
+  position: relative;
+  color: #fff;
+  z-index: 5;
+  margin: 0;
+  padding: 0;
+}
+
+.tile-stats.tile-green:hover {
+  background: #008d4c;
+}
+.tile-stats.tile-green {
+  background: #00a65a;
+}
+
+.tile-stats.tile-aqua:hover {
+  background: #00acd6;
+}
+.tile-stats.tile-aqua {
+  background: #00c0ef;
+}
+
+
+
+.table-title {
+  background-color: #f5f5f5;
+  padding: 10px;
+  min-width: 150px;
+  color: black;
+  font-weight: bold;
+}
