@@ -526,8 +526,8 @@ sub certificatesReport {
 				$urlToCheck = $urlToCheck->host . ":" . $urlToCheck->port;
 				# print(Dumper($urlToCheck));
 				my $command = `echo "QUIT" | timeout 3 openssl s_client -connect $urlToCheck 2>/dev/null | openssl x509 -noout -dates`;
-				print(Dumper($command));
-				exit;
+				# print(Dumper($command));
+				# exit;
 				$command =~ /^notBefore=(.*)$/m;
 				$startDate = $1;
 				$command =~ /^notAfter=(.*)$/m;
