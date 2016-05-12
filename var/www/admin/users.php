@@ -11,13 +11,13 @@ if (is_writeable($xmlPasswordsFile)):
 	if ($_SERVER['REQUEST_METHOD'] == 'POST'){
     $issue = true;
     do {
-      $xmlSettingsFile = "/var/www/admin/conf/modulesettings.xml";
+      $xmlSettingsFile = "/var/www/admin/conf/configs.xml";
       if (is_readable($xmlSettingsFile)) {
         $xmlSettings = simplexml_load_file($xmlSettingsFile);
-        $smtpHost = $xmlSettings->xpath('/settings/setting[id="smtpAddress"]')[0]->value;
-        $smtpSender = $xmlSettings->xpath('/settings/setting[id="senderMail"]')[0]->value;
-        $smtpRecipient = $xmlSettings->xpath('/settings/setting[id="recipientMail"]')[0]->value;
-        $smtpHost = $xmlSettings->xpath('/settings/setting[id="smtpAddress"]')[0]->value;
+        $smtpHost = $xmlSettings->xpath('/configs/config[id="smtpAddress"]')[0]->value;
+        $smtpSender = $xmlSettings->xpath('/configs/config[id="senderMail"]')[0]->value;
+        $smtpRecipient = $xmlSettings->xpath('/configs/config[id="recipientMail"]')[0]->value;
+        $smtpHost = $xmlSettings->xpath('/configs/config[id="smtpAddress"]')[0]->value;
         $mail = new PHPMailer;
         $mail->isSMTP();
         $mail->Host = $smtpHost;
