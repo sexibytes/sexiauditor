@@ -245,24 +245,6 @@ class SexiCheck {
     $this->powerChoice = $powerChoice;
     $this->alarmStatus = $alarmStatus;
     $this->servicePolicyChoice = $servicePolicyChoice;
-
-    global $xmlStartPath;
-    $this->xmlStartPath = $xmlStartPath;
-    $this->scannedDirectories = array_values(array_diff(scandir($xmlStartPath, SCANDIR_SORT_DESCENDING), array('..', '.', 'latest')));
-    if ($_SERVER['REQUEST_METHOD'] == 'POST'){
-      $this->selectedDate = $_POST["selectedDate"];
-      foreach ($this->scannedDirectories as $key => $value) {
-        if (strpos($value, str_replace("/","",$this->selectedDate)) === 0) {
-          $this->xmlSelectedPath = $value;
-          break;
-        }
-      }
-    } else {
-      $this->selectedDate = DateTime::createFromFormat('Ymd', $this->scannedDirectories[0])->format('Y/m/d');
-      $this->xmlSelectedPath = "latest";
-    }
-    # Header generation
-    $this->displayHeader($_SERVER['SCRIPT_NAME']);
   }
 
   public function displayCheck($args) {
@@ -446,14 +428,11 @@ data: ' . json_encode($data, JSON_NUMERIC_CHECK) . '
     </div>
     <script type="text/javascript">
     $(document).ready( function () {
-      $("#tab_' . $this->id . '").DataTable( {
-        "search": {
-          "smart": false,
-          "regex": true
-        },'."\n";
-          if (!is_null($this->order)) { $this->footer .= '        "order": [' . $this->order . '],'."\n"; }
-          if (!is_null($this->columnDefs)) { $this->footer .= '        "columnDefs": [' . $this->columnDefs . '],'."\n"; }
-          $this->footer .= '      } );
+      $("#tab_' . $this->id . '").DataTable( {'."\n";
+        if ($this->typeCheck != "pivotTableGraphed") { $this->footer .= '        "search": { "smart": false, "regex": true },'."\n"; } else { $this->footer .= '        "searching": false, "lengthChange": false, "info": false,'; }
+        if (!is_null($this->order)) { $this->footer .= '        "order": [' . $this->order . '],'."\n"; }
+        if (!is_null($this->columnDefs)) { $this->footer .= '        "columnDefs": [' . $this->columnDefs . '],'."\n"; }
+        $this->footer .= '      } );
     } );
     </script>'."\n";
         }
@@ -474,42 +453,56 @@ data: ' . json_encode($data, JSON_NUMERIC_CHECK) . '
     if ($this->typeCheck == "pivotTableGraphed") { echo $this->graph; }
   }
 
-  public function displayHeader($formPage) {
-    global $title;
-    $this->header = "";
-    $this->header .= '      <div style="padding-top: 10px; padding-bottom: 10px;" class="container">
-        <div class="row">
-          <div class="col-lg-10 alert alert-info" style="margin-top: 20px; text-align: center;">
-            <h1 style="margin-top: 10px;">'.$title.' on ' . DateTime::createFromFormat('Y/m/d', $this->selectedDate)->format('l jS F Y') . '</h1>
-          </div>
-          <div class="alert col-lg-2">
-            <form action="' . $formPage . '" style="margin-top: 5px;" method="post">
-              <div class="form-group" style="margin-bottom: 5px;">
-                <div class="input-group date" id="datetimepicker11">
-                  <input type="text" class="form-control" name="selectedDate" readonly />
-                  <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
-                </div>
-              </div>
-              <button type="submit" class="btn btn-default" style="width: 100%">Select this date</button>
-              <script type="text/javascript">'."\n";
-    $this->header .= "              $(function () {
-                $('#datetimepicker11').datetimepicker({
-                  ignoreReadonly: true,
-                  format: 'YYYY/MM/DD',
-                  showTodayButton: true,
-                  defaultDate: moment(\"" . $this->selectedDate . "\", \"YYYY/MM/DD\"),
-                  enabledDates: [\n";
-    foreach ($this->scannedDirectories as $xmlDirectory) {
-      $this->header .= '                   moment("' . DateTime::createFromFormat('Ymd', $xmlDirectory)->format('Y/m/d H:i') . '", "YYYY/MM/DD HH:ii"),' . "\n";
+  public function displayHeader($formPage, $visible = true) {
+    global $xmlStartPath;
+    $this->xmlStartPath = $xmlStartPath;
+    $this->scannedDirectories = array_values(array_diff(scandir($xmlStartPath, SCANDIR_SORT_DESCENDING), array('..', '.', 'latest')));
+    if ($_SERVER['REQUEST_METHOD'] == 'POST'){
+      $this->selectedDate = $_POST["selectedDate"];
+      foreach ($this->scannedDirectories as $key => $value) {
+        if (strpos($value, str_replace("/","",$this->selectedDate)) === 0) {
+          $this->xmlSelectedPath = $value;
+          break;
+        }
+      }
+    } else {
+      $this->selectedDate = DateTime::createFromFormat('Ymd', $this->scannedDirectories[0])->format('Y/m/d');
+      $this->xmlSelectedPath = "latest";
     }
-    $this->header .= '                  ]
-                });
-              });
-              </script>
-            </form>
+    global $title;
+    $this->header = ($visible) ? '  <div style="padding-top: 10px; padding-bottom: 10px;" class="container">'."\n" : '  <div id="purgeLoading" style="display:flex;"><span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>&nbsp; Loading inventory, please wait for awesomeness ...</div>' . "\n" . '  <div style="display:none; padding-top: 10px; padding-bottom: 10px;" class="container" id="wrapper-container">'."\n";
+    $this->header .= '    <div class="row">
+      <div class="col-lg-10 alert alert-info" style="margin-top: 20px; text-align: center;">
+        <h1 style="margin-top: 10px;">'.$title.' on ' . DateTime::createFromFormat('Y/m/d', $this->selectedDate)->format('l jS F Y') . '</h1>
+      </div>
+      <div class="alert col-lg-2">
+        <form action="' . $formPage . '" style="margin-top: 5px;" method="post">
+          <div class="form-group" style="margin-bottom: 5px;">
+            <div class="input-group date" id="datetimepicker11">
+              <input type="text" class="form-control" name="selectedDate" readonly />
+              <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
+            </div>
           </div>
-        </div>
-        <div class="row" id="toc"><ul><li><strong>Inline TOC</strong> <i class="glyphicon glyphicon-chevron-right"></i><i class="glyphicon glyphicon-chevron-right"></i></li></ul></div>'."\n";
+          <button type="submit" class="btn btn-default" style="width: 100%">Select this date</button>
+          <script type="text/javascript">'."\n";
+    $this->header .= "             $(function () {
+              $('#datetimepicker11').datetimepicker({
+                ignoreReadonly: true,
+                format: 'YYYY/MM/DD',
+                showTodayButton: true,
+                defaultDate: moment(\"" . $this->selectedDate . "\", \"YYYY/MM/DD\"),
+                enabledDates: [\n";
+    foreach ($this->scannedDirectories as $xmlDirectory) {
+      $this->header .= '                  moment("' . DateTime::createFromFormat('Ymd', $xmlDirectory)->format('Y/m/d H:i') . '", "YYYY/MM/DD HH:ii"),' . "\n";
+    }
+    $this->header .= '                ]
+              });
+            });
+          </script>
+        </form>
+      </div>
+    </div>'."\n";
+    if ($visible) { $this->header .= '    <div class="row" id="toc"><ul><li><strong>Tags</strong> <i class="glyphicon glyphicon-chevron-right"></i><i class="glyphicon glyphicon-chevron-right"></i></li></ul></div><hr class="divider-dashed">'."\n"; }
     echo $this->header;
   }
 
@@ -544,6 +537,32 @@ data: ' . json_encode($data, JSON_NUMERIC_CHECK) . '
 
   public function getSumValue() {
     # code...
+  }
+
+  public function getSelectedPath() {
+    return $this->xmlStartPath.$this->xmlSelectedPath;
+  }
+
+  public function getVMInfos($vmMoRef, $vcenter) {
+    $xmlFile = $this->xmlStartPath.$this->xmlSelectedPath.'/vms-global.xml';
+    if (is_readable($xmlFile)) {
+      $xmlContent = simplexml_load_file($xmlFile);
+    	$xpathFull = $xmlContent->xpath("/vms/vm[moref='" . $vmMoRef . "' and vcenter='" . $vcenter . "']");
+    	return ((count($xpathFull) == 1) ? $xpathFull[0] : 'inexistant');
+    } else {
+      return 'error';
+    }
+  }
+
+  public function getDatastoreInfos($datastoreName, $vcenter) {
+    $xmlFile = $this->xmlStartPath.$this->xmlSelectedPath.'/datastores-global.xml';
+    if (is_readable($xmlFile)) {
+      $xmlContent = simplexml_load_file($xmlFile);
+      $xpathFull = $xmlContent->xpath("/datastores/datastore[name='" . $datastoreName . "' and vcenter='" . $vcenter . "']");
+      return ((count($xpathFull) == 1) ? $xpathFull[0] : 'inexistant');
+    } else {
+      return 'error';
+    }
   }
 }
 
