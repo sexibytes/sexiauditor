@@ -69,7 +69,7 @@ $(document).ready( function() {
 		echo '		<table role="presentation" class="table table-striped"><tbody class="files">';
 		while (false !== ($file = readdir($handle))) {
 			if ($file != "." && $file != ".." && $file != ".gitignore") {
-        $tempMessageOutput = shell_exec("/usr/bin/unzip -c \"".$dir.$file."\" sexigraf-master/updateRunner.xml");
+        $tempMessageOutput = shell_exec("/usr/bin/unzip -c \"".$dir.$file."\" sexiauditor-master/updateRunner.xml");
         preg_match('/\s*<version>(?<version>.*)<\/version>/', $tempMessageOutput, $matches);
 				echo '		<tr class="template-download fade in">';
 				echo '        <td><span class="preview"></span></td>';
