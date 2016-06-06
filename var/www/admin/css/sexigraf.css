@@ -5,7 +5,7 @@ p {
   padding-top:10px;
 }
 body {
-  font: 16px "Droid Sans", "Lucida Grande", Helvetica, Arial, sans-serif;
+  font: 16px Roboto, "Droid Sans", "Lucida Grande", Helvetica, Arial, sans-serif;
 /*  background-color: #f8f8f8; */
 }
 .navbar-brand {
