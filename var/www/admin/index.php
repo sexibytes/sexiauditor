@@ -30,6 +30,7 @@ if (count($xmlSubDirectories) < 1) {
     $totalDatastore = "31.4K";
     $averageVMPervCenter = 426;
     $totalHostCPU = 0;
+    $totalHostCPUMhz = 0;
     $totalHostMemory = 0;
     $totalDatastoreSize = 0;
     $totalvMotion = 0;
