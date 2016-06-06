@@ -7,6 +7,7 @@
   <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
   <link rel="stylesheet" type="text/css" href="css/BootstrapXL.css">
   <link rel="stylesheet" type="text/css" href="css/sexigraf.css">
+  <link href='https://fonts.googleapis.com/css?family=Roboto' rel='stylesheet' type='text/css'>
 <?php
     if(isset($additionalStylesheet)) {
         foreach ($additionalStylesheet as $stylesheet ) { echo '  <link rel="stylesheet" type="text/css" href="' . $stylesheet . '">' . "\n"; }
