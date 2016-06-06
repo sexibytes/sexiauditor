@@ -457,6 +457,9 @@ data: ' . json_encode($data, JSON_NUMERIC_CHECK) . '
     global $xmlStartPath;
     $this->xmlStartPath = $xmlStartPath;
     $this->scannedDirectories = array_values(array_diff(scandir($xmlStartPath, SCANDIR_SORT_DESCENDING), array('..', '.', 'latest')));
+    if (count($this->scannedDirectories) < 1) {
+      throw new Exception('There is no data generated yet. Please add some vCenter to the <a href="credstore.php">Credential Store</a> and come back as soon as data will be retrieved (should take just a couple of minutes).');
+    }
     if ($_SERVER['REQUEST_METHOD'] == 'POST'){
       $this->selectedDate = $_POST["selectedDate"];
       foreach ($this->scannedDirectories as $key => $value) {
