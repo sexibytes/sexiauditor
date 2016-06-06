@@ -8,13 +8,13 @@ require("header.php");
 require("helper.php");
 
 $xmlPath = "/opt/vcron/data/";
-if (!file_exists($xmlPath)) : 
+if (!file_exists($xmlPath)) :
     echo '<div class="alert alert-danger" role="alert"><span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span><span class="sr-only">Error:</span> Folder ' . $xmlPath . ' don\'t exist, aborting... </div>';
 else:
 
-$xmlSubDirectories = scandir($xmlPath, SCANDIR_SORT_DESCENDING);
-# if no folder available (minus '.' and '..') we switch to vopendata sample
-if (count($xmlSubDirectories) < 3) {
+$xmlSubDirectories = array_diff(scandir($xmlPath, SCANDIR_SORT_DESCENDING), array('..', '.', 'README.md', 'latest'));
+# if no folder available (minus '.', '..' and 'latest') we switch to vopendata sample
+if (count($xmlSubDirectories) < 1) {
 ##########################################
 # vOpenData default sample               #
 # It's used only at the beginning before #
@@ -22,7 +22,7 @@ if (count($xmlSubDirectories) < 3) {
 ##########################################
     $introductionLabel = 'This is a selection of statistics from the <a href="http://www.vopendata.org">vOpenData project</a>. Want to see you infrastructure metrics instead? Add your infrastructure in the Admin View > Credential Store!';
     $totalVMs = "168K";
-    $totalvCenter = 395; 
+    $totalvCenter = 395;
     $totalCluster = "1.6K";
     $totalHost = "13.9K";
     $totalVMFS = "34.4K";
