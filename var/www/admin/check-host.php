@@ -21,6 +21,8 @@ require("helper.php");
 # Main class loading
 try {
   $check = new SexiCheck();
+  # Header generation
+  $check->displayHeader($_SERVER['SCRIPT_NAME']);
 } catch (Exception $e) {
   # Any exception will be ending the script, we want exception-free run
   exit('  <div class="alert alert-danger" role="alert"><span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span><span class="sr-only">Error:</span> ' . $e->getMessage() . '</div>');
