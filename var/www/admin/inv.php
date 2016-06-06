@@ -19,6 +19,11 @@ require("header.php");
 require("helper.php");
 
 $scannedDirectories = array_values(array_diff(scandir($xmlStartPath, SCANDIR_SORT_DESCENDING), array('..', '.', 'latest')));
+if (count($scannedDirectories) < 1) {
+  echo '  <div class="alert alert-warning" role="alert"><span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span><span class="sr-only">Error:</span> There is no data generated yet. Please add some vCenter to the <a href="credstore.php">Credential Store</a> and come back as soon as data will be retrieved (should take just a couple of minutes).</div>';
+  require("footer.php");
+  exit;
+}
 if ($_SERVER['REQUEST_METHOD'] == 'POST'){
     $selectedDate = $_POST["selectedDate"];
     foreach ($scannedDirectories as $key => $value) {
