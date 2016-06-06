@@ -19,13 +19,13 @@ require("helper.php");
 		$safe_submit = secureInput($_POST["submit"]);
 		$safe_vcenter = secureInput($_POST["input-vcenter"]);
 		$username = secureInput(str_replace("\\","\\\\",$_POST["input-username"]));
-		$password = secureInput($_POST["input-password"]);
 		switch ($safe_submit) {
 			case "addmodify":
+				$password = secureInput($_POST["input-password"]);
 				$errorHappened = false;
 				if (empty($safe_vcenter) or empty($username) or empty($password)) {
 					$errorHappened = true;
-					$errorMessage = "All mandatory values have not been provided."; 
+					$errorMessage = "All mandatory values have not been provided.";
 				} elseif (!filter_var($safe_vcenter, FILTER_VALIDATE_IP) and (gethostbyname($safe_vcenter) == $safe_vcenter)) {
 					$errorHappened = true;
 					$errorMessage = "vCenter IP or FQDN is not correct.";
@@ -98,7 +98,7 @@ require("helper.php");
 			<td><input type="password" class="form-control" name="input-password" placeholder="Password" aria-describedby="password-label"></td>
 			<td><button name="submit" class="btn btn-success" value="addmodify">Add</button></td>
 		</form></tr>
-<?php 
+<?php
 	$credstoreData = shell_exec("/usr/lib/vmware-vcli/apps/general/credstore_admin.pl --credstore " . $credstoreFile . " list");
 	foreach(preg_split("/((\r?\n)|(\r\n?))/", $credstoreData) as $line) {
 		if (strlen($line) == 0) { break; }
@@ -116,7 +116,7 @@ require("helper.php");
 		</tr>
 ';
 		}
-	} 
+	}
 ?>
 	      </tbody>
 	    </table>
