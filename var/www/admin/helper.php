@@ -32,6 +32,24 @@ function secondsToTime($inputSeconds) {
   }
 }
 
+function isHttpAvailable($domain) {
+  //check, if a valid url is provided
+  if (!filter_var($domain, FILTER_VALIDATE_URL)) return false;
+
+  //initialize curl
+  $curlInit = curl_init($domain);
+  curl_setopt($curlInit,CURLOPT_CONNECTTIMEOUT,5);
+  curl_setopt($curlInit,CURLOPT_HEADER,true);
+  curl_setopt($curlInit,CURLOPT_NOBODY,true);
+  curl_setopt($curlInit,CURLOPT_RETURNTRANSFER,true);
+
+  //get answer
+  $response = curl_exec($curlInit);
+  curl_close($curlInit);
+  if ($response) return true;
+  return false;
+}
+
 function humanFileSize($size,$unit="") {
         if( (!$unit && $size >= 1<<30) || $unit == "GB")
                 return number_format($size/(1<<30),2)."GB";
