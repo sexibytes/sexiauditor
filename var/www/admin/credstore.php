@@ -26,6 +26,9 @@ require("helper.php");
 				if (empty($safe_vcenter) or empty($username) or empty($password)) {
 					$errorHappened = true;
 					$errorMessage = "All mandatory values have not been provided.";
+				} elseif (!isHttpAvailable($safe_vcenter)) {
+					$errorHappened = true;
+					$errorMessage = "Cannot connect to server " . $safe_vcenter . ", please check firewall access.";
 				} elseif (!filter_var($safe_vcenter, FILTER_VALIDATE_IP) and (gethostbyname($safe_vcenter) == $safe_vcenter)) {
 					$errorHappened = true;
 					$errorMessage = "vCenter IP or FQDN is not correct.";
