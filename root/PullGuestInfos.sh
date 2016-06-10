@@ -47,7 +47,7 @@ if [[ $GUESTINFO =~ "VMware ESXi" ]]; then
       needUpdate=true
     fi
 
-    echo "$GUESTNAME" > /etc/hostname
+    echo "$GUESTNAME" > /tmp/tmp-hostname
 
     if cmp -s "/tmp/tmp-hostname" "/etc/hostname"; then
       rm -f /tmp/tmp-hostname
