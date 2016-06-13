@@ -34,7 +34,7 @@
     <nav class="navbar navbar-default navbar-fixed-top" role="navigation" style="margin-bottom: 0">
       <div class="navbar-brand">SexiAuditor</div>
       <ul class="nav navbar-top-links navbar-right">
-        <li><a href="passwordupdate.php">Welcome <?php echo (isset($_SESSION['displayname']) ? $_SESSION['displayname'] : $_SESSION['username']) . ((isset($_SESSION['role']) && $_SESSION['role'] == 'admin') ? ' <i class="glyphicon glyphicon-star"></i>' : ''); ?></a></li>
+        <li><a href="passwordupdate.php">Welcome <?php echo (isset($_SESSION['displayname']) ? $_SESSION['displayname'] : (isset($_SESSION['username']) ? $_SESSION['username'] : 'Unknown')) . ((isset($_SESSION['role']) && $_SESSION['role'] == 'admin') ? ' <i class="glyphicon glyphicon-star"></i>' : ''); ?></a></li>
         <li><i class="glyphicon glyphicon-option-vertical" style="color: #BBB;"></i></li>
         <li class="dropdown">
           <a id="dLabel" class="dropdown-toggle" data-toggle="dropdown" href="#" aria-expanded="false">
