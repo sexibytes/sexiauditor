@@ -1,5 +1,5 @@
 --- lib/VMware/share/VMware/VICommon.pm	2016-02-17 06:00:51.000000000 +0000
-+++ lib/VMware/share/VMware/VICommon2.pm	2016-06-10 15:16:14.955410829 +0000
++++ lib/VMware/share/VMware/VICommon.pm	2016-06-10 15:16:14.955410829 +0000
 @@ -2328,8 +2328,8 @@
  sub get_session_loaded {
     my $self = shift;
