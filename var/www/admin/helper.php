@@ -33,9 +33,6 @@ function secondsToTime($inputSeconds) {
 }
 
 function isHttpAvailable($domain) {
-  //check, if a valid url is provided
-  if (!filter_var($domain, FILTER_VALIDATE_URL)) return false;
-
   //initialize curl
   $curlInit = curl_init($domain);
   curl_setopt($curlInit,CURLOPT_CONNECTTIMEOUT,5);
