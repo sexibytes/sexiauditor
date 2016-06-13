@@ -1,0 +1,3 @@
+# sexiauditor should be schedule on the more often scale (ie hourly)
+# it will handle schedule for daily, weekly and monthly on its own
+0 *  * * * root /usr/bin/perl /opt/vcron/scheduler.pl
