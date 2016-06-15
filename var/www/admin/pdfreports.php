@@ -35,10 +35,10 @@ require("helper.php");
       <tbody>
 <?php
   $dir = "/var/www/admin/reports/";
-	if ($handle = opendir($dir)) {
+  if ($handle = opendir($dir)) {
     $numReport = 1;
-		while (false !== ($file = readdir($handle))) {
-			if ($file != "." && $file != ".." && $file != ".gitignore") {
+    while (false !== ($file = readdir($handle))) {
+      if ($file != "." && $file != ".." && $file != ".gitignore") {
         $lastModified = date('F d Y, H:i:s',filemtime($dir.$file));
         echo '            <tr><td class="text-left"><i class="glyphicon glyphicon-file"></i> <a href="#report'.$numReport.'" data-toggle="modal" rel="external">' . $file . '</td><td class="text-right">' . human_filesize(filesize($dir.$file)) . '</a></td><td class="text-right">' . $lastModified . '</td></tr>';
         echo '
@@ -62,27 +62,27 @@ require("helper.php");
                   </div>
               </div>
           </div>';
-          $numReport++;
-		    }
-		}
-		closedir($handle);
-    echo '    	</tbody></table>';
+        $numReport++;
+      }
+    }
+    closedir($handle);
+    echo '      </tbody></table>';
 }
 ?>
-            </tbody>
-        </table>
-        </div>
-        <script type="text/javascript">
-        $(document).ready( function () {
-            $.fn.dataTable.moment( 'MMMM DD YYYY, HH:mm:ss' );
-            $('#pdfReports').DataTable( {
-                "search": {
-                    "smart": false,
-                    "regex": true
-                },
-				        "columnDefs": [{ type: 'file-size', targets: [ 1 ] }]
-            } );
-         } );
-        </script>
+      </tbody>
+    </table>
+  </div>
+  <script type="text/javascript">
+  $(document).ready( function () {
+      $.fn.dataTable.moment( 'MMMM DD YYYY, HH:mm:ss' );
+      $('#pdfReports').DataTable( {
+          "search": {
+              "smart": false,
+              "regex": true
+          },
+          "columnDefs": [{ type: 'file-size', targets: [ 1 ] }]
+      } );
+   } );
+  </script>
 </div>
 <?php require("footer.php"); ?>
