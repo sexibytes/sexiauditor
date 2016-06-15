@@ -48,111 +48,111 @@ function isHttpAvailable($domain) {
 }
 
 function humanFileSize($size,$unit="") {
-        if( (!$unit && $size >= 1<<30) || $unit == "GB")
-                return number_format($size/(1<<30),2)."GB";
-        if( (!$unit && $size >= 1<<20) || $unit == "MB")
-                return number_format($size/(1<<20),2)."MB";
-        if( (!$unit && $size >= 1<<10) || $unit == "KB")
-                return number_format($size/(1<<10),2)."KB";
-        return number_format($size)." bytes";
+  if( (!$unit && $size >= 1<<30) || $unit == "GB")
+    return number_format($size/(1<<30),2)."GB";
+  if( (!$unit && $size >= 1<<20) || $unit == "MB")
+    return number_format($size/(1<<20),2)."MB";
+  if( (!$unit && $size >= 1<<10) || $unit == "KB")
+    return number_format($size/(1<<10),2)."KB";
+  return number_format($size)." bytes";
 }
 
 function human_filesize($size, $precision = 2, $unity = 'B') {
-    for($i = 0; ($size / 1024) > 0.9; $i++, $size /= 1024) {}
-    return round($size, $precision).' '.[$unity,"k$unity","M$unity","G$unity","T$unity","P$unity","E$unity","Z$unity","Y$unity"][$i];
+  for($i = 0; ($size / 1024) > 0.9; $i++, $size /= 1024) {}
+  return round($size, $precision).' '.[$unity,"k$unity","M$unity","G$unity","T$unity","P$unity","E$unity","Z$unity","Y$unity"][$i];
 }
 
 function unlinkRecursive($dir) {
-	if(!$dh = @opendir($dir))
-        	return;
-        while (false !== ($obj = readdir($dh))) {
-        	if($obj == '.' || $obj == '..')
-                	continue;
-                if (!@unlink($dir . '/' . $obj))
-                        unlinkRecursive($dir.'/'.$obj);
-        }
-        closedir($dh);
-        @rmdir($dir);
-        return;
+  if(!$dh = @opendir($dir))
+    return;
+  while (false !== ($obj = readdir($dh))) {
+    if($obj == '.' || $obj == '..')
+      continue;
+    if (!@unlink($dir . '/' . $obj))
+      unlinkRecursive($dir.'/'.$obj);
+  }
+  closedir($dh);
+  @rmdir($dir);
+  return;
 }
 
 function rcopy($src, $dest){
-	if(!is_dir($src)) return false;
-        if(!is_dir($dest))
-        	if(!mkdir($dest))
-                	return false;
-        $i = new DirectoryIterator($src);
-        foreach($i as $f) {
-             	if($f->isFile())
-                      	copy($f->getRealPath(), "$dest/" . $f->getFilename());
-                else if(!$f->isDot() && $f->isDir())
-                     	rcopy($f->getRealPath(), "$dest/$f");
-        }
+  if(!is_dir($src)) return false;
+  if(!is_dir($dest))
+    if(!mkdir($dest))
+      return false;
+  $i = new DirectoryIterator($src);
+  foreach($i as $f) {
+     if($f->isFile())
+      copy($f->getRealPath(), "$dest/" . $f->getFilename());
+    else if(!$f->isDot() && $f->isDir())
+       rcopy($f->getRealPath(), "$dest/$f");
+  }
 }
 
 function php_file_tree_dir($directory, $first_call = true) {
-	$file = scandir($directory);
-	natcasesort($file);
-	$files = $dirs = array();
-	foreach($file as $this_file) {
-		if( is_dir("$directory/$this_file" ) ) $dirs[] = $this_file; else $files[] = $this_file;
-	}
-	$file = array_merge($dirs, $files);
+  $file = scandir($directory);
+  natcasesort($file);
+  $files = $dirs = array();
+  foreach($file as $this_file) {
+    if( is_dir("$directory/$this_file" ) ) $dirs[] = $this_file; else $files[] = $this_file;
+  }
+  $file = array_merge($dirs, $files);
 
-	if( count($file) > 2 ) {
-		$php_file_tree = "<ul";
-		if( $first_call ) { $php_file_tree .= " class=\"php-file-tree\""; $first_call = false; }
-		$php_file_tree .= ">";
-		foreach( $file as $this_file ) {
-			if( $this_file != "." && $this_file != ".." ) {
-				if( is_dir("$directory/$this_file") ) {
-					$php_file_tree .= "<li class=\"pft-directory\"><input type=\"checkbox\" name=\"pathChecked[]\" value=\"$directory/$this_file\"> <a href=\"#\"><strong>" . htmlspecialchars($this_file) . "</strong></a>";
-					$php_file_tree .= php_file_tree_dir("$directory/$this_file" , false);
-					$php_file_tree .= "</li>";
-				} else {
-					$php_file_tree .= "<li class=\"pft-file\"><input type=\"checkbox\" name=\"pathChecked[]\" value=\"$directory/$this_file\"> <strong>" . htmlspecialchars($this_file) . "</strong> (". humanFileSize(filesize("$directory/$this_file")) . ")</li>";
-				}
-			}
-		}
-		$php_file_tree .= "</ul>";
-	}
-	return $php_file_tree;
+  if( count($file) > 2 ) {
+    $php_file_tree = "<ul";
+    if( $first_call ) { $php_file_tree .= " class=\"php-file-tree\""; $first_call = false; }
+    $php_file_tree .= ">";
+    foreach( $file as $this_file ) {
+      if( $this_file != "." && $this_file != ".." ) {
+        if( is_dir("$directory/$this_file") ) {
+          $php_file_tree .= "<li class=\"pft-directory\"><input type=\"checkbox\" name=\"pathChecked[]\" value=\"$directory/$this_file\"> <a href=\"#\"><strong>" . htmlspecialchars($this_file) . "</strong></a>";
+          $php_file_tree .= php_file_tree_dir("$directory/$this_file" , false);
+          $php_file_tree .= "</li>";
+        } else {
+          $php_file_tree .= "<li class=\"pft-file\"><input type=\"checkbox\" name=\"pathChecked[]\" value=\"$directory/$this_file\"> <strong>" . htmlspecialchars($this_file) . "</strong> (". humanFileSize(filesize("$directory/$this_file")) . ")</li>";
+        }
+      }
+    }
+    $php_file_tree .= "</ul>";
+  }
+  return $php_file_tree;
 }
 
 function rand_line($fileName, $maxLineLength = 4096) {
-    $handle = @fopen($fileName, "r");
-    if ($handle) {
-        $random_line = null;
-        $line = null;
-        $count = 0;
-        while (($line = fgets($handle, $maxLineLength)) !== false) {
-            $count++;
-            // P(1/$count) probability of picking current line as random line
-            if(rand() % $count == 0) {
-              $random_line = $line;
-            }
-        }
-        if (!feof($handle)) {
-            echo "Error: unexpected fgets() fail\n";
-            fclose($handle);
-            return null;
-        } else {
-            fclose($handle);
-        }
-        return $random_line;
+  $handle = @fopen($fileName, "r");
+  if ($handle) {
+    $random_line = null;
+    $line = null;
+    $count = 0;
+    while (($line = fgets($handle, $maxLineLength)) !== false) {
+      $count++;
+      // P(1/$count) probability of picking current line as random line
+      if(rand() % $count == 0) {
+        $random_line = $line;
+      }
     }
+    if (!feof($handle)) {
+      echo "Error: unexpected fgets() fail\n";
+      fclose($handle);
+      return null;
+    } else {
+      fclose($handle);
+    }
+    return $random_line;
+  }
 }
 
 function addOrdinalNumberSuffix($num) {
-    if (!in_array(($num % 100),array(11,12,13))){
-		switch ($num % 10) {
-			// Handle 1st, 2nd, 3rd
-			case 1:  return $num.'st';
-			case 2:  return $num.'nd';
-			case 3:  return $num.'rd';
-		}
-    }
-    return $num.'th';
+  if (!in_array(($num % 100),array(11,12,13))){
+  switch ($num % 10) {
+    // Handle 1st, 2nd, 3rd
+    case 1:  return $num.'st';
+    case 2:  return $num.'nd';
+    case 3:  return $num.'rd';
+  }
+  }
+  return $num.'th';
 }
 
 function secureInput($data) { return htmlspecialchars(stripslashes(trim($data))); }
@@ -300,9 +300,9 @@ class SexiCheck {
     if (is_readable($this->xmlFile)) {
       // global $lang;
       $xmlContent = simplexml_load_file($this->xmlFile);
-    	$xpathFull = $xmlContent->xpath($this->xpathQuery);
-    	if (count($xpathFull) > 0) {
-        $this->header .= '    <h2 class="text-danger" id="' . $this->id . '"><i class="glyphicon glyphicon-exclamation-sign"></i> ' . $this->langDef[$this->id]["title"] . '</h2>'."\n";
+      $xpathFull = $xmlContent->xpath($this->xpathQuery);
+      if (count($xpathFull) > 0) {
+        $this->header .= '    <h2 class="text-danger anchor" id="' . $this->id . '"><i class="glyphicon glyphicon-exclamation-sign"></i> ' . $this->langDef[$this->id]["title"] . '</h2>'."\n";
         $this->header .= '    <div class="alert alert-warning" role="alert"><i>' . $this->langDef[$this->id]["description"] . '</i></div>'."\n";
         if ($this->typeCheck == "pivotTableGraphed") {
           $this->header .= '    <div class="row">'."\n";
@@ -320,55 +320,55 @@ class SexiCheck {
         $entries = 0;
         # $this->body generation will depend on check type
         switch ($this->typeCheck) {
-    			case 'majorityPerCluster':
-          	foreach (array_diff(array_count_values(array_map("strval", $xmlContent->xpath("/hosts/host/vcenter"))), array("1")) as  $key_vcenter => $value_vcenter) {
-          		foreach (array_diff(array_count_values(array_map("strval", $xmlContent->xpath("/hosts/host[vcenter='".$key_vcenter."']/cluster"))), array("1")) as  $key_cluster => $value_cluster) {
-          			if ($key_cluster == 'Standalone') { continue; }
-          			$majorityGroup = array_diff(array_count_values(array_map("strval", $xmlContent->xpath("/hosts/host[vcenter='".$key_vcenter."' and cluster='".$key_cluster."']/".$this->majorityProperty))), array("0"));
-          			if (count($majorityGroup) < 1) {
+          case 'majorityPerCluster':
+            foreach (array_diff(array_count_values(array_map("strval", $xmlContent->xpath("/hosts/host/vcenter"))), array("1")) as  $key_vcenter => $value_vcenter) {
+              foreach (array_diff(array_count_values(array_map("strval", $xmlContent->xpath("/hosts/host[vcenter='".$key_vcenter."']/cluster"))), array("1")) as  $key_cluster => $value_cluster) {
+                if ($key_cluster == 'Standalone') { continue; }
+                $majorityGroup = array_diff(array_count_values(array_map("strval", $xmlContent->xpath("/hosts/host[vcenter='".$key_vcenter."' and cluster='".$key_cluster."']/".$this->majorityProperty))), array("0"));
+                if (count($majorityGroup) < 1) {
                   $majorityGroup = '';
                 } else {
                   arsort($majorityGroup);
                   $majorityGroup = array_keys($majorityGroup)[0];
                 }
-          			foreach ($xmlContent->xpath("/hosts/host[vcenter='".$key_vcenter."' and cluster='".$key_cluster."' and ".$this->majorityProperty."!='".$majorityGroup."']") as $entry) {
+                foreach ($xmlContent->xpath("/hosts/host[vcenter='".$key_vcenter."' and cluster='".$key_cluster."' and ".$this->majorityProperty."!='".$majorityGroup."']") as $entry) {
                   $this->body .= '          <tr>';
                   foreach ($this->tbody as $column) {
                     $entries++;
                     $this->body .= eval("return $column;");
                   }
                   $this->body .= '</tr>'."\n";
-          			}
+                }
               }
-        		}
+            }
             if ($entries == 0) {
               $this->header = '';
-              $this->body = '    <h2 class="text-success" id="' . $this->id . '"><i class="glyphicon glyphicon-ok-sign"></i> ' . $this->langDef[$this->id]["title"] . ' <small>' . str_replace(array("\n", "\t", "\r"), '', (rand_line($this->achievementFile))) . '</small></h2>'."\n";
+              $this->body = '    <h2 class="text-success anchor" id="' . $this->id . '"><i class="glyphicon glyphicon-ok-sign"></i> ' . $this->langDef[$this->id]["title"] . ' <small>' . str_replace(array("\n", "\t", "\r"), '', (rand_line($this->achievementFile))) . '</small></h2>'."\n";
             }
             break;
           case 'mismatchPerCluster':
-          	foreach (array_diff(array_count_values(array_map("strval", $xmlContent->xpath("/hosts/host/vcenter"))), array("1")) as  $key_vcenter => $value_vcenter) {
-          		foreach (array_diff(array_count_values(array_map("strval", $xmlContent->xpath("/hosts/host[vcenter='".$key_vcenter."']/cluster"))), array("1")) as  $key_cluster => $value_cluster) {
-          			if ($key_cluster == 'Standalone') { continue; }
-          			$mismatchMatches = array_diff(array_count_values(array_map("strval", $xmlContent->xpath("/hosts/host[vcenter='".$key_vcenter."' and cluster='".$key_cluster."']/".$this->mismatchProperty))), array("1"));
+            foreach (array_diff(array_count_values(array_map("strval", $xmlContent->xpath("/hosts/host/vcenter"))), array("1")) as  $key_vcenter => $value_vcenter) {
+              foreach (array_diff(array_count_values(array_map("strval", $xmlContent->xpath("/hosts/host[vcenter='".$key_vcenter."']/cluster"))), array("1")) as  $key_cluster => $value_cluster) {
+                if ($key_cluster == 'Standalone') { continue; }
+                $mismatchMatches = array_diff(array_count_values(array_map("strval", $xmlContent->xpath("/hosts/host[vcenter='".$key_vcenter."' and cluster='".$key_cluster."']/".$this->mismatchProperty))), array("1"));
                 if (count($mismatchMatches) > 1) {
-          				$compliance = '<i class="glyphicon glyphicon-remove-sign text-danger"></i>';
-            			$mismatchEntry = "*Mismatch* ";
-          			} else {
-          				$compliance = '<i class="glyphicon glyphicon-ok-sign text-success"></i>';
-            			$mismatchEntry = "";
-          			}
-          			foreach (array_diff(array_count_values(array_map("strval", $xmlContent->xpath("/hosts/host[vcenter='".$key_vcenter."' and cluster='".$key_cluster."']/".$this->mismatchProperty))), array("1")) as  $key_entry => $value_entry) {
-          				$mismatchEntry .= " $key_entry";
-          			}
+                  $compliance = '<i class="glyphicon glyphicon-remove-sign text-danger"></i>';
+                  $mismatchEntry = "*Mismatch* ";
+                } else {
+                  $compliance = '<i class="glyphicon glyphicon-ok-sign text-success"></i>';
+                  $mismatchEntry = "";
+                }
+                foreach (array_diff(array_count_values(array_map("strval", $xmlContent->xpath("/hosts/host[vcenter='".$key_vcenter."' and cluster='".$key_cluster."']/".$this->mismatchProperty))), array("1")) as  $key_entry => $value_entry) {
+                  $mismatchEntry .= " $key_entry";
+                }
                 $this->body .= '          <tr>';
                 foreach ($this->tbody as $column) {
                   $entries++;
                   $this->body .= eval("return $column;");
                 }
                 $this->body .= '</tr>'."\n";
-          		}
-        		}
+              }
+            }
             break;
           case 'pivotTable':
             $dataPivot = array_diff(array_count_values(array_map("strval", $xmlContent->xpath($this->xpathQuery))), array("1"));
@@ -384,28 +384,26 @@ class SexiCheck {
             $this->graph .= '<div id="graph_' . $this->id . '" class="col-lg-8" style="min-height: 550px;">sdf</div>'."\n";
             $this->graph .= '            <script>
             var option = {
-    tooltip : {
-        trigger: "item",
-        formatter: "{b}<br/>{c} ({d}%)"
-    },
-                toolbox: {
-                  show : true,
-                  feature : {
-                    mark : {show: false},
-                    dataView : {show: false},
-                    magicType: { show : true, title : { line : "Display with line", bar : "Display with bar" }, type : ["line", "bar"] },
-                    restore : {show: true},
-                    saveAsImage : {show: true}
-                  }
-                },
-                calculable : true,
-                series : [
-                    {
-                        name:' . $this->id . ',
-                        type:"pie",
+              tooltip : {
+                  trigger: "item",
+                  formatter: "{b}<br/>{c} ({d}%)"
+              },
+              toolbox: {
+                show : true,
+                feature : {
+                  mark : {show: false},
+                  dataView : {show: false},
+                  magicType: { show : true, title : { line : "Display with line", bar : "Display with bar" }, type : ["line", "bar"] },
+                  restore : {show: true},
+                  saveAsImage : {show: true}
+                }
+              },
+              calculable : true,
+              series : [{
+                      name:' . $this->id . ',
+                      type:"pie",
 
             ';
-
 
             foreach ($dataPivot as $key => $value) {
               $data[] = (object) array('value' => $value, 'name' => $key);
@@ -413,18 +411,14 @@ class SexiCheck {
               $this->body .= '            <tr><td>' . $key . '</td><td>' . $value . '</td></tr>';
             }
 
-$this->graph .= '
-data: ' . json_encode($data, JSON_NUMERIC_CHECK) . '
-
-}
-]
-};
-                                    var ttbChart = echarts.init(document.getElementById("graph_' . $this->id . '"));
-                                    ttbChart.setTheme("macarons");
-                                    ttbChart.setOption(option);
-                                    </script>';
-
-
+            $this->graph .= '
+                        data: ' . json_encode($data, JSON_NUMERIC_CHECK) . '
+                    }]
+                  };
+                  var ttbChart = echarts.init(document.getElementById("graph_' . $this->id . '"));
+                  ttbChart.setTheme("macarons");
+                  ttbChart.setOption(option);
+            </script>';
             $this->graph .= '    </div><hr class="divider-dashed" />'."\n";
             break;
           default:
@@ -450,10 +444,10 @@ data: ' . json_encode($data, JSON_NUMERIC_CHECK) . '
         $this->footer .= '      } );
     } );
     </script>'."\n";
-        }
         if ($this->typeCheck != "pivotTableGraphed") { $this->footer .= '    <hr class="divider-dashed" />'."\n"; }
+        }
       } elseif ($this->h_configs['showEmpty'] == 'enable') {
-        $this->body = '    <h2 class="text-success" id="' . $this->id . '"><i class="glyphicon glyphicon-ok-sign"></i> ' . $this->langDef[$this->id]["title"] . ' <small>' . str_replace(array("\n", "\t", "\r"), '', (rand_line($this->achievementFile))) . '</small></h2>'."\n";
+        $this->body = '    <h2 class="text-success anchor" id="' . $this->id . '"><i class="glyphicon glyphicon-ok-sign"></i> ' . $this->langDef[$this->id]["title"] . ' <small>' . str_replace(array("\n", "\t", "\r"), '', (rand_line($this->achievementFile))) . '</small></h2>'."\n";
       }
     } else {
       $this->body .= '    <div class="alert alert-danger" role="alert">
@@ -565,8 +559,8 @@ data: ' . json_encode($data, JSON_NUMERIC_CHECK) . '
     $xmlFile = $this->xmlStartPath.$this->xmlSelectedPath.'/vms-global.xml';
     if (is_readable($xmlFile)) {
       $xmlContent = simplexml_load_file($xmlFile);
-    	$xpathFull = $xmlContent->xpath("/vms/vm[moref='" . $vmMoRef . "' and vcenter='" . $vcenter . "']");
-    	return ((count($xpathFull) == 1) ? $xpathFull[0] : 'inexistant');
+      $xpathFull = $xmlContent->xpath("/vms/vm[moref='" . $vmMoRef . "' and vcenter='" . $vcenter . "']");
+      return ((count($xpathFull) == 1) ? $xpathFull[0] : 'inexistant');
     } else {
       return 'error';
     }
