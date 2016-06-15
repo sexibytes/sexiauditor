@@ -6,7 +6,7 @@
   <title><?php echo $title; ?></title>
   <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
   <link rel="stylesheet" type="text/css" href="css/BootstrapXL.css">
-  <link rel="stylesheet" type="text/css" href="css/sexigraf.css">
+  <link rel="stylesheet" type="text/css" href="css/sexiauditor.css">
   <link href='https://fonts.googleapis.com/css?family=Roboto' rel='stylesheet' type='text/css'>
 <?php
     if(isset($additionalStylesheet)) {
