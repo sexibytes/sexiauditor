@@ -83,5 +83,5 @@ if($check->getModuleSchedule('clusterCPURatio') != 'off' && $check->getModuleSch
     <h2>clusterTPSSavings</h2>
     <h2>clusterAutoSlotSize</h2>
     <h2>clusterProfile</h2>
-	</div>
+  </div>
 <?php require("footer.php"); ?>
