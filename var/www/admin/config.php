@@ -47,54 +47,54 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <form class="form-horizontal" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>" method="post">
 <?php
     foreach ($xmlConfigs->xpath("/configs/config") as $setting) {
-        echo '      <div class="form-group">
-        <label for="' . $setting->id . '" class="col-sm-6 control-label">' . $setting->label . '</label>
-        <div class="col-sm-4">'."\n";
-		switch ($setting->type) {
-			case 'boolean':
-				echo '          <div class="btn-group" data-toggle="buttons">
-            <button name="radio" class="btn btn-danger' . (($setting->value == 'disable') ? ' active': '' ) . '"><input type="radio" name="' . $setting->id . '" value="disable">No</button>
-            <button name="radio" class="btn btn-success' . (($setting->value == 'enable') ? ' active': '' ) . '"><input type="radio" name="' . $setting->id . '" value="enable">Yes</button>
-          </div>'."\n";
-				break;
-			case 'daily':
-				echo '          <select name="' . $setting->id . '" class="form-control">'."\n";
-				for ($hour = 0; $hour <= 23; $hour++) { echo '            <option value="' . $hour . '"' . ($hour == $setting->value ? " selected" : "") . '>' . str_pad($hour, 2, 0, STR_PAD_LEFT) . 'h00</option>'."\n"; }
-				echo '          </select>'."\n";
-				break;
-			case 'weekly':
-				echo '          <select name="' . $setting->id . '" class="form-control">'."\n";
-				for ($day = 0; $day <= 6; $day++) { echo '            <option value="' . $day . '"' . ($day == $setting->value ? " selected" : "") . '>' . jddayofweek($day, CAL_DOW_LONG) . '</option>'."\n"; }
-				echo '          </select>'."\n";
-				break;
-			case 'monthly':
-				echo '          <select name="' . $setting->id . '" class="form-control">'."\n";
-				for ($month = 1; $month <= 31; $month++) { echo '            <option value="' . $month . '"' . ($month == $setting->value ? " selected" : "") . '>' . addOrdinalNumberSuffix($month) . '</option>'."\n"; }
-				echo '          </select>'."\n";
-				break;
-			case 'powerList':
-				echo '          <select name="' . $setting->id . '" class="form-control">'."\n";
-				foreach ($powerChoice as $key => $value) { echo '            <option value="' . $key . '"' . ($key == $setting->value ? " selected" : "") . '>' . $value . '</option>'."\n"; }
-				echo '          </select>'."\n";
-				break;
-			case 'servicePolicy':
-				echo '          <select name="' . $setting->id . '" class="form-control">'."\n";
-				foreach ($servicePolicyChoice as $key => $value) { echo '            <option value="' . $key . '"' . ($key == $setting->value ? " selected" : "") . '>' . $value . '</option>'."\n"; }
-				echo '          </select>'."\n";
-				break;
-			case 'language':
-				echo '          <select name="' . $setting->id . '" class="form-control">'."\n";
-				foreach ($langChoice as $key => $value) { echo '            <option value="' . $key . '"' . ($key == $setting->value ? " selected" : "") . '>' . $value . '</option>'."\n"; }
-				echo '          </select>'."\n";
-				break;
-			case 'number':
-				echo '          <input type="number" min="0" class="form-control" name="' . $setting->id . '" id="' . $setting->id . '" value="' . $setting->value . '">'."\n";
-				break;
-			default:
-				echo '          <input type="' . $setting->type . '" class="form-control" name="' . $setting->id . '" id="' . $setting->id . '" value="' . $setting->value . '">'."\n";
-				break;
-		}
-        echo '        </div>
+      echo '      <div class="form-group">
+      <label for="' . $setting->id . '" class="col-sm-6 control-label">' . $setting->label . '</label>
+      <div class="col-sm-4">'."\n";
+      switch ($setting->type) {
+        case 'boolean':
+          echo '          <div class="btn-group" data-toggle="buttons">
+              <button name="radio" class="btn btn-danger' . (($setting->value == 'disable') ? ' active': '' ) . '"><input type="radio" name="' . $setting->id . '" value="disable">No</button>
+              <button name="radio" class="btn btn-success' . (($setting->value == 'enable') ? ' active': '' ) . '"><input type="radio" name="' . $setting->id . '" value="enable">Yes</button>
+            </div>'."\n";
+          break;
+        case 'daily':
+          echo '          <select name="' . $setting->id . '" class="form-control">'."\n";
+          for ($hour = 0; $hour <= 23; $hour++) { echo '            <option value="' . $hour . '"' . ($hour == $setting->value ? " selected" : "") . '>' . str_pad($hour, 2, 0, STR_PAD_LEFT) . 'h00</option>'."\n"; }
+          echo '          </select>'."\n";
+          break;
+        case 'weekly':
+          echo '          <select name="' . $setting->id . '" class="form-control">'."\n";
+          for ($day = 0; $day <= 6; $day++) { echo '            <option value="' . $day . '"' . ($day == $setting->value ? " selected" : "") . '>' . jddayofweek($day, CAL_DOW_LONG) . '</option>'."\n"; }
+          echo '          </select>'."\n";
+          break;
+        case 'monthly':
+          echo '          <select name="' . $setting->id . '" class="form-control">'."\n";
+          for ($month = 1; $month <= 31; $month++) { echo '            <option value="' . $month . '"' . ($month == $setting->value ? " selected" : "") . '>' . addOrdinalNumberSuffix($month) . '</option>'."\n"; }
+          echo '          </select>'."\n";
+          break;
+        case 'powerList':
+          echo '          <select name="' . $setting->id . '" class="form-control">'."\n";
+          foreach ($powerChoice as $key => $value) { echo '            <option value="' . $key . '"' . ($key == $setting->value ? " selected" : "") . '>' . $value . '</option>'."\n"; }
+          echo '          </select>'."\n";
+          break;
+        case 'servicePolicy':
+          echo '          <select name="' . $setting->id . '" class="form-control">'."\n";
+          foreach ($servicePolicyChoice as $key => $value) { echo '            <option value="' . $key . '"' . ($key == $setting->value ? " selected" : "") . '>' . $value . '</option>'."\n"; }
+          echo '          </select>'."\n";
+          break;
+        case 'language':
+          echo '          <select name="' . $setting->id . '" class="form-control">'."\n";
+          foreach ($langChoice as $key => $value) { echo '            <option value="' . $key . '"' . ($key == $setting->value ? " selected" : "") . '>' . $value . '</option>'."\n"; }
+          echo '          </select>'."\n";
+          break;
+        case 'number':
+          echo '          <input type="number" min="0" class="form-control" name="' . $setting->id . '" id="' . $setting->id . '" value="' . $setting->value . '">'."\n";
+          break;
+        default:
+          echo '          <input type="' . $setting->type . '" class="form-control" name="' . $setting->id . '" id="' . $setting->id . '" value="' . $setting->value . '">'."\n";
+          break;
+      }
+      echo '        </div>
       </div>'."\n";
     }
 ?>
