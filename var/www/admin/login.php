@@ -43,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST'){
     <meta charset="utf-8">
     <title>Login to SexiAuditor</title>
     <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
-    <link rel="stylesheet" type="text/css" href="css/sexigraf.css">
+    <link rel="stylesheet" type="text/css" href="css/sexiauditor.css">
     <link rel="stylesheet" type="text/css" href="css/auth.css">
 </head>
 <body>
