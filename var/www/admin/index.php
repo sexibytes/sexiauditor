@@ -12,9 +12,10 @@ if (!file_exists($xmlPath)) :
     echo '<div class="alert alert-danger" role="alert"><span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span><span class="sr-only">Error:</span> Folder ' . $xmlPath . ' don\'t exist, aborting... </div>';
 else:
 
-$xmlSubDirectories = array_diff(scandir($xmlPath, SCANDIR_SORT_DESCENDING), array('..', '.', 'README.md', 'latest'));
+// $xmlSubDirectories = array_diff(scandir($xmlPath, SCANDIR_SORT_DESCENDING), array('..', '.', 'README.md', 'latest'));
 # if no folder available (minus '.', '..' and 'latest') we switch to vopendata sample
-if (count($xmlSubDirectories) < 1) {
+// if (count($xmlSubDirectories) < 1) {
+if (!file_exists("$xmlPath/latest/vms-global.xml") or !file_exists("$xmlPath/latest/hosts-global.xml") or !file_exists("$xmlPath/latest/clusters-global.xml") or !file_exists("$xmlPath/latest/datastores-global.xml")) {
 ##########################################
 # vOpenData default sample               #
 # It's used only at the beginning before #
