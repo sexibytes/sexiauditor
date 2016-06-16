@@ -1,12 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <modules>
   <module>
+    <id>VSANHealthCheck</id>
+    <schedule>off</schedule>
+  </module>
+  <module>
     <id>vcSessionAge</id>
-    <schedule>daily</schedule>
+    <schedule>off</schedule>
   </module>
   <module>
     <id>vcLicenceReport</id>
-    <schedule>daily</schedule>
+    <schedule>off</schedule>
   </module>
   <module>
     <id>vcPermissionReport</id>
@@ -14,51 +18,59 @@
   </module>
   <module>
     <id>vcTerminateSession</id>
-    <schedule>monthly</schedule>
+    <schedule>off</schedule>
+  </module>
+  <module>
+    <id>vcCertificatesReport</id>
+    <schedule>off</schedule>
   </module>
   <module>
     <id>clusterConfigurationIssues</id>
-    <schedule>daily</schedule>
+    <schedule>off</schedule>
   </module>
   <module>
     <id>clusterAdmissionControl</id>
-    <schedule>daily</schedule>
+    <schedule>off</schedule>
+  </module>
+  <module>
+    <id>clusterHAStatus</id>
+    <schedule>off</schedule>
   </module>
   <module>
     <id>clusterDatastoreConsistency</id>
-    <schedule>daily</schedule>
+    <schedule>off</schedule>
   </module>
   <module>
     <id>clusterMembersVersion</id>
-    <schedule>daily</schedule>
+    <schedule>off</schedule>
   </module>
   <module>
     <id>clusterMembersOvercommit</id>
-    <schedule>daily</schedule>
+    <schedule>off</schedule>
   </module>
   <module>
     <id>clusterMembersLUNPathCountMismatch</id>
-    <schedule>daily</schedule>
+    <schedule>off</schedule>
   </module>
   <module>
     <id>clusterCPURatio</id>
-    <schedule>daily</schedule>
+    <schedule>off</schedule>
   </module>
   <module>
     <id>clusterTPSSavings</id>
-    <schedule>daily</schedule>
+    <schedule>off</schedule>
   </module>
   <module>
     <id>clusterAutoSlotSize</id>
-    <schedule>daily</schedule>
+    <schedule>off</schedule>
   </module>
   <module>
     <id>clusterProfile</id>
-    <schedule>daily</schedule>
+    <schedule>off</schedule>
   </module>
   <module>
     <id>hostLUNPathDead</id>
-    <schedule>daily</schedule>
+    <schedule>off</schedule>
   </module>
   <module>
     <id>hostProfileCompliance</id>
@@ -69,39 +81,39 @@
     <schedule>off</schedule>
   </module>
   <module>
-    <id>hostNTPCheck</id>
-    <schedule>daily</schedule>
-  </module>
-  <module>
-    <id>hostDNSCheck</id>
-    <schedule>daily</schedule>
-  </module>
-  <module>
-    <id>hostSyslogCheck</id>
-    <schedule>daily</schedule>
-  </module>
-  <module>
-    <id>hostconfigurationissues</id>
+    <id>hostSshShell</id>
     <schedule>off</schedule>
   </module>
   <module>
-    <id>hostAlarms</id>
+    <id>hostNTPCheck</id>
+    <schedule>off</schedule>
+  </module>
+  <module>
+    <id>hostDNSCheck</id>
+    <schedule>off</schedule>
+  </module>
+  <module>
+    <id>hostSyslogCheck</id>
+    <schedule>off</schedule>
+  </module>
+  <module>
+    <id>hostConfigurationIssues</id>
     <schedule>off</schedule>
   </module>
   <module>
     <id>hostHardwareStatus</id>
-    <schedule>daily</schedule>
-  </module>
-  <module>
-    <id>hostRebootrequired</id>
-    <schedule>daily</schedule>
-  </module>
-  <module>
-    <id>hostFQDNhostnamemismatch</id>
     <schedule>off</schedule>
   </module>
   <module>
-    <id>hostmaintenancemode</id>
+    <id>hostRebootrequired</id>
+    <schedule>off</schedule>
+  </module>
+  <module>
+    <id>hostFQDNHostnameMismatch</id>
+    <schedule>off</schedule>
+  </module>
+  <module>
+    <id>hostMaintenanceMode</id>
     <schedule>off</schedule>
   </module>
   <module>
@@ -110,7 +122,7 @@
   </module>
   <module>
     <id>hostPowerManagementPolicy</id>
-    <schedule>daily</schedule>
+    <schedule>off</schedule>
   </module>
   <module>
     <id>hostBundlebackup</id>
@@ -118,15 +130,15 @@
   </module>
   <module>
     <id>datastoreSpacereport</id>
-    <schedule>daily</schedule>
+    <schedule>off</schedule>
   </module>
   <module>
     <id>datastoreOrphanedVMFilesreport</id>
-    <schedule>daily</schedule>
+    <schedule>off</schedule>
   </module>
   <module>
     <id>datastoreOverallocation</id>
-    <schedule>daily</schedule>
+    <schedule>off</schedule>
   </module>
   <module>
     <id>datastoreSIOCdisabled</id>
@@ -134,15 +146,15 @@
   </module>
   <module>
     <id>datastoremaintenancemode</id>
-    <schedule>daily</schedule>
+    <schedule>off</schedule>
   </module>
   <module>
     <id>datastoreAccessible</id>
-    <schedule>daily</schedule>
+    <schedule>off</schedule>
   </module>
   <module>
-    <id>networkDVSVSSportsfree</id>
-    <schedule>daily</schedule>
+    <id>networkDVSportsfree</id>
+    <schedule>off</schedule>
   </module>
   <module>
     <id>networkDVPGAutoExpand</id>
@@ -153,151 +165,87 @@
     <schedule>off</schedule>
   </module>
   <module>
-    <id>inventory</id>
-    <schedule>hourly</schedule>
-  </module>
-  <module>
     <id>vmSnapshotsage</id>
-    <schedule>daily</schedule>
-  </module>
-  <module>
-    <id>vmphantomsnapshot</id>
-    <schedule>daily</schedule>
-  </module>
-  <module>
-    <id>vmconsolidationneeded</id>
-    <schedule>daily</schedule>
-  </module>
-  <module>
-    <id>vmcpuramhddreservation</id>
-    <schedule>daily</schedule>
-  </module>
-  <module>
-    <id>vmcpuramhddlimits</id>
-    <schedule>daily</schedule>
-  </module>
-  <module>
-    <id>vmcpuramhotadd</id>
-    <schedule>daily</schedule>
-  </module>
-  <module>
-    <id>vmvmtoolspivottable</id>
-    <schedule>hourly</schedule>
-  </module>
-  <module>
-    <id>vmvHardwarepivottable</id>
-    <schedule>hourly</schedule>
-  </module>
-  <module>
-    <id>vmballoonzipswap</id>
-    <schedule>daily</schedule>
-  </module>
-  <module>
-    <id>vmmultiwritermode</id>
-    <schedule>daily</schedule>
-  </module>
-  <module>
-    <id>vmNonpersistentmode</id>
-    <schedule>daily</schedule>
-  </module>
-  <module>
-    <id>vmscsibussharing</id>
-    <schedule>daily</schedule>
-  </module>
-  <module>
-    <id>vminvalidorinnaccessible</id>
-    <schedule>hourly</schedule>
-  </module>
-  <module>
-    <id>vminconsistentfolder</id>
-    <schedule>hourly</schedule>
-  </module>
-  <module>
-    <id>vmCDconnected</id>
     <schedule>off</schedule>
   </module>
   <module>
-    <id>vmalarms</id>
-    <schedule>hourly</schedule>
+    <id>vmphantomsnapshot</id>
+    <schedule>off</schedule>
   </module>
   <module>
-    <id>vmGuestIdmismatch</id>
-    <schedule>hourly</schedule>
+    <id>vmconsolidationneeded</id>
+    <schedule>off</schedule>
+  </module>
+  <module>
+    <id>vmcpuramhddreservation</id>
+    <schedule>off</schedule>
+  </module>
+  <module>
+    <id>vmcpuramhddlimits</id>
+    <schedule>off</schedule>
+  </module>
+  <module>
+    <id>vmcpuramhotadd</id>
+    <schedule>off</schedule>
+  </module>
+  <module>
+    <id>vmToolsPivot</id>
+    <schedule>off</schedule>
+  </module>
+  <module>
+    <id>vmvHardwarePivot</id>
+    <schedule>off</schedule>
+  </module>
+  <module>
+    <id>vmballoonzipswap</id>
+    <schedule>off</schedule>
+  </module>
+  <module>
+    <id>vmmultiwritermode</id>
+    <schedule>off</schedule>
+  </module>
+  <module>
+    <id>vmNonpersistentmode</id>
+    <schedule>off</schedule>
+  </module>
+  <module>
+    <id>vmscsibussharing</id>
+    <schedule>off</schedule>
+  </module>
+  <module>
+    <id>vmInvalidOrInaccessible</id>
+    <schedule>off</schedule>
+  </module>
+  <module>
+    <id>vmInconsistent</id>
+    <schedule>off</schedule>
+  </module>
+  <module>
+    <id>vmRemovableConnected</id>
+    <schedule>off</schedule>
+  </module>
+  <module>
+    <id>vmGuestIdMismatch</id>
+    <schedule>off</schedule>
   </module>
   <module>
     <id>vmPoweredOff</id>
-    <schedule>daily</schedule>
+    <schedule>off</schedule>
   </module>
   <module>
     <id>vmGuestPivot</id>
-    <schedule>daily</schedule>
-  </module>
-  <module>
-    <id>vmmisnamed</id>
     <schedule>off</schedule>
   </module>
   <module>
     <id>vmMisnamed</id>
-    <schedule>daily</schedule>
+    <schedule>off</schedule>
   </module>
   <module>
-    <id>vmInconsistent</id>
-    <schedule>daily</schedule>
-  </module>
-  <module>
-    <id>vmAlarms</id>
+    <id>inventory</id>
     <schedule>hourly</schedule>
   </module>
   <module>
-    <id>vmGuestIdMismatch</id>
-    <schedule>daily</schedule>
-  </module>
-  <module>
     <id>alarms</id>
-    <schedule>daily</schedule>
-  </module>
-  <module>
-    <id>vmRemovableConnected</id>
-    <schedule>daily</schedule>
-  </module>
-  <module>
-    <id>vmInvalidOrInaccessible</id>
-    <schedule>daily</schedule>
-  </module>
-  <module>
-    <id>vmToolsPivot</id>
-    <schedule>daily</schedule>
-  </module>
-  <module>
-    <id>vmvHardwarePivot</id>
-    <schedule>daily</schedule>
-  </module>
-  <module>
-    <id>networkDVSportsfree</id>
-    <schedule>daily</schedule>
-  </module>
-  <module>
-    <id>clusterHAStatus</id>
-    <schedule>daily</schedule>
-  </module>
-  <module>
-    <id>hostMaintenanceMode</id>
-    <schedule>daily</schedule>
-  </module>
-  <module>
-    <id>hostFQDNHostnameMismatch</id>
-    <schedule>daily</schedule>
-  </module>
-  <module>
-    <id>vcCertificatesReport</id>
-    <schedule>daily</schedule>
-  </module>
-  <module>
-    <id>hostConfigurationIssues</id>
-    <schedule>daily</schedule>
-  </module>
-  <module>
-    <id>hostSshShell</id>
-    <schedule>daily</schedule>
+    <schedule>off</schedule>
   </module>
 </modules>
