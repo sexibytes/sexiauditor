@@ -52,6 +52,7 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
                 <ul class="multi-column-dropdown">
                   <li><a href="index.php"><i class="glyphicon glyphicon-map-marker glyphicon-custom"></i> User Dashboard</a></li>
                   <li class="divider"></li>
+                  <li><a href="check-vsan.php"><img src="images/vc-vsan.gif" class="glyphicon-custom" /> VSAN Checks</a></li>
                   <li><a href="check-vcenter.php"><img src="images/vc-vcenter.gif" class="glyphicon-custom" /> vCenter Checks</a></li>
                   <li><a href="check-cluster.php"><img src="images/vc-cluster.gif" class="glyphicon-custom" /> Cluster Checks</a></li>
                   <li><a href="check-host.php"><img src="images/vc-host.gif" class="glyphicon-custom" /> Host Checks</a></li>
