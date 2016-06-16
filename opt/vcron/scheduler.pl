@@ -18,6 +18,12 @@ use URI::URL;
 use VMware::VIRuntime;
 use VMware::VICredStore;
 use XML::LibXML;
+# loading VSAN module for perl
+use FindBin;
+use lib "$FindBin::Bin/VSAN/";
+use VsanapiUtils;
+load_vsanmgmt_binding_files("./VSAN/bindings/VIM25VsanmgmtStub.pm",
+                            "./VSAN/bindings/VIM25VsanmgmtRuntime.pm");
 
 # initialize starting point for duration calculation
 my $start = time;
