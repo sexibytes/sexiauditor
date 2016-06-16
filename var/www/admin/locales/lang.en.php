@@ -15,7 +15,7 @@ $lang['VCCERTIFICATESREPORT'] = array("title" => "Certificate Report", "descript
 # cluster items
 $lang['CLUSTERCONFIGURATIONISSUES'] = array('title' => 'Cluster with Configuration Issues','description' => 'The following clusters have HA configuration issues. This will impact your disaster recovery.');
 $lang['CLUSTERHASTATUS'] = array('title' => 'Cluster Without HA','description' => 'The following cluster does not have HA enabled. You should check if that\'s expected as this is a must have feature!');
-$lang['ALARMSCLUSTER'] = array('title' => 'Cluster Alarms','description' => 'This module will display triggered alarms on Clsuter objects level (including VSAN ones) with status and time of creation.');
+$lang['ALARMSCLUSTER'] = array('title' => 'Cluster Alarms','description' => 'This module will display triggered alarms on Cluster objects level (including VSAN ones) with status and time of creation.');
 $lang['CLUSTERMEMBERSVERSION'] = array('title' => 'Hosts Build Number Mismatch','description' => 'Display ESX build number by cluster, in order to spot potential intracluster build mismatch.');
 $lang['CLUSTERMEMBERSLUNPATHCOUNTMISMATCH'] = array('title' => 'Cluster With Members LUN Path Count Mismatch','description' => 'The following cluster members does not have the same number of LUN, please check for mapping or masking misconfiguration.');
 $lang['CLUSTERCPURATIO'] = array('title' => 'Ratio Virtual/Physical CPU','description' => 'Display ratio of virtual CPU per physical CPU that goes over threshold of ' . $this->getConfig('thresholdCPURatio'));
