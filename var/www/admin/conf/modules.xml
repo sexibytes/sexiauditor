@@ -1,451 +1,461 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <modules>
-	<category>
-		<name>vCenter</name>
-		<module>
-			<id>vcSessionAge</id>
-			<type>report</type>
-			<name>Session Age</name>
-			<version>1.0</version>
-			<description>Display vCenter session that are older than (x)days.</description>
-		</module>
-		<module>
-			<id>vcLicenceReport</id>
-			<type>report</type>
-			<name>License Report</name>
-			<version>1.0</version>
-			<description>Display licence consumption based on vCenter licence defined.</description>
-		</module>
-		<module>
-			<id>vcPermissionReport</id>
-			<type>report</type>
-			<name>Permission report</name>
-			<version>0.1</version>
-			<description>Display permission listing with user/role combination.</description>
-		</module>
-		<module>
-			<id>vcTerminateSession</id>
-			<type>action</type>
-			<name>Terminate session</name>
-			<version>0.1</version>
-			<description>[Action] Kill vCenter session older than (x)days.</description>
-		</module>
-		<module>
-			<id>vcCertificatesReport</id>
-			<type>report</type>
-			<name>Certificate Report</name>
-			<version>0.1</version>
-			<description>Display soon-to-be-expired certificates for all vCenter components (SSO, WebClient, ...).</description>
-		</module>
-	</category>
-	<category>
-		<name>Cluster</name>
-		<module>
-			<id>clusterConfigurationIssues</id>
-			<type>report</type>
-			<name>Configuration Issues</name>
-			<version>1.0</version>
-			<description>Configuration Issues report.</description>
-		</module>
-		<module>
-			<id>clusterAdmissionControl</id>
-			<type>report</type>
-			<name>Admission Control</name>
-			<version>0.1</version>
-			<description>Admission Control report.</description>
-		</module>
-		<module>
-			<id>clusterHAStatus</id>
-			<type>report</type>
-			<name>Cluster Without HA</name>
-			<version>1.0</version>
-			<description>Display cluster without HA.</description>
-		</module>
-		<module>
-			<id>clusterDatastoreConsistency</id>
-			<type>report</type>
-			<name>Datastore Consistency</name>
-			<version>0.1</version>
-			<description>Datastore Consistency report.</description>
-		</module>
-		<module>
-			<id>clusterMembersVersion</id>
-			<type>report</type>
-			<name>Members Version</name>
-			<version>1.0</version>
-			<description>Members Version Report.</description>
-		</module>
-		<module>
-			<id>clusterMembersOvercommit</id>
-			<type>report</type>
-			<name>Members Overcommit</name>
-			<version>0.1</version>
-			<description>Members Overcommit Report.</description>
-		</module>
-		<module>
-			<id>clusterMembersLUNPathCountMismatch</id>
-			<type>report</type>
-			<name>Members LUN Path count mismatch</name>
-			<version>0.1</version>
-			<description>Members LUN Path count mismatch Report.</description>
-		</module>
-		<module>
-			<id>clusterCPURatio</id>
-			<type>report</type>
-			<name>vCPU pCPU table</name>
-			<version>1.0</version>
-			<description>vCPU pCPU table Report.</description>
-		</module>
-		<module>
-			<id>clusterTPSSavings</id>
-			<type>report</type>
-			<name>TPS savings</name>
-			<version>0.1</version>
-			<description>TPS savings Report.</description>
-		</module>
-		<module>
-			<id>clusterAutoSlotSize</id>
-			<type>report</type>
-			<name>AutoSlotSize</name>
-			<version>0.1</version>
-			<description>AutoSlotSize Report.</description>
-		</module>
-		<module>
-			<id>clusterProfile</id>
-			<type>report</type>
-			<name>Profile</name>
-			<version>0.1</version>
-			<description>Profile Report.</description>
-		</module>
-	</category>
-	<category>
-		<name>Host</name>
-		<module>
-			<id>hostLUNPathDead</id>
-			<type>report</type>
-			<name>LUN Path Dead</name>
-			<version>0.1</version>
-			<description>LUN Path Dead report.</description>
-		</module>
-		<module>
-			<id>hostProfileCompliance</id>
-			<type>report</type>
-			<name>Profile Compliance</name>
-			<version>0.1</version>
-			<description>Profile Compliance report.</description>
-		</module>
-		<module>
-			<id>hostLocalSwapDatastoreCompliance</id>
-			<type>report</type>
-			<name>LocalSwapDatastore Compliance</name>
-			<version>0.1</version>
-			<description>LocalSwapDatastore Compliance report.</description>
-		</module>
-		<module>
-			<id>hostSshShell</id>
-			<type>report</type>
-			<name>SSH/shell check</name>
-			<version>0.1</version>
-			<description>SSH/shell check report.</description>
-		</module>
-		<module>
-			<id>hostNTPCheck</id>
-			<type>report</type>
-			<name>NTP Check</name>
-			<version>1.0</version>
-			<description>NTP Check report.</description>
-		</module>
-		<module>
-			<id>hostDNSCheck</id>
-			<type>report</type>
-			<name>DNS Check</name>
-			<version>1.0</version>
-			<description>DNS Check report.</description>
-		</module>
-		<module>
-			<id>hostSyslogCheck</id>
-			<type>report</type>
-			<name>Syslog Check</name>
-			<version>1.0</version>
-			<description>Syslog Check report.</description>
-		</module>
-		<module>
-			<id>hostConfigurationIssues</id>
-			<type>report</type>
-			<name>configuration issues</name>
-			<version>1.0</version>
-			<description>configuration issues report.</description>
-		</module>
-		<module>
-			<id>hostHardwareStatus</id>
-			<type>report</type>
-			<name>Hardware Status</name>
-			<version>1.0</version>
-			<description>Hardware Status report.</description>
-		</module>
-		<module>
-			<id>hostRebootrequired</id>
-			<type>report</type>
-			<name>Reboot required</name>
-			<version>1.0</version>
-			<description>Reboot required report.</description>
-		</module>
-		<module>
-			<id>hostFQDNHostnameMismatch</id>
-			<type>report</type>
-			<name>FQDN/hostname mismatch</name>
-			<version>1.0</version>
-			<description>FQDN/hostname mismatch report.</description>
-		</module>
-		<module>
-			<id>hostMaintenanceMode</id>
-			<type>report</type>
-			<name>Maintenance Mode</name>
-			<version>1.0</version>
-			<description>maintenance mode report.</description>
-		</module>
-		<module>
-			<id>hostballooningzipswap</id>
-			<type>report</type>
-			<name>ballooning/zip/swap</name>
-			<version>0.1</version>
-			<description>ballooning/zip/swap report.</description>
-		</module>
-		<module>
-			<id>hostPowerManagementPolicy</id>
-			<type>report</type>
-			<name>PowerManagement Policy</name>
-			<version>0.1</version>
-			<description>PowerManagement Policy report.</description>
-		</module>
-		<module>
-			<id>hostBundlebackup</id>
-			<type>action</type>
-			<name>Bundle backup</name>
-			<version>0.1</version>
-			<description>Bundle backup report.</description>
-		</module>
-	</category>
-	<category>
-		<name>Datastore</name>
-		<module>
-			<id>datastoreSpacereport</id>
-			<type>report</type>
-			<name>Space report</name>
-			<version>1.0</version>
-			<description>Space report.</description>
-		</module>
-		<module>
-			<id>datastoreOrphanedVMFilesreport</id>
-			<type>report</type>
-			<name>Orphaned VM Files report</name>
-			<version>0.1</version>
-			<description>Orphaned VM Files report report.</description>
-		</module>
-		<module>
-			<id>datastoreOverallocation</id>
-			<type>report</type>
-			<name>Overallocation</name>
-			<version>1.0</version>
-			<description>Overallocation report.</description>
-		</module>
-		<module>
-			<id>datastoreSIOCdisabled</id>
-			<type>report</type>
-			<name>SIOC disabled</name>
-			<version>1.0</version>
-			<description>SIOC disabled report.</description>
-		</module>
-		<module>
-			<id>datastoremaintenancemode</id>
-			<type>report</type>
-			<name>maintenance mode</name>
-			<version>1.0</version>
-			<description>maintenance mode report.</description>
-		</module>
-		<module>
-			<id>datastoreAccessible</id>
-			<type>report</type>
-			<name>Accessible</name>
-			<version>1.0</version>
-			<description>Accessible report.</description>
-		</module>
-	</category>
-	<category>
-		<name>Network</name>
-		<module>
-			<id>networkDVSportsfree</id>
-			<type>report</type>
-			<name>DVS ports free</name>
-			<version>1.0</version>
-			<description>DVS ports free report.</description>
-		</module>
-		<module>
-			<id>networkDVPGAutoExpand</id>
-			<type>action</type>
-			<name>DVPG AutoExpand</name>
-			<version>0.1</version>
-			<description>DVPG AutoExpand action.</description>
-		</module>
-		<module>
-			<id>networkDVSprofile</id>
-			<type>report</type>
-			<name>DVS profile</name>
-			<version>0.1</version>
-			<description>DVS profile report.</description>
-		</module>
-	</category>
-	<category>
-		<name>Virtual Machine</name>
-		<module>
-			<id>vmSnapshotsage</id>
-			<type>report</type>
-			<name>Snapshots age</name>
-			<version>1.0</version>
-			<description>Snapshots age report.</description>
-		</module>
-		<module>
-			<id>vmphantomsnapshot</id>
-			<type>report</type>
-			<name>phantom snapshot</name>
-			<version>1.0</version>
-			<description>phantom snapshot report.</description>
-		</module>
-		<module>
-			<id>vmconsolidationneeded</id>
-			<type>report</type>
-			<name>consolidation needed</name>
-			<version>1.0</version>
-			<description>consolidation needed report.</description>
-		</module>
-		<module>
-			<id>vmcpuramhddreservation</id>
-			<type>report</type>
-			<name>cpu/ram/hdd reservation</name>
-			<version>1.0</version>
-			<description>cpu/ram/hdd reservation report.</description>
-		</module>
-		<module>
-			<id>vmcpuramhddlimits</id>
-			<type>report</type>
-			<name>cpu/ram/hdd limits</name>
-			<version>1.0</version>
-			<description>cpu/ram/hdd limits report.</description>
-		</module>
-		<module>
-			<id>vmcpuramhotadd</id>
-			<type>report</type>
-			<name>cpu/ram hot-add</name>
-			<version>1.0</version>
-			<description>cpu/ram hot-add report.</description>
-		</module>
-		<module>
-			<id>vmToolsPivot</id>
-			<type>report</type>
-			<name>VM Tools Pivot Table</name>
-			<version>1.0</version>
-			<description>Will display a list of all vmtools version group by count.</description>
-		</module>
-		<module>
-			<id>vmvHardwarePivot</id>
-			<type>report</type>
-			<name>vHardware Pivot Table</name>
-			<version>1.0</version>
-			<description>Will display a list of all guest hardware version (VHW) group by count.</description>
-		</module>
-		<module>
-			<id>vmballoonzipswap</id>
-			<type>report</type>
-			<name>balloon/zip/swap</name>
-			<version>1.0</version>
-			<description>balloon/zip/swap report.</description>
-		</module>
-		<module>
-			<id>vmmultiwritermode</id>
-			<type>report</type>
-			<name>multiwriter mode</name>
-			<version>1.0</version>
-			<description>multiwriter mode report.</description>
-		</module>
-		<module>
-			<id>vmNonpersistentmode</id>
-			<type>report</type>
-			<name>Non persistent mode</name>
-			<version>1.0</version>
-			<description>Non persistent mode report.</description>
-		</module>
-		<module>
-			<id>vmscsibussharing</id>
-			<type>report</type>
-			<name>scsi bus sharing</name>
-			<version>1.0</version>
-			<description>scsi bus sharing report.</description>
-		</module>
-		<module>
-			<id>vmInvalidOrInaccessible</id>
-			<type>report</type>
-			<name>VM Invalid Or Inaccessible</name>
-			<version>1.0</version>
-			<description>This module will display VMs that are marked as inaccessible or invalid.</description>
-		</module>
-		<module>
-			<id>vmInconsistent</id>
-			<type>report</type>
-			<name>Inconsistent Folder</name>
-			<version>1.0</version>
-			<description>The following VMs are not stored in folders consistent to their names, this may cause issues when trying to locate them from the datastore manually.</description>
-		</module>
-		<module>
-			<id>vmRemovableConnected</id>
-			<type>report</type>
-			<name>Removable Connected</name>
-			<version>1.0</version>
-			<description>This module will display VM that have removable devices (floppy, CD-Rom, ...) connected.</description>
-		</module>
-		<module>
-			<id>vmGuestIdMismatch</id>
-			<type>report</type>
-			<name>GuestId mismatch</name>
-			<version>1.0</version>
-			<description>GuestId mismatch report.</description>
-		</module>
-		<module>
-			<id>vmPoweredOff</id>
-			<type>report</type>
-			<name>Powered Off</name>
-			<version>1.0</version>
-			<description>This module will display VM that are Powered Off. This can be useful to check if this state is expected.</description>
-		</module>
-		<module>
-			<id>vmGuestPivot</id>
-			<type>report</type>
-			<name>GuestID Pivot Table</name>
-			<version>1.0</version>
-			<description>Will display a list of all guest OS group by count.</description>
-		</module>
-		<module>
-			<id>vmMisnamed</id>
-			<type>report</type>
-			<name>Misnamed based on FQDN</name>
-			<version>1.0</version>
-			<description>Will display VM that have FQDN mismatched with the VM object name.</description>
-		</module>
-	</category>
-	<category>
-		<name>Global</name>
-		<module>
-			<id>inventory</id>
-			<type>action</type>
-			<name>Inventory</name>
-			<version>1.0</version>
-			<description>Virtual Machine inventory with a lot of properties. Hosts and Datastores info will be retrieved as well (used in main page stats page).</description>
-		</module>
-		<module>
-			<id>alarms</id>
-			<type>report</type>
-			<name>Alarms</name>
-			<version>1.0</version>
-			<description>Will display triggered alarms on objects level with status and time of creation.</description>
-		</module>
-	</category>
+  <category>
+    <name>VSAN</name>
+    <module>
+      <id>VSANHealthCheck</id>
+      <type>report</type>
+      <name>VSAN Health Check</name>
+      <version>0.1</version>
+      <description>Display VSAN information about Health Check.</description>
+    </module>
+  </category>
+  <category>
+    <name>vCenter</name>
+    <module>
+      <id>vcSessionAge</id>
+      <type>report</type>
+      <name>Session Age</name>
+      <version>1.0</version>
+      <description>Display vCenter session that are older than (x)days.</description>
+    </module>
+    <module>
+      <id>vcLicenceReport</id>
+      <type>report</type>
+      <name>License Report</name>
+      <version>1.0</version>
+      <description>Display licence consumption based on vCenter licence defined.</description>
+    </module>
+    <module>
+      <id>vcPermissionReport</id>
+      <type>report</type>
+      <name>Permission report</name>
+      <version>0.1</version>
+      <description>Display permission listing with user/role combination.</description>
+    </module>
+    <module>
+      <id>vcTerminateSession</id>
+      <type>action</type>
+      <name>Terminate session</name>
+      <version>0.1</version>
+      <description>[Action] Kill vCenter session older than (x)days.</description>
+    </module>
+    <module>
+      <id>vcCertificatesReport</id>
+      <type>report</type>
+      <name>Certificate Report</name>
+      <version>0.1</version>
+      <description>Display soon-to-be-expired certificates for all vCenter components (SSO, WebClient, ...).</description>
+    </module>
+  </category>
+  <category>
+    <name>Cluster</name>
+    <module>
+      <id>clusterConfigurationIssues</id>
+      <type>report</type>
+      <name>Configuration Issues</name>
+      <version>1.0</version>
+      <description>Configuration Issues report.</description>
+    </module>
+    <module>
+      <id>clusterAdmissionControl</id>
+      <type>report</type>
+      <name>Admission Control</name>
+      <version>0.1</version>
+      <description>Admission Control report.</description>
+    </module>
+    <module>
+      <id>clusterHAStatus</id>
+      <type>report</type>
+      <name>Cluster Without HA</name>
+      <version>1.0</version>
+      <description>Display cluster without HA.</description>
+    </module>
+    <module>
+      <id>clusterDatastoreConsistency</id>
+      <type>report</type>
+      <name>Datastore Consistency</name>
+      <version>0.1</version>
+      <description>Datastore Consistency report.</description>
+    </module>
+    <module>
+      <id>clusterMembersVersion</id>
+      <type>report</type>
+      <name>Members Version</name>
+      <version>1.0</version>
+      <description>Members Version Report.</description>
+    </module>
+    <module>
+      <id>clusterMembersOvercommit</id>
+      <type>report</type>
+      <name>Members Overcommit</name>
+      <version>0.1</version>
+      <description>Members Overcommit Report.</description>
+    </module>
+    <module>
+      <id>clusterMembersLUNPathCountMismatch</id>
+      <type>report</type>
+      <name>Members LUN Path count mismatch</name>
+      <version>0.1</version>
+      <description>Members LUN Path count mismatch Report.</description>
+    </module>
+    <module>
+      <id>clusterCPURatio</id>
+      <type>report</type>
+      <name>vCPU pCPU table</name>
+      <version>1.0</version>
+      <description>vCPU pCPU table Report.</description>
+    </module>
+    <module>
+      <id>clusterTPSSavings</id>
+      <type>report</type>
+      <name>TPS savings</name>
+      <version>0.1</version>
+      <description>TPS savings Report.</description>
+    </module>
+    <module>
+      <id>clusterAutoSlotSize</id>
+      <type>report</type>
+      <name>AutoSlotSize</name>
+      <version>0.1</version>
+      <description>AutoSlotSize Report.</description>
+    </module>
+    <module>
+      <id>clusterProfile</id>
+      <type>report</type>
+      <name>Profile</name>
+      <version>0.1</version>
+      <description>Profile Report.</description>
+    </module>
+  </category>
+  <category>
+    <name>Host</name>
+    <module>
+      <id>hostLUNPathDead</id>
+      <type>report</type>
+      <name>LUN Path Dead</name>
+      <version>0.1</version>
+      <description>LUN Path Dead report.</description>
+    </module>
+    <module>
+      <id>hostProfileCompliance</id>
+      <type>report</type>
+      <name>Profile Compliance</name>
+      <version>0.1</version>
+      <description>Profile Compliance report.</description>
+    </module>
+    <module>
+      <id>hostLocalSwapDatastoreCompliance</id>
+      <type>report</type>
+      <name>LocalSwapDatastore Compliance</name>
+      <version>0.1</version>
+      <description>LocalSwapDatastore Compliance report.</description>
+    </module>
+    <module>
+      <id>hostSshShell</id>
+      <type>report</type>
+      <name>SSH/shell check</name>
+      <version>0.1</version>
+      <description>SSH/shell check report.</description>
+    </module>
+    <module>
+      <id>hostNTPCheck</id>
+      <type>report</type>
+      <name>NTP Check</name>
+      <version>1.0</version>
+      <description>NTP Check report.</description>
+    </module>
+    <module>
+      <id>hostDNSCheck</id>
+      <type>report</type>
+      <name>DNS Check</name>
+      <version>1.0</version>
+      <description>DNS Check report.</description>
+    </module>
+    <module>
+      <id>hostSyslogCheck</id>
+      <type>report</type>
+      <name>Syslog Check</name>
+      <version>1.0</version>
+      <description>Syslog Check report.</description>
+    </module>
+    <module>
+      <id>hostConfigurationIssues</id>
+      <type>report</type>
+      <name>configuration issues</name>
+      <version>1.0</version>
+      <description>configuration issues report.</description>
+    </module>
+    <module>
+      <id>hostHardwareStatus</id>
+      <type>report</type>
+      <name>Hardware Status</name>
+      <version>1.0</version>
+      <description>Hardware Status report.</description>
+    </module>
+    <module>
+      <id>hostRebootrequired</id>
+      <type>report</type>
+      <name>Reboot required</name>
+      <version>1.0</version>
+      <description>Reboot required report.</description>
+    </module>
+    <module>
+      <id>hostFQDNHostnameMismatch</id>
+      <type>report</type>
+      <name>FQDN/hostname mismatch</name>
+      <version>1.0</version>
+      <description>FQDN/hostname mismatch report.</description>
+    </module>
+    <module>
+      <id>hostMaintenanceMode</id>
+      <type>report</type>
+      <name>Maintenance Mode</name>
+      <version>1.0</version>
+      <description>maintenance mode report.</description>
+    </module>
+    <module>
+      <id>hostballooningzipswap</id>
+      <type>report</type>
+      <name>ballooning/zip/swap</name>
+      <version>0.1</version>
+      <description>ballooning/zip/swap report.</description>
+    </module>
+    <module>
+      <id>hostPowerManagementPolicy</id>
+      <type>report</type>
+      <name>PowerManagement Policy</name>
+      <version>0.1</version>
+      <description>PowerManagement Policy report.</description>
+    </module>
+    <module>
+      <id>hostBundlebackup</id>
+      <type>action</type>
+      <name>Bundle backup</name>
+      <version>0.1</version>
+      <description>Bundle backup report.</description>
+    </module>
+  </category>
+  <category>
+    <name>Datastore</name>
+    <module>
+      <id>datastoreSpacereport</id>
+      <type>report</type>
+      <name>Space report</name>
+      <version>1.0</version>
+      <description>Space report.</description>
+    </module>
+    <module>
+      <id>datastoreOrphanedVMFilesreport</id>
+      <type>report</type>
+      <name>Orphaned VM Files report</name>
+      <version>0.1</version>
+      <description>Orphaned VM Files report report.</description>
+    </module>
+    <module>
+      <id>datastoreOverallocation</id>
+      <type>report</type>
+      <name>Overallocation</name>
+      <version>1.0</version>
+      <description>Overallocation report.</description>
+    </module>
+    <module>
+      <id>datastoreSIOCdisabled</id>
+      <type>report</type>
+      <name>SIOC disabled</name>
+      <version>1.0</version>
+      <description>SIOC disabled report.</description>
+    </module>
+    <module>
+      <id>datastoremaintenancemode</id>
+      <type>report</type>
+      <name>maintenance mode</name>
+      <version>1.0</version>
+      <description>maintenance mode report.</description>
+    </module>
+    <module>
+      <id>datastoreAccessible</id>
+      <type>report</type>
+      <name>Accessible</name>
+      <version>1.0</version>
+      <description>Accessible report.</description>
+    </module>
+  </category>
+  <category>
+    <name>Network</name>
+    <module>
+      <id>networkDVSportsfree</id>
+      <type>report</type>
+      <name>DVS ports free</name>
+      <version>1.0</version>
+      <description>DVS ports free report.</description>
+    </module>
+    <module>
+      <id>networkDVPGAutoExpand</id>
+      <type>action</type>
+      <name>DVPG AutoExpand</name>
+      <version>0.1</version>
+      <description>DVPG AutoExpand action.</description>
+    </module>
+    <module>
+      <id>networkDVSprofile</id>
+      <type>report</type>
+      <name>DVS profile</name>
+      <version>0.1</version>
+      <description>DVS profile report.</description>
+    </module>
+  </category>
+  <category>
+    <name>Virtual Machine</name>
+    <module>
+      <id>vmSnapshotsage</id>
+      <type>report</type>
+      <name>Snapshots age</name>
+      <version>1.0</version>
+      <description>Snapshots age report.</description>
+    </module>
+    <module>
+      <id>vmphantomsnapshot</id>
+      <type>report</type>
+      <name>phantom snapshot</name>
+      <version>1.0</version>
+      <description>phantom snapshot report.</description>
+    </module>
+    <module>
+      <id>vmconsolidationneeded</id>
+      <type>report</type>
+      <name>consolidation needed</name>
+      <version>1.0</version>
+      <description>consolidation needed report.</description>
+    </module>
+    <module>
+      <id>vmcpuramhddreservation</id>
+      <type>report</type>
+      <name>cpu/ram/hdd reservation</name>
+      <version>1.0</version>
+      <description>cpu/ram/hdd reservation report.</description>
+    </module>
+    <module>
+      <id>vmcpuramhddlimits</id>
+      <type>report</type>
+      <name>cpu/ram/hdd limits</name>
+      <version>1.0</version>
+      <description>cpu/ram/hdd limits report.</description>
+    </module>
+    <module>
+      <id>vmcpuramhotadd</id>
+      <type>report</type>
+      <name>cpu/ram hot-add</name>
+      <version>1.0</version>
+      <description>cpu/ram hot-add report.</description>
+    </module>
+    <module>
+      <id>vmToolsPivot</id>
+      <type>report</type>
+      <name>VM Tools Pivot Table</name>
+      <version>1.0</version>
+      <description>Will display a list of all vmtools version group by count.</description>
+    </module>
+    <module>
+      <id>vmvHardwarePivot</id>
+      <type>report</type>
+      <name>vHardware Pivot Table</name>
+      <version>1.0</version>
+      <description>Will display a list of all guest hardware version (VHW) group by count.</description>
+    </module>
+    <module>
+      <id>vmballoonzipswap</id>
+      <type>report</type>
+      <name>balloon/zip/swap</name>
+      <version>1.0</version>
+      <description>balloon/zip/swap report.</description>
+    </module>
+    <module>
+      <id>vmmultiwritermode</id>
+      <type>report</type>
+      <name>multiwriter mode</name>
+      <version>1.0</version>
+      <description>multiwriter mode report.</description>
+    </module>
+    <module>
+      <id>vmNonpersistentmode</id>
+      <type>report</type>
+      <name>Non persistent mode</name>
+      <version>1.0</version>
+      <description>Non persistent mode report.</description>
+    </module>
+    <module>
+      <id>vmscsibussharing</id>
+      <type>report</type>
+      <name>scsi bus sharing</name>
+      <version>1.0</version>
+      <description>scsi bus sharing report.</description>
+    </module>
+    <module>
+      <id>vmInvalidOrInaccessible</id>
+      <type>report</type>
+      <name>VM Invalid Or Inaccessible</name>
+      <version>1.0</version>
+      <description>This module will display VMs that are marked as inaccessible or invalid.</description>
+    </module>
+    <module>
+      <id>vmInconsistent</id>
+      <type>report</type>
+      <name>Inconsistent Folder</name>
+      <version>1.0</version>
+      <description>The following VMs are not stored in folders consistent to their names, this may cause issues when trying to locate them from the datastore manually.</description>
+    </module>
+    <module>
+      <id>vmRemovableConnected</id>
+      <type>report</type>
+      <name>Removable Connected</name>
+      <version>1.0</version>
+      <description>This module will display VM that have removable devices (floppy, CD-Rom, ...) connected.</description>
+    </module>
+    <module>
+      <id>vmGuestIdMismatch</id>
+      <type>report</type>
+      <name>GuestId mismatch</name>
+      <version>1.0</version>
+      <description>GuestId mismatch report.</description>
+    </module>
+    <module>
+      <id>vmPoweredOff</id>
+      <type>report</type>
+      <name>Powered Off</name>
+      <version>1.0</version>
+      <description>This module will display VM that are Powered Off. This can be useful to check if this state is expected.</description>
+    </module>
+    <module>
+      <id>vmGuestPivot</id>
+      <type>report</type>
+      <name>GuestID Pivot Table</name>
+      <version>1.0</version>
+      <description>Will display a list of all guest OS group by count.</description>
+    </module>
+    <module>
+      <id>vmMisnamed</id>
+      <type>report</type>
+      <name>Misnamed based on FQDN</name>
+      <version>1.0</version>
+      <description>Will display VM that have FQDN mismatched with the VM object name.</description>
+    </module>
+  </category>
+  <category>
+    <name>Global</name>
+    <module>
+      <id>inventory</id>
+      <type>action</type>
+      <name>Inventory</name>
+      <version>1.0</version>
+      <description>Virtual Machine inventory with a lot of properties. Hosts and Datastores info will be retrieved as well (used in main page stats page).</description>
+    </module>
+    <module>
+      <id>alarms</id>
+      <type>report</type>
+      <name>Alarms</name>
+      <version>1.0</version>
+      <description>Will display triggered alarms on objects level with status and time of creation.</description>
+    </module>
+  </category>
 </modules>
