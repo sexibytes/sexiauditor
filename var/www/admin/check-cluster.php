@@ -37,6 +37,16 @@ if($check->getModuleSchedule('clusterConfigurationIssues') != 'off' && $check->g
                           'columnDefs' => '{ "orderable": false, className: "dt-body-center", "targets": [ 4 ] }']);
 }
 
+if($check->getModuleSchedule('alarms') != 'off') {
+  $check->displayCheck([  'xmlFile' => "alarms-global.xml",
+                          'xpathQuery' => "/alarms/alarm[entity_type='ClusterComputeResource']",
+                          "id" => "ALARMSCLUSTER",
+                          'thead' => array('Status', 'Alarm', 'Date', 'Name', 'vCenter'),
+                          'tbody' => array('"<td>" . $this->alarmStatus[(string) $entry->status] . "</td>"', '"<td>" . $entry->name . "</td>"', '"<td>" . $entry->time . "</td>"', '"<td>" . $entry->entity . "</td>"', '"<td>" . $entry->vcenter . "</td>"'),
+                          'order' => '[ 1, "asc" ]',
+                          'columnDefs' => '{ "orderable": false, className: "dt-body-right", "targets": [ 0 ] }']);
+}
+
 if($check->getModuleSchedule('clusterHAStatus') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
   $check->displayCheck([  'xmlFile' => "clusters-global.xml",
                           'xpathQuery' => "/clusters/cluster[dasenabled!='1']",
