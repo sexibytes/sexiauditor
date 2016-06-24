@@ -8,32 +8,34 @@ require("header.php");
 require("helper.php");
 
 if (is_readable($xmlTTBFile)) :
-	$xml = simplexml_load_file($xmlTTBFile);
-	foreach ($xml->children() as $exectime) {
-		$dataTemp = null;
-		$dataTemp[] = 1000 * DateTime::createFromFormat('YmdHi', $exectime->attributes()['date'])->getTimestamp();
-		$dataTemp[] = (int) $exectime->attributes()['seconds'];
-		$data[] = $dataTemp;
-	}
+  $xml = simplexml_load_file($xmlTTBFile);
+  $data = array();
+  foreach ($xml->children() as $exectime) {
+    $dataTemp = null;
+    $dataTemp[] = 1000 * DateTime::createFromFormat('YmdHi', $exectime->attributes()['date'])->getTimestamp();
+    $dataTemp[] = (int) $exectime->attributes()['seconds'];
+    $data[] = $dataTemp;
+  }
 
   if (is_readable($xmlConfigsFile)) {
-  	$h_configs = array();
+    $h_configs = array();
     $xmlConfigs = simplexml_load_file($xmlConfigsFile);
     # hash table initialization with settings XML file
     foreach ($xmlConfigs->xpath('/configs/config') as $config) {
       $h_configs[(string) $config->id] = (string) $config->value;
     }
   } else {
-	  echo '  <div class="alert alert-danger" role="alert"><span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span><span class="sr-only">Error:</span> File ' . $xmlConfigsFile . ' is not existant or not writeable</div>';
-	  require("footer.php");
-	  exit();
+    echo '  <div class="alert alert-danger" role="alert"><span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span><span class="sr-only">Error:</span> File ' . $xmlConfigsFile . ' is not existant or not writeable</div>';
+    require("footer.php");
+    exit();
   }
-	if($h_configs['timeToBuildCount'] > 0) {
-		$data = array_slice($data, $h_configs['timeToBuildCount'] * -1);
-	}
+  if($h_configs['timeToBuildCount'] > 0) {
+    $data = array_slice($data, $h_configs['timeToBuildCount'] * -1);
+  }
 ?>
   <div class="container">
     <h2>Execution Time (last <?php echo $h_configs['timeToBuildCount']; ?> builds)</h2>
+<?php if (count($data) > 0) : ?>
     <div id="main" style="height:600px"></div>
   </div>
 
@@ -74,6 +76,10 @@ if (is_readable($xmlTTBFile)) :
   ttbChart.setOption(option);
   </script>
 
+<?php else : ?>
+    <div class="alert alert-warning" role="alert"><span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span><span class="sr-only">Warning:</span> The scheduler have not been executed yet, add some server and module and come back.</div>
+  </div>
+<?php endif; ?>
 <?php
 else :
     echo '  <div class="alert alert-danger" role="alert"><span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span><span class="sr-only">Error:</span> File ' . $xmlTTBFile . ' is not existant or not readable</div>';
