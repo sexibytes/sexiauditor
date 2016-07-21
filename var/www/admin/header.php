@@ -7,7 +7,6 @@
   <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
   <link rel="stylesheet" type="text/css" href="css/BootstrapXL.css">
   <link rel="stylesheet" type="text/css" href="css/sexiauditor.css">
-  <link href='https://fonts.googleapis.com/css?family=Roboto' rel='stylesheet' type='text/css'>
 <?php
 if(isset($additionalStylesheet)) {
   foreach ($additionalStylesheet as $stylesheet ) { echo '  <link rel="stylesheet" type="text/css" href="' . $stylesheet . '">' . "\n"; }
@@ -31,14 +30,14 @@ if(isset($additionalScript)) {
     <nav class="navbar navbar-default navbar-fixed-top" role="navigation" style="margin-bottom: 0">
       <div class="navbar-brand">SexiAuditor</div>
       <ul class="nav navbar-top-links navbar-right">
-        <li><a href="passwordupdate.php">Welcome <?php echo (isset($_SESSION['displayname']) ? $_SESSION['displayname'] : (isset($_SESSION['username']) ? $_SESSION['username'] : 'Unknown')) . ((isset($_SESSION['role']) && $_SESSION['role'] == 'admin') ? ' <i class="glyphicon glyphicon-star"></i>' : ''); ?></a></li>
+        <li><a href="passwordupdate.php">Welcome <?php echo (isset($_SESSION['displayname']) ? $_SESSION['displayname'] : (isset($_SESSION['username']) ? $_SESSION['username'] : 'Unknown')) . ((isset($_SESSION['role']) && $_SESSION['role'] == '1') ? ' <i class="glyphicon glyphicon-star"></i>' : ''); ?></a></li>
         <li><i class="glyphicon glyphicon-option-vertical" style="color: #BBB;"></i></li>
         <li class="dropdown">
           <a id="dLabel" class="dropdown-toggle" data-toggle="dropdown" href="#" aria-expanded="false">
             <i class="glyphicon glyphicon-tasks"></i>  <i class="glyphicon glyphicon-triangle-bottom" style="font-size: 0.8em;"></i>
           </a>
 <?php
-if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
+if (isset($_SESSION['role']) && $_SESSION['role'] == '1') {
   $nbColumn = " columns-3";
   $widthColumn = "col-sm-4";
 } else {
@@ -62,7 +61,7 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
                   <li><a href="inv.php"><i class="glyphicon glyphicon-list-alt glyphicon-custom"></i> Global Inventory</a></li>
                 </ul>
               </div>
-<?php if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin'): ?>
+<?php if (isset($_SESSION['role']) && $_SESSION['role'] == '1'): ?>
               <div class="<?php echo $widthColumn; ?>">
                 <ul class="multi-column-dropdown">
                   <li><a href="admin.php"><i class="glyphicon glyphicon-map-marker glyphicon-custom"></i> Admin Dashboard</a></li>
@@ -77,7 +76,7 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
 <?php endif; ?>
               <div class="<?php echo $widthColumn; ?>">
                 <ul class="multi-column-dropdown">
-<?php if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin'): ?>
+<?php if (isset($_SESSION['role']) && $_SESSION['role'] == '1'): ?>
                   <li><a href="config.php"><i class="glyphicon glyphicon-pencil glyphicon-custom"></i> Module Settings</a></li>
                   <li><a href="users.php"><i class="glyphicon glyphicon-user glyphicon-custom"></i> Users Management</a></li>
 <?php endif; ?>
