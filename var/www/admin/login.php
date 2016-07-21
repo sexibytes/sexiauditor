@@ -1,24 +1,18 @@
 <?php
+require("dbconnection.php");
 if ($_SERVER['REQUEST_METHOD'] == 'POST'){
   require("helper.php");
   $issue = true;
-  $xmlPasswordFile = "/var/www/admin/conf/passwords.xml";
   do {
-    if (!is_readable($xmlPasswordFile)) {
-      $issueMessage = "File $xmlPasswordFile is not existant or not readable";
-      break;
-    }
+    $db->where('username', secureInput($_POST['username']));
+    $resultUser = $db->getOne('users');
 
-    $xmlPassword = simplexml_load_file($xmlPasswordFile);
-    $h_passwords = array();
-    foreach ($xmlPassword->xpath('/passwords/password') as $username) { $h_passwords[(string) $username->id] = (string) $username->hash; }
-
-    if (!array_key_exists(secureInput($_POST['username']), $h_passwords)) {
+    if ($db->count < 1) {
       $issueMessage = "Unknown username " . secureInput($_POST['username']);
       break;
     }
 
-    if ($h_passwords[secureInput($_POST['username'])] != hash('sha512', secureInput($_POST['password']))) {
+    if ($resultUser['password'] != hash('sha512', secureInput($_POST['password']))) {
       $issueMessage = "Bad password for username " . secureInput($_POST['username']);
       break;
     }
@@ -28,10 +22,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST'){
     $issue = false;
     session_name('SexiAuditor');
     session_start();
-    $_SESSION['username'] = secureInput($_POST['username']);
-    $_SESSION['displayname'] = (string) $xmlPassword->xpath('/passwords/password[id="' . secureInput($_POST['username']) . '"]/displayname')[0];
-    $_SESSION['role'] = (string) $xmlPassword->xpath('/passwords/password[id="' . secureInput($_POST['username']) . '"]/role')[0];
-    $_SESSION['email'] = (string) $xmlPassword->xpath('/passwords/password[id="' . secureInput($_POST['username']) . '"]/email')[0];
+    $_SESSION['username'] = $resultUser['username'];
+    $_SESSION['displayname'] = $resultUser['displayname'];
+    $_SESSION['role'] = $resultUser['role'];
+    $_SESSION['email'] = $resultUser['email'];
     $_SESSION['isLogged'] = true;
     header('Location: index.php');
   } while (0);
