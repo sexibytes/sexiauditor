@@ -510,3 +510,10 @@ input[readonly] {
   color: black;
   font-weight: bold;
 }
+
+@font-face {
+  font-family: 'Roboto';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Roboto'), local('Roboto-Regular'), url("../fonts/Roboto-Regular.woff2") format('woff2');
+}
