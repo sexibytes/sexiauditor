@@ -1,4 +1,4 @@
-<?php if (isset($isAdminPage) && $isAdminPage && (!isset($_SESSION['role']) || $_SESSION['role'] != 'admin')) { header('Location: logout.php'); } ?>
+<?php if (isset($isAdminPage) && $isAdminPage && (!isset($_SESSION['role']) || $_SESSION['role'] != '1')) { header('Location: logout.php'); } ?>
 <!DOCTYPE HTML>
 <html>
 <head>
