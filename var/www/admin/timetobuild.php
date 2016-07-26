@@ -1,41 +1,32 @@
 <?php require("session.php"); ?>
 <?php
+require("dbconnection.php");
 $isAdminPage = true;
 $title = "Time To Build";
-$additionalStylesheet = array(  );
 $additionalScript = array( 'js/echarts-all-english-v2.js' );
 require("header.php");
 require("helper.php");
 
-if (is_readable($xmlTTBFile)) :
-  $xml = simplexml_load_file($xmlTTBFile);
-  $data = array();
-  foreach ($xml->children() as $exectime) {
+$data = array();
+$db->where('configid', "timeToBuildCount");
+$timeToBuildCount = $db->getOne('config', "value");
+if ($timeToBuildCount['value'] > 0) {
+  $limit = $timeToBuildCount['value'];
+} else {
+  $limit = NULL;
+}
+$db->orderBy("date","Desc");
+$resultExecutionTime = $db->get('executiontime', $limit);
+if ($db->count > 0) :
+  foreach ($resultExecutionTime as $exectime) {
     $dataTemp = null;
-    $dataTemp[] = 1000 * DateTime::createFromFormat('YmdHi', $exectime->attributes()['date'])->getTimestamp();
-    $dataTemp[] = (int) $exectime->attributes()['seconds'];
+    $dataTemp[] = 1000 * DateTime::createFromFormat('Y-m-d H:i:s', $exectime['date'])->getTimestamp();
+    $dataTemp[] = (int) $exectime['seconds'];
     $data[] = $dataTemp;
-  }
-
-  if (is_readable($xmlConfigsFile)) {
-    $h_configs = array();
-    $xmlConfigs = simplexml_load_file($xmlConfigsFile);
-    # hash table initialization with settings XML file
-    foreach ($xmlConfigs->xpath('/configs/config') as $config) {
-      $h_configs[(string) $config->id] = (string) $config->value;
-    }
-  } else {
-    echo '  <div class="alert alert-danger" role="alert"><span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span><span class="sr-only">Error:</span> File ' . $xmlConfigsFile . ' is not existant or not writeable</div>';
-    require("footer.php");
-    exit();
-  }
-  if($h_configs['timeToBuildCount'] > 0) {
-    $data = array_slice($data, $h_configs['timeToBuildCount'] * -1);
   }
 ?>
   <div class="container">
-    <h2>Execution Time (last <?php echo $h_configs['timeToBuildCount']; ?> builds)</h2>
-<?php if (count($data) > 0) : ?>
+    <h2>Execution Time (last <?php echo $timeToBuildCount['value']; ?> builds)</h2>
     <div id="main" style="height:600px"></div>
   </div>
 
@@ -75,14 +66,8 @@ if (is_readable($xmlTTBFile)) :
   ttbChart.setTheme('macarons');
   ttbChart.setOption(option);
   </script>
-
 <?php else : ?>
     <div class="alert alert-warning" role="alert"><span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span><span class="sr-only">Warning:</span> The scheduler have not been executed yet, add some server and module and come back.</div>
   </div>
 <?php endif; ?>
-<?php
-else :
-    echo '  <div class="alert alert-danger" role="alert"><span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span><span class="sr-only">Error:</span> File ' . $xmlTTBFile . ' is not existant or not readable</div>';
-endif;
-?>
 <?php require("footer.php"); ?>

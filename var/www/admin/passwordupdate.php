@@ -1,41 +1,41 @@
 <?php require("session.php"); ?>
 <?php
+require("dbconnection.php");
 $title = "Password Update";
 require("header.php");
 require("helper.php");
 
-$xmlPasswordsFile = "/var/www/admin/conf/passwords.xml";
-if (is_writeable($xmlPasswordsFile)):
-  $xmlPassword = simplexml_load_file($xmlPasswordsFile);
-  if ($_SERVER['REQUEST_METHOD'] == 'POST'){
-    $issue = true;
-    do {
-      if (!isset($_POST['currentPassword']) || !isset($_POST['newPassword']) || !isset($_POST['newPasswordConfirm']) || secureInput($_POST['currentPassword']) == '' || secureInput($_POST['newPassword']) == '' || secureInput($_POST['newPasswordConfirm']) == '') {
-        $issueMessage = 'Missing mandatory values for "' . secureInput($_SESSION['username']) . '" passwords';
-        break;
-      }
-      if (secureInput($_POST['newPassword']) != secureInput($_POST['newPasswordConfirm'])) {
-        $issueMessage = 'New password confirmation for "' . secureInput($_SESSION['username']) . '" username doesn\'t match';
-        break;
-      }
-      $currentHash = $xmlPassword->xpath('/passwords/password[id="' . secureInput($_SESSION['username']) . '"]/hash');
-      if (hash('sha512', secureInput($_POST['currentPassword'])) != $currentHash[0][0]) {
-        $issueMessage = 'Bad password for "' . secureInput($_SESSION['username']) . '" username';
-        break;
-      }
-      $currentHash[0][0] = hash('sha512', secureInput($_POST['newPassword']));
-      if (!$xmlPassword->asXML($xmlPasswordsFile)) {
-        $issueMessage = 'Error updating new password for "' . secureInput($_SESSION['username']) . '" username';
-        break;
-      }
-      $issue = false;
-    } while (0);
-    if ($issue) {
-      echo '      <div class="alert alert-danger" role="alert"><span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span><span class="sr-only">Error:</span> ' . $issueMessage . '</div>';
-    } else {
-      echo '      <div class="alert alert-success" role="alert"><span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span><span class="sr-only">Success:</span> Password updated successfuly, you can logout/login with your new infos</div>';
+if ($_SERVER['REQUEST_METHOD'] == 'POST'){
+  $issue = true;
+  do {
+    if (!isset($_POST['currentPassword']) || !isset($_POST['newPassword']) || !isset($_POST['newPasswordConfirm']) || secureInput($_POST['currentPassword']) == '' || secureInput($_POST['newPassword']) == '' || secureInput($_POST['newPasswordConfirm']) == '') {
+      $issueMessage = 'Missing mandatory values for "' . secureInput($_SESSION['username']) . '" passwords';
+      break;
     }
+    if (secureInput($_POST['newPassword']) != secureInput($_POST['newPasswordConfirm'])) {
+      $issueMessage = 'New password confirmation for "' . secureInput($_SESSION['username']) . '" username doesn\'t match';
+      break;
+    }
+    $db->where('username', secureInput($_SESSION['username']));
+    $resultUser = $db->getOne('users');
+    if (hash('sha512', secureInput($_POST['currentPassword'])) != $resultUser['password']) {
+      $issueMessage = 'Bad password for "' . secureInput($_SESSION['username']) . '" username';
+      break;
+    }
+    $data = Array ('password' => hash('sha512', secureInput($_POST['newPassword'])));
+    $db->where ('username', secureInput($_SESSION['username']));
+    if (!$db->update ('users', $data)) {
+      $issueMessage = 'Error updating new password for "' . secureInput($_SESSION['username']) . '" username';
+      break;
+    }
+    $issue = false;
+  } while (0);
+  if ($issue) {
+    echo '      <div class="alert alert-danger" role="alert"><span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span><span class="sr-only">Error:</span> ' . $issueMessage . '</div>';
+  } else {
+    echo '      <div class="alert alert-success" role="alert"><span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span><span class="sr-only">Success:</span> Password updated successfuly, you can logout/login with your new infos</div>';
   }
+}
 ?>
 
 <div class="container">
@@ -58,9 +58,4 @@ if (is_writeable($xmlPasswordsFile)):
   </div>
   </form>
 </div>
-<?php
-else:
-  echo '  <div class="alert alert-danger" role="alert"><span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span><span class="sr-only">Error:</span> File ' . $xmlPasswordsFile . ' is not existant or not writeable</div>';
-endif; /* check xml file */
-?>
 <?php require("footer.php"); ?>

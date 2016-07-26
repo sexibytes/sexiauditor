@@ -1,5 +1,5 @@
 <?php require("session.php"); ?>
-<?php if (!isset($_SESSION['role']) || $_SESSION['role'] != 'admin') { header('Location: logout.php'); } ?>
+<?php if (!isset($_SESSION['role']) || $_SESSION['role'] != '1') { header('Location: logout.php'); } ?>
 
 <?php
 class PHPTail {
@@ -213,14 +213,14 @@ class PHPTail {
   				</ul>
   			</li>
   			<li><i class="glyphicon glyphicon-option-vertical" style="color: #BBB;"></i></li>
-          <li><a href="passwordupdate.php">Welcome <?php echo (isset($_SESSION['displayname']) ? $_SESSION['displayname'] : $_SESSION['username']) . ((isset($_SESSION['role']) && $_SESSION['role'] == 'admin') ? ' <i class="glyphicon glyphicon-star"></i>' : ''); ?></a></li>
+          <li><a href="passwordupdate.php">Welcome <?php echo (isset($_SESSION['displayname']) ? $_SESSION['displayname'] : $_SESSION['username']) . ((isset($_SESSION['role']) && $_SESSION['role'] == '1') ? ' <i class="glyphicon glyphicon-star"></i>' : ''); ?></a></li>
           <li><i class="glyphicon glyphicon-option-vertical" style="color: #BBB;"></i></li>
           <li class="dropdown">
               <a id="dLabel" class="dropdown-toggle" data-toggle="dropdown" href="#" aria-expanded="false">
                   <i class="glyphicon glyphicon-tasks"></i>  <i class="glyphicon glyphicon-triangle-bottom" style="font-size: 0.8em;"></i>
               </a>
   <?php
-  if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin') {
+  if (isset($_SESSION['role']) && $_SESSION['role'] == '1') {
   	$nbColumn = " columns-3";
   	$widthColumn = "col-sm-4";
   } else {
@@ -244,7 +244,7 @@ class PHPTail {
   									<!-- <li class="divider"></li> -->
   								</ul>
   							</div>
-  <?php if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin'): ?>
+  <?php if (isset($_SESSION['role']) && $_SESSION['role'] == '1'): ?>
   							<div class="<?php echo $widthColumn; ?>">
   								<ul class="multi-column-dropdown">
   									<li><a href="admin.php"><i class="glyphicon glyphicon-map-marker glyphicon-custom"></i> Admin Dashboard</a></li>
@@ -261,7 +261,7 @@ class PHPTail {
   <?php endif; ?>
   							<div class="<?php echo $widthColumn; ?>">
   								<ul class="multi-column-dropdown">
-  <?php if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin'): ?>
+  <?php if (isset($_SESSION['role']) && $_SESSION['role'] == '1'): ?>
   									<li><a href="config.php"><i class="glyphicon glyphicon-pencil glyphicon-custom"></i> Module Settings</a></li>
   									<li><a href="users.php"><i class="glyphicon glyphicon-user glyphicon-custom"></i> Users Management</a></li>
   <?php endif; ?>
@@ -295,7 +295,7 @@ class PHPTail {
  */
 
 $tail = new PHPTail(array(
-    "vCron Scheduler" => "/var/log/sexiauditor/vcronScheduler.log",
+    "vCron Scheduler" => "/var/log/sexiauditor/vcronScheduler.log"
 ));
 
 /**

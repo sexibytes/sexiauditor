@@ -157,12 +157,14 @@ function addOrdinalNumberSuffix($num) {
 
 function secureInput($data) { return htmlspecialchars(stripslashes(trim($data))); }
 
-function sendMailNewUser($username, $displayname, $role, $acess) {
+function sendMailNewUser($username, $displayname, $password, $role, $access) {
   $bodyTextContent    = 'A new user have been created with your email to access audit platform on ' . gethostname() . '<br/>Please find information below:<br />';
   $bodyTextContent   .= 'Username: ' . $username . '<br />';
+  $bodyTextContent   .= 'Password: ' . $password . '<br />';
   $bodyTextContent   .= 'Display Name: ' . $displayname . '<br />';
   $bodyTextContent   .= 'Role: ' . $role . '<br />';
-  $bodyTextContent   .= 'Access: '. $acess . '<br />';
+  $bodyTextContent   .= 'Access: '. $access . '<br />';
+  $bodyTextContent   .= '<br /><strong>Please, for the sake of Unicorn, don\'t forget to change your password once connected<strong><br />';
   $bodyContent = preg_replace('/\%SEXIAUDITOR_TEXT\%/s', $bodyTextContent, file_get_contents('mail-template/newuser.html'));
 
   return $bodyContent;
@@ -251,6 +253,7 @@ class SexiCheck {
       $lang_file = 'lang.en.php';
     }
 
+    require("dbconnection.php");
     include_once 'locales/'.$lang_file;
     $this->langDef = $lang;
 
