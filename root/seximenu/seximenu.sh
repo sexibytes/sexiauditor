@@ -18,7 +18,7 @@
 #
 # Based on EFA-project configuration tool
 # http://efa-project.org/
-# 
+#
 
 # Enable Extended Globs
 shopt -s extglob
@@ -31,7 +31,7 @@ show_menu() {
     echo -e "Please choose an option:"
     echo -e " "
     echo -e "0) Logout                              5)$cyan Network settings$clean"
-    echo -e "1) Shell                               6)$cyan Change console keymap (for Frenchies)$clean"
+    echo -e "1) Shell                               6)$cyan Switch between FR<>US console keymap$clean"
     echo -e "2)$yellow Reboot system$clean"
     echo -e "3)$yellow Halt system$clean"
     echo -e "4)$yellow Restart SexiAuditor services$clean"
@@ -75,17 +75,17 @@ func_reboot() {
   done
 }
 
-# Restart SexiGraf services function
+# Restart SexiAuditor services function
 func_restartservices() {
   func_echo-header
   echo -e ""
-  echo -e "$red Restarting SexiGraf services will restart:"
+  echo -e "$red Restarting SexiAuditor services will restart:"
   echo -e "                     /etc/init.d/collectd"
   echo -e "                     /etc/init.d/grafana-server"
   echo -e "                     /etc/init.d/carbon-cache"
   echo -e "                     /etc/init.d/apache2"
   echo -e ""
-  echo -e -n "Are you sure you want to restart SexiGraf services? (y/N): $clean"
+  echo -e -n "Are you sure you want to restart SexiAuditor services? (y/N): $clean"
 
   local TMPYN
   read TMPYN
@@ -99,7 +99,7 @@ func_restartservices() {
     /etc/init.d/grafana-server start
     /etc/init.d/apache2 start
     echo -e ""
-    echo -e "SexiGraf services restarted"
+    echo -e "SexiAuditor services restarted"
     echo -e ""
     pause
   else
@@ -200,7 +200,7 @@ func_networksettings() {
         echo -e " DNS:      N/A"
         echo -e " Hostname: N/A"
         echo -e ""
-        echo -e "$green[SEXIAUDITOR]$clean Please provide new IP address for SexiGraf appliance"
+        echo -e "$green[SEXIAUDITOR]$clean Please provide new IP address for SexiAuditor appliance"
         echo -e -n "('q' to quit wizard): "
         read inputip
         if [[ $inputip == "q" ]]; then
@@ -225,7 +225,7 @@ func_networksettings() {
         echo -e " DNS:      N/A"
         echo -e " Hostname: N/A"
         echo -e ""
-        echo -e "$green[SEXIAUDITOR]$clean Please provide new netmask address for SexiGraf appliance"
+        echo -e "$green[SEXIAUDITOR]$clean Please provide new netmask address for SexiAuditor appliance"
         echo -e -n "('q' to quit wizard) (###.###.###.###): "
         read inputnm
         if [[ $inputnm == "q" ]]; then
@@ -250,7 +250,7 @@ func_networksettings() {
         echo -e " DNS:      N/A"
         echo -e " Hostname: N/A"
         echo -e ""
-        echo -e "$green[SEXIAUDITOR]$clean Please provide new gateway address for SexiGraf appliance"
+        echo -e "$green[SEXIAUDITOR]$clean Please provide new gateway address for SexiAuditor appliance"
         echo -e -n "('q' to quit wizard): "
         read inputgw
         if [[ $inputgw == "q" ]]; then
@@ -275,7 +275,7 @@ func_networksettings() {
         echo -e " DNS:      N/A"
         echo -e " Hostname: N/A"
         echo -e ""
-        echo -e "$green[SEXIAUDITOR]$clean Please provide new DNS address for SexiGraf appliance (only one DNS server)"
+        echo -e "$green[SEXIAUDITOR]$clean Please provide new DNS address for SexiAuditor appliance (only one DNS server)"
         echo -e -n "('q' to quit wizard): "
         read inputdns
         if [[ $inputdns == "q" ]]; then
@@ -300,7 +300,7 @@ func_networksettings() {
         echo -e " DNS:      $inputdns"
         echo -e " Hostname: N/A"
         echo -e ""
-        echo -e "$green[SEXIAUDITOR]$clean Please provide new hostname for SexiGraf appliance"
+        echo -e "$green[SEXIAUDITOR]$clean Please provide new hostname for SexiAuditor appliance"
         echo -e -n "('q' to quit wizard): "
         read inputhostname
         if [[ $inputhostname == "q" ]]; then
@@ -385,23 +385,28 @@ pause(){
 func_echo-header(){
   statecarboncache=`/etc/init.d/carbon-cache status`
   statecollectd=`/etc/init.d/collectd status`
-  stategrafanaserver=`/etc/init.d/grafana-server status`
+  statemariadb=`/etc/init.d/mysql status`
   stateapache2=`/etc/init.d/apache2 status`
-  clear                                                           
-  echo ""
-  echo -e "    _________             .__   _____            .___.__  __                "
-  echo -e "  /   _____/ ____ ___  __|__| /  _  \  __ __  __| _/|__|/  |_  ___________ "
-  echo -e "  \_____  \_/ __ \\  \/  /  |/  /_\  \|  |  \/ __ | |  \   __\/  _ \_  __ \"
-  echo -e "  /        \  ___/ >    <|  /    |    \  |  / /_/ | |  ||  | (  <_> )  | \/"
-  echo -e "  /_______  /\___  >__/\_ \__\____|__  /____/\____ | |__||__|  \____/|__|   "
-  echo -e "          \/     \/      \/          \/           \/                         "                                                  
+  if [ ! -f /etc/sexiauditor_version ]; then
+    sexiauditorversion="unknown > please check for /etc/sexiauditor_version file"
+  else
+    sexiauditorversion=`cat /etc/sexiauditor_version`
+  fi
+  clear
+  echo ''
+  echo -e '   __           _   _             _ _ _             '
+  echo -e '  / _\ _____  _(_) /_\  _   _  __| (_) |_ ___  _ __ '
+  echo -e '  \ \ / _ \ \/ / |//_\\\| | | |/ _  | | __/ _ \|  __|'
+  echo -e '  _\ \  __/>  <| /  _  \ |_| | (_| | | || (_) | |   '
+  echo -e '  \__/\___/_/\_\_\_/ \_/\__,_|\__,_|_|\__\___/|_|   '
   echo ""
   echo -e "Hostname:    `hostname`"
+  echo -e "Version:    " $sexiauditorversion
   echo -e "IP:          `ifconfig eth0 | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*'`"
   echo -e "Netmask:     `ifconfig eth0 | grep -Eo ' (Mask:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*'`"
   echo -e "GW:          "`ip route show | grep -Eo "default via ([0-9]*\.){3}[0-9]*" | grep -Eo '([0-9]*\.){3}[0-9]*'`""
   echo ""
-  echo -e "`df -h | egrep "Filesystem|sda1"`"
+  echo -e "`df -h | egrep "Filesystem|dm-0"`"
   echo ""
   if [[ $statecarboncache =~ "Active: active (running)" ]]; then
     echo -e -n " carbon-cache  [$green RUNNING $clean]"
@@ -413,10 +418,10 @@ func_echo-header(){
   else
     echo -e "                 collectd [$red FAILED  $clean]"
   fi
-  if [[ $stategrafanaserver =~ "Active: active (running)" ]]; then
-    echo -e -n " grafana       [$green RUNNING $clean]"
+  if [[ $statemariadb =~ "Active: active (running)" ]]; then
+    echo -e -n " mariadb       [$green RUNNING $clean]"
   else
-    echo -e -n " grafana       [$red FAILED  $clean]"
+    echo -e -n " mariadb       [$red FAILED  $clean]"
   fi
   if [[ $stateapache2 =~ "Active: active (running)" ]]; then
     echo -e "                 apache2  [$green RUNNING $clean]"
