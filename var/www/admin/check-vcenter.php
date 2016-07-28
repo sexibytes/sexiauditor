@@ -29,29 +29,27 @@ try {
 }
 
 if($check->getModuleSchedule('vcSessionAge') != 'off') {
-  $check->displayCheck([  'xmlFile' => "sessions-global.xml",
-                          'xpathQuery' => "/sessions/session[age>" . $check->getConfig('vcSessionAge') . "]",
+  $vcSessionAge = ($check->getConfig('vcSessionAge') != 'undefined') ? $check->getConfig('vcSessionAge') : 0;
+  $check->displayCheck([  'sqlQuery' => "SELECT DATEDIFF('" . $check->getSelectedDate() . "', sessions.lastActiveTime) as age, vcenters.name as vcenter, sessions.lastActiveTime, sessions.userName, sessions.ipAddress, sessions.userAgent FROM sessions, vcenters WHERE sessions.vcenter = vcenters.id AND active = 1 AND lastActiveTime < '" . $check->getSelectedDate() . "' - INTERVAL $vcSessionAge DAY",
                           "id" => "VCSESSIONAGE",
                           'thead' => array('Session Age', 'Last ActiveTime', 'UserName', 'ipAddress', 'UserAgent', 'vCenter'),
-                          'tbody' => array('"<td>".round($entry->age)."</td>"', '"<td>".$entry->lastActiveTime."</td>"', '"<td>".$entry->userName."</td>"', '"<td>".$entry->ipAddress."</td>"', '"<td>".$this->getUserAgent($entry->userAgent)."</td>"', '"<td>".$entry->vcenter."</td>"'),
+                          'tbody' => array('"<td>".round($entry["age"])."</td>"', '"<td>".$entry["lastActiveTime"]."</td>"', '"<td>".$entry["userName"]."</td>"', '"<td>".$entry["ipAddress"]."</td>"', '"<td>".$this->getUserAgent($entry["userAgent"])."</td>"', '"<td>".$entry["vcenter"]."</td>"'),
                           'order' => '[ 0, "desc" ]',
                           'columnDefs' => '{ "orderable": false, className: "dt-body-center", "targets": [ 4 ] }']);
 }
 
 if($check->getModuleSchedule('vcLicenceReport') != 'off') {
-  $check->displayCheck([  'xmlFile' => "licenses-global.xml",
-                          'xpathQuery' => "/licenses/license",
+  $check->displayCheck([  'sqlQuery' => "SELECT vcenters.name as vcenter, licenses.name, licenses.costUnit, licenses.total, licenses.used, licenses.licenseKey FROM licenses, vcenters WHERE licenses.vcenter = vcenters.id AND active = 1",
                           "id" => "VCLICENCEREPORT",
                           'thead' => array('Name', 'Unit', 'Total', 'Used', 'licenseKey', 'vCenter'),
-                          'tbody' => array('"<td>".$entry->name."</td>"', '"<td>".$entry->costUnit."</td>"', '"<td>".$entry->total."</td>"', '"<td>".$entry->used."</td>"', '"<td>".'.(($check->getConfig('showPlainLicense') == 'disable') ? 'substr($entry->licenseKey, 0, 5) . "-#####-#####-#####-" . substr($entry->licenseKey, -5)' : '$entry->licenseKey').'."</td>"', '"<td>".$entry->vcenter."</td>"')]);
+                          'tbody' => array('"<td>".$entry["name"]."</td>"', '"<td>".$entry["costUnit"]."</td>"', '"<td>".$entry["total"]."</td>"', '"<td>".$entry["used"]."</td>"', '"<td>".'.(($check->getConfig('showPlainLicense') == 'disable') ? 'substr($entry["licenseKey"], 0, 5) . "-#####-#####-#####-" . substr($entry["licenseKey"], -5)' : '$entry["licenseKey"]').'."</td>"', '"<td>".$entry["vcenter"]."</td>"')]);
 }
 
 if($check->getModuleSchedule('vcCertificatesReport') != 'off') {
-  $check->displayCheck([  'xmlFile' => "certificates-global.xml",
-                          'xpathQuery' => "/certificates/certificate",
+  $check->displayCheck([  'sqlQuery' => "SELECT v.name as vcenter, c.type, c.url, c.start, c.end, DATEDIFF(c.end, '" . $check->getSelectedDate() . "') as expiry FROM certificates c, vcenters v WHERE c.vcenter = v.id AND active = 1",
                           "id" => "VCCERTIFICATESREPORT",
                           'thead' => array('Type', 'URL', 'Trust Start', 'Trust End', 'Expiry (d)', 'vCenter'),
-                          'tbody' => array('"<td>".$entry->type."</td>"', '"<td>".$entry->url."</td>"', '"<td>".$entry->start."</td>"', '"<td>".$entry->end."</td>"', '"<td>".secondsToTime($entry->expiry)."</td>"', '"<td>".$entry->vcenter."</td>"'),
+                          'tbody' => array('"<td>".$entry["type"]."</td>"', '"<td>".$entry["url"]."</td>"', '"<td>".$entry["start"]."</td>"', '"<td>".$entry["end"]."</td>"', '"<td>".$entry["expiry"]."</td>"', '"<td>".$entry["vcenter"]."</td>"'),
                           'order' => '[ 4, "asc" ]']);
 }
 ?>

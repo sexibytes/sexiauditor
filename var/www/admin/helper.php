@@ -19,18 +19,18 @@ $userAgent = array("Perl" => '<img src="images/logo-perl.png" title="VI Perl" />
 # VARIABLE EDITION END ZONE #
 #############################
 
-function secondsToTime($inputSeconds) {
-  // var_dump($inputSeconds);
-  if ($inputSeconds != "Unreachable") {
-    // $then = new DateTime(date('Y-m-d H:i:s', time() + $inputSeconds));
-    // $now = new DateTime(date('Y-m-d H:i:s', time()));
-    // $diff = $then->diff($now);
-    // return ((($diff->y > 0) ? $diff->y . 'y ' : '') . (($diff->m > 0) ? $diff->m . 'm ' : '') . $diff->d . 'd');
-    return round($inputSeconds/86400);
-  } else {
-    return 0;
-  }
-}
+// function secondsToTime($inputSeconds) {
+//   // var_dump($inputSeconds);
+//   if ($inputSeconds != "Unreachable") {
+//     // $then = new DateTime(date('Y-m-d H:i:s', time() + $inputSeconds));
+//     // $now = new DateTime(date('Y-m-d H:i:s', time()));
+//     // $diff = $then->diff($now);
+//     // return ((($diff->y > 0) ? $diff->y . 'y ' : '') . (($diff->m > 0) ? $diff->m . 'm ' : '') . $diff->d . 'd');
+//     return round($inputSeconds/86400);
+//   } else {
+//     return 0;
+//   }
+// }
 
 function isHttpAvailable($domain) {
   //initialize curl
@@ -170,7 +170,7 @@ function sendMailNewUser($username, $displayname, $password, $role, $access) {
   return $bodyContent;
 }
 
-class SexiCheck {
+class SexiCheckOld {
   private $checkType = "";
   private $xmlFile;
   private $xpathQuery;
@@ -580,5 +580,384 @@ class SexiCheck {
     }
   }
 }
+
+
+class SexiCheck {
+  private $checkType = "";
+  private $xmlFile;
+  // private $sqlQuery;
+  private $title;
+  private $description;
+  private $thead = array();
+  private $tbody = array();
+  private $order;
+  private $columnDefs;
+  private $h_configs = array();
+  private $h_modules = array();
+  private $h_moduleschedules = array();
+  private $powerChoice;
+  private $servicePolicyChoice;
+  private $alarmStatus;
+  private $header;
+  private $body;
+  private $footer;
+  private $graph;
+  private $achievementFile;
+  private $xmlConfigsFile;
+  private $xmlModulesFile;
+  private $xmlModuleSchedulesFile;
+  private $selectedDate;
+  private $xmlSelectedPath;
+  private $scannedDirectories;
+  private $xmlStartPath;
+  private $lang;
+  private $langDef;
+  private $db;
+
+  public function __construct() {
+    global $achievementFile;
+    global $xmlConfigsFile;
+    global $xmlModulesFile;
+    global $xmlModuleSchedulesFile;
+    $this->achievementFile = $achievementFile;
+    $this->xmlConfigsFile = $xmlConfigsFile;
+    $this->xmlModulesFile = $xmlModulesFile;
+    $this->xmlModuleSchedulesFile = $xmlModuleSchedulesFile;
+
+    if (is_readable($this->xmlConfigsFile)) {
+      $xmlConfigs = simplexml_load_file($this->xmlConfigsFile);
+      # hash table initialization with settings XML file
+      foreach ($xmlConfigs->xpath('/configs/config') as $config) {
+        $this->h_configs[(string) $config->id] = (string) $config->value;
+      }
+    } else {
+      throw new Exception('File ' . $this->xmlConfigsFile . ' is not existant or not readable');
+    }
+
+    if (is_readable($this->xmlModulesFile)) {
+      $xmlModules = simplexml_load_file($this->xmlModulesFile);
+      # hash table initialization with settings XML file
+      foreach ($xmlModules->xpath('/modules/module') as $module) {
+        $this->h_modules[(string) $module->id] = (string) $module->value;
+      }
+    } else {
+      throw new Exception('File ' . $this->xmlModulesFile . ' is not existant or not readable');
+    }
+
+    if (is_readable($this->xmlModuleSchedulesFile)) {
+      $xmlModuleSchedules = simplexml_load_file($this->xmlModuleSchedulesFile);
+      # hash table initialization with settings XML file
+      foreach ($xmlModuleSchedules->xpath('/modules/module') as $module) {
+        $this->h_moduleschedules[(string) $module->id] = (string) $module->schedule;
+      }
+    } else {
+      throw new Exception('File ' . $this->xmlModuleSchedulesFile . ' is not existant or not readable');
+    }
+
+    $this->lang = (defined($this->h_configs['lang'])) ? $this->h_configs['lang'] : 'en';
+    switch ($this->lang) {
+      case 'en':
+        $lang_file = 'lang.en.php';
+        break;
+      case 'fr':
+        $lang_file = 'lang.fr.php';
+        break;
+      default:
+      $lang_file = 'lang.en.php';
+    }
+
+    # database instanciation so we can use $db object in this class methods
+    require("dbconnection.php");
+    $this->db = $db;
+
+    include_once 'locales/'.$lang_file;
+    $this->langDef = $lang;
+
+    global $powerChoice;
+    global $alarmStatus;
+    global $servicePolicyChoice;
+    $this->powerChoice = $powerChoice;
+    $this->alarmStatus = $alarmStatus;
+    $this->servicePolicyChoice = $servicePolicyChoice;
+  }
+
+  private function dbGetDate() {
+    $this->db->orderBy("date","desc");
+    $this->db->groupBy("DATE(executiontime.date)");
+    $resultDate = $this->db->get('executiontime', NULL, 'date');
+    return $resultDate;
+  }
+
+  public function displayCheck($args) {
+    $args += [
+      'xmlFile' => null,
+      'sqlQuery' => null,
+      'thead' => array(),
+      'tbody' => array(),
+      'order' => null,
+      'columnDefs' => null,
+      'typeCheck' => null,
+      'majorityProperty' => null,
+      'mismatchProperty' => null,
+      'pivotProperty' => null,
+      'id' => null,
+    ];
+    extract($args);
+    $this->thead = $thead;
+    $this->tbody = $tbody;
+    $this->order = $order;
+    $this->columnDefs = $columnDefs;
+    $this->typeCheck = $typeCheck;
+    $this->majorityProperty = $majorityProperty;
+    $this->mismatchProperty = $mismatchProperty;
+    $this->pivotProperty = $pivotProperty;
+    $this->id = $id;
+    $this->header = "";
+    $this->body = "";
+    $this->footer = "";
+    $this->graph = "";
+
+    $sqlData = $this->db->rawQuery($sqlQuery);
+    if ($this->db->count > 0) {
+      $this->header .= '    <h2 class="text-danger anchor" id="' . $this->id . '"><i class="glyphicon glyphicon-exclamation-sign"></i> ' . $this->langDef[$this->id]["title"] . '</h2>'."\n";
+      $this->header .= '    <div class="alert alert-warning" role="alert"><i>' . $this->langDef[$this->id]["description"] . '</i></div>'."\n";
+      if ($this->typeCheck == "pivotTableGraphed") {
+        $this->header .= '    <div class="row">'."\n";
+        $this->header .= '    <div class="col-lg-4">'."\n";
+      } else {
+        $this->header .= '    <div class="col-lg-12">'."\n";
+      }
+      $this->header .= '      <table id="tab_' . $this->id . '" class="table table-hover">'."\n";
+      $this->header .= '        <thead><tr>'."\n";
+      foreach ($this->thead as $thead) {
+        $this->header .= '          <th>' . $thead . '</th>'."\n";
+      }
+      $this->header .= '        </tr></thead>'."\n";
+      $this->header .= '        <tbody>'."\n";
+      $entries = 0;
+      # $this->body generation will depend on check type
+      switch ($this->typeCheck) {
+        case 'majorityPerCluster':
+          $hMajority = array();
+          $sqlDataMaj = $this->db->rawQuery("SELECT cluster as clus, (SELECT " . $this->majorityProperty . " FROM hosts WHERE cluster = clus GROUP BY " . $this->majorityProperty . " ORDER BY COUNT(*) DESC LIMIT 0,1) AS topProp FROM `hosts` WHERE active = 1 GROUP BY clus");
+          foreach ($sqlDataMaj as $entry) {
+            $hMajority[$entry["clus"]] = $entry["topProp"];
+          }
+          foreach ($sqlData as $entry) {
+            if ($hMajority[$entry["clusterId"]] != $entry[$this->majorityProperty]) {
+              $entries++;
+              $this->body .= '          <tr>';
+              foreach ($this->tbody as $column) {
+                $this->body .= eval("return $column;");
+              }
+              $this->body .= '</tr>'."\n";
+            }
+          }
+          if ($entries == 0) {
+            $this->header = '';
+            $this->body = '    <h2 class="text-success anchor" id="' . $this->id . '"><i class="glyphicon glyphicon-ok-sign"></i> ' . $this->langDef[$this->id]["title"] . ' <small>' . str_replace(array("\n", "\t", "\r"), '', (rand_line($this->achievementFile))) . '</small></h2>'."\n";
+          }
+          break;
+        case 'pivotTable':
+          $dataPivot = array_diff(array_count_values(array_map("strval", $xmlContent->xpath($this->xpathQuery))), array("1"));
+          arsort($dataPivot);
+          foreach ($dataPivot as $key => $value) {
+            $entries++;
+            $this->body .= '            <tr><td>' . $key . '</td><td>' . $value . '</td></tr>';
+          }
+          break;
+        case 'pivotTableGraphed':
+          $dataPivot = array_diff(array_count_values(array_map("strval", $xmlContent->xpath($this->xpathQuery))), array("1"));
+          arsort($dataPivot);
+          $this->graph .= '<div id="graph_' . $this->id . '" class="col-lg-8" style="min-height: 550px;">sdf</div>'."\n";
+          $this->graph .= '            <script>
+          var option = {
+            tooltip : {
+                trigger: "item",
+                formatter: "{b}<br/>{c} ({d}%)"
+            },
+            toolbox: {
+              show : true,
+              feature : {
+                mark : {show: false},
+                dataView : {show: false},
+                magicType: { show : true, title : { line : "Display with line", bar : "Display with bar" }, type : ["line", "bar"] },
+                restore : {show: true},
+                saveAsImage : {show: true}
+              }
+            },
+            calculable : true,
+            series : [{
+                    name:' . $this->id . ',
+                    type:"pie",
+
+          ';
+
+          foreach ($dataPivot as $key => $value) {
+            $data[] = (object) array('value' => $value, 'name' => $key);
+            $entries++;
+            $this->body .= '            <tr><td>' . $key . '</td><td>' . $value . '</td></tr>';
+          }
+
+          $this->graph .= '
+                      data: ' . json_encode($data, JSON_NUMERIC_CHECK) . '
+                  }]
+                };
+                var ttbChart = echarts.init(document.getElementById("graph_' . $this->id . '"));
+                ttbChart.setTheme("macarons");
+                ttbChart.setOption(option);
+          </script>';
+          $this->graph .= '    </div><hr class="divider-dashed" />'."\n";
+          break;
+        default:
+          foreach ($sqlData as $entry) {
+            $entries++;
+            $this->body .= '          <tr>';
+            foreach ($this->tbody as $column) {
+              $this->body .= eval("return $column;");
+            }
+            $this->body .= '</tr>'."\n";
+          }
+      }
+      if ($entries > 0) {
+        $this->footer .= '        </tbody>
+    </table>
+  </div>
+  <script type="text/javascript">
+  $(document).ready( function () {
+    $("#tab_' . $this->id . '").DataTable( {'."\n";
+      if ($this->typeCheck != "pivotTableGraphed") { $this->footer .= '        "search": { "smart": false, "regex": true },'."\n"; } else { $this->footer .= '        "searching": false, "lengthChange": false, "info": false,'; }
+      if (!is_null($this->order)) { $this->footer .= '        "order": [' . $this->order . '],'."\n"; }
+      if (!is_null($this->columnDefs)) { $this->footer .= '        "columnDefs": [' . $this->columnDefs . '],'."\n"; }
+      $this->footer .= '      } );
+  } );
+  </script>'."\n";
+      if ($this->typeCheck != "pivotTableGraphed") { $this->footer .= '    <hr class="divider-dashed" />'."\n"; }
+      }
+    } elseif ($this->getConfig('showEmpty') == 'enable') {
+      $this->body = '    <h2 class="text-success anchor" id="' . $this->id . '"><i class="glyphicon glyphicon-ok-sign"></i> ' . $this->langDef[$this->id]["title"] . ' <small>' . str_replace(array("\n", "\t", "\r"), '', (rand_line($this->achievementFile))) . '</small></h2>'."\n";
+    }
+    echo $this->header;
+    echo $this->body;
+    echo $this->footer;
+    if ($this->typeCheck == "pivotTableGraphed") { echo $this->graph; }
+  }
+
+  public function displayHeader($formPage, $visible = true) {
+    $dateAvailable = $this->dbGetDate();
+    if (count($dateAvailable) < 1) {
+      throw new Exception('There is no data generated yet. Please add some vCenter to the <a href="credstore.php">Credential Store</a> and come back as soon as data will be retrieved (should take just a couple of minutes).');
+    }
+    if ($_SERVER['REQUEST_METHOD'] == 'POST'){
+      $this->selectedDate = $_POST["selectedDate"];
+    } else {
+      $this->selectedDate = DateTime::createFromFormat('Y-m-d H:i:s', $dateAvailable[0]['date'])->format('Y/m/d');
+    }
+    global $title;
+    $this->header = ($visible) ? '  <div style="padding-top: 10px; padding-bottom: 10px;" class="container">'."\n" : '  <div id="purgeLoading" style="display:flex;"><span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>&nbsp; Loading inventory, please wait for awesomeness ...</div>' . "\n" . '  <div style="display:none; padding-top: 10px; padding-bottom: 10px;" class="container" id="wrapper-container">'."\n";
+    $this->header .= '    <div class="row">
+      <div class="col-lg-10 alert alert-info" style="margin-top: 20px; text-align: center;">
+        <h1 style="margin-top: 10px;">'.$title.' <small>on ' . DateTime::createFromFormat('Y/m/d', $this->selectedDate)->format('l jS F Y') . '</small></h1>
+      </div>
+      <div class="alert col-lg-2">
+        <form action="' . $formPage . '" style="margin-top: 5px;" method="post">
+          <div class="form-group" style="margin-bottom: 5px;">
+            <div class="input-group date" id="datetimepicker11">
+              <input type="text" class="form-control" name="selectedDate" readonly />
+              <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-default" style="width: 100%">Select this date</button>
+          <script type="text/javascript">'."\n";
+    $this->header .= "             $(function () {
+              $('#datetimepicker11').datetimepicker({
+                ignoreReadonly: true,
+                format: 'YYYY/MM/DD',
+                showTodayButton: true,
+                defaultDate: moment(\"" . $this->selectedDate . "\", \"YYYY/MM/DD\"),
+                enabledDates: [\n";
+    foreach ($dateAvailable as $dateDirectory) {
+      $this->header .= '                  moment("' . DateTime::createFromFormat('Y-m-d H:i:s', $dateDirectory['date'])->format('Y/m/d H:i') . '", "YYYY/MM/DD HH:ii"),' . "\n";
+    }
+    $this->header .= '                ]
+              });
+            });
+          </script>
+        </form>
+      </div>
+    </div>'."\n";
+    if ($visible) { $this->header .= '    <div class="row" id="toc"><ul><li><strong>Tags</strong> <i class="glyphicon glyphicon-chevron-right"></i><i class="glyphicon glyphicon-chevron-right"></i></li></ul></div><hr class="divider-dashed">'."\n"; }
+    echo $this->header;
+  }
+
+  public function getModuleSchedule($module) {
+    $this->db->where('id', $module);
+    $resultSchedule = $this->db->getOne("moduleSchedule", "schedule");
+    return $resultSchedule['schedule'];
+  }
+
+  public function getConfig($config) {
+    $this->db->where('configid', $config);
+    $resultConfig = $this->db->getOne("config", "value");
+    if ($this->db->count > 0) {
+      return $resultConfig['value'];
+    } else {
+      return "undefined";
+    }
+  }
+
+  public function getUserAgent($useragentPattern) {
+    global $userAgent;
+    if ($useragentPattern == 'VI Perl') {
+      return $userAgent['Perl'];
+    } elseif (preg_match("/^VMware VI Client/", $useragentPattern)) {
+      return $userAgent['Client'];
+    } elseif (preg_match("/^Mozilla/", $useragentPattern)) {
+      return $userAgent['Mozilla'];
+    } elseif (preg_match("/^VMware vim-java/", $useragentPattern)) {
+      return $userAgent['java'];
+    } elseif (preg_match("/^PowerCLI/", $useragentPattern)) {
+      return $userAgent['PowerCLI'];
+    } else {
+      return "undefined";
+    }
+  }
+
+  public function getSumValue() {
+    # code...
+  }
+
+  public function getSelectedPath() {
+    return $this->xmlStartPath.$this->xmlSelectedPath;
+  }
+
+  public function getSelectedDate() {
+    return $this->selectedDate;
+  }
+
+  public function getVMInfos($vmMoRef, $vcenter) {
+    $xmlFile = $this->xmlStartPath.$this->xmlSelectedPath.'/vms-global.xml';
+    if (is_readable($xmlFile)) {
+      $xmlContent = simplexml_load_file($xmlFile);
+      $xpathFull = $xmlContent->xpath("/vms/vm[moref='" . $vmMoRef . "' and vcenter='" . $vcenter . "']");
+      return ((count($xpathFull) == 1) ? $xpathFull[0] : 'inexistant');
+    } else {
+      return 'error';
+    }
+  }
+
+  public function getDatastoreInfos($datastoreName, $vcenter) {
+    $xmlFile = $this->xmlStartPath.$this->xmlSelectedPath.'/datastores-global.xml';
+    if (is_readable($xmlFile)) {
+      $xmlContent = simplexml_load_file($xmlFile);
+      $xpathFull = $xmlContent->xpath("/datastores/datastore[name='" . $datastoreName . "' and vcenter='" . $vcenter . "']");
+      return ((count($xpathFull) == 1) ? $xpathFull[0] : 'inexistant');
+    } else {
+      return 'error';
+    }
+  }
+}
+
+
 
 ?>
