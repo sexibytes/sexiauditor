@@ -692,8 +692,8 @@ sub vminventory {
     if(defined($vm_view->guest) && defined($vm_view->guest->guestId)) { $vm_guestId = $vm_view->guest->guestId; }
     my $vm_configGuestId = "Not Available";
     if(defined($vm_view->{'config.guestId'})) { $vm_configGuestId = $vm_view->{'config.guestId'}; }
-    my $vm_toolsVersion = "Not Available";
-    if(defined($vm_view->guest) && defined($vm_view->guest->toolsVersion)) { $vm_toolsVersion = $vm_view->guest->toolsVersion; }
+    my $vm_toolsVersion = 0;
+    if(defined($vm_view->guest) && defined($vm_view->guest->toolsVersion)) { $vm_toolsVersion = 0+$vm_view->guest->toolsVersion; }
     my $devices = $vm_view->{'config.hardware.device'};
     my $removableExist = 0;
     foreach my $device (@$devices) {
@@ -730,7 +730,7 @@ sub vminventory {
     my $vcenterID = dbGetVC($vcentersdk->host);
     my $hostID = dbGetHost($vm_view->runtime->host->type."-".$vm_view->runtime->host->value, $vcenterID);
     my $moRef = $vm_view->{'mo_ref'}->{'type'}."-".$vm_view->{'mo_ref'}->{'value'};
-    my $query = "SELECT * FROM vms WHERE host = '" . $hostID . "' AND moref = '" . $moRef . "' AND active = 1";
+    my $query = "SELECT vms.* FROM vms INNER JOIN hosts h ON vms.host = h.id WHERE h.vcenter = '" . $vcenterID . "' AND vms.moref = '" . $moRef . "' AND vms.active = 1";
     my $sth = $dbh->prepare($query);
     $sth->execute();
     my $rows = $sth->rows;
@@ -790,7 +790,7 @@ sub vminventory {
     } else {
       if ($rows gt 0) {
         # VM have changed, we must decom old one before create a new one
-        $logger->info("[DEBUG][VM-INVENTORY] VM $moRef on host $hostID have changed since last check, sending old entry it into oblivion");
+        $logger->info("[DEBUG][VM-INVENTORY] VM $moRef on host $hostID have changed since last check, sending old entry " . $ref->{'id'} . " it into oblivion");
         my $sqlUpdate = $dbh->prepare("UPDATE vms set active = 0 WHERE id = '" . $ref->{'id'} . "'");
         $sqlUpdate->execute();
         $sqlUpdate->finish();
@@ -900,7 +900,7 @@ sub hostinventory {
       && ($ref->{'vcenter'} eq $vcenterID)
       && ($ref->{'cluster'} eq $clusterID)
       && ($ref->{'hostname'} eq $host_view->{'config.network.dnsConfig'}->hostName)
-      && ($ref->{'name'} eq $host_view->name)
+      && ($ref->{'host_name'} eq $host_view->name)
       && ($ref->{'ntpservers'} eq join(';', sort @$ntpservers))
       && ($ref->{'deadlunpathcount'} eq $lundeadpathcount)
       && ($ref->{'numcpucore'} eq $host_view->{'summary.hardware.numCpuCores'})
@@ -935,7 +935,7 @@ sub hostinventory {
         $sqlUpdate->finish();
       }
       $logger->info("[DEBUG][HOST-INVENTORY] Adding data for host $moRef");
-      my $sqlInsert = $dbh->prepare("INSERT INTO hosts (vcenter, cluster, moref, hostname, name, ntpservers, deadlunpathcount, numcpucore, syslog_target, rebootrequired, powerpolicy, bandwidthcapacity, memory, dnsservers, cputype, numcpu, inmaintenancemode, lunpathcount, model, sharedmemory, cpumhz, esxbuild, ssh_policy, shell_policy, firstseen, lastseen, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?), ?)");
+      my $sqlInsert = $dbh->prepare("INSERT INTO hosts (vcenter, cluster, moref, hostname, host_name, ntpservers, deadlunpathcount, numcpucore, syslog_target, rebootrequired, powerpolicy, bandwidthcapacity, memory, dnsservers, cputype, numcpu, inmaintenancemode, lunpathcount, model, sharedmemory, cpumhz, esxbuild, ssh_policy, shell_policy, firstseen, lastseen, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?), ?)");
       $sqlInsert->execute(
         $vcenterID,
         $clusterID,
@@ -995,14 +995,14 @@ sub clusterinventory {
     # TODO > generate error and skip if multiple + manage deletion (execute query on lastseen != $start)
     my $ref = $sth->fetchrow_hashref();
     if (($rows gt 0)
-      && ($ref->{'name'} eq $cluster_view->name)
+      && ($ref->{'cluster_name'} eq $cluster_view->name)
       && ($ref->{'dasenabled'} eq $dasenabled)
       && ($ref->{'lastconfigissuetime'} eq $lastconfigissuetime)
       && ($ref->{'lastconfigissue'} eq $lastconfigissue)) {
       # Cluster already exists, have not changed, updated lastseen property
       $logger->info("[DEBUG][CLUSTER-INVENTORY] Cluster $moRef already exists and have not changed since last check, updating lastseen property");
-      my $sqlUpdate = $dbh->prepare("UPDATE clusters set lastseen = FROM_UNIXTIME (?) AND vmotion = " . $cluster_view->summary->numVmotions . " WHERE id = '" . $ref->{'id'} . "'");
-      $sqlUpdate->execute($start);
+      my $sqlUpdate = $dbh->prepare("UPDATE clusters set lastseen = FROM_UNIXTIME ($start), vmotion = " . $cluster_view->summary->numVmotions . " WHERE id = '" . $ref->{'id'} . "'");
+      $sqlUpdate->execute();
       $sqlUpdate->finish();
     } else {
       if ($rows gt 0) {
@@ -1013,7 +1013,7 @@ sub clusterinventory {
         $sqlUpdate->finish();
       }
       $logger->info("[DEBUG][CLUSTER-INVENTORY] Adding data for cluster $moRef");
-      my $sqlInsert = $dbh->prepare("INSERT INTO clusters (vcenter, moref, name, vmotion, dasenabled, lastconfigissuetime, lastconfigissue, firstseen, lastseen, active) VALUES (?, ?, ?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?), ?)");
+      my $sqlInsert = $dbh->prepare("INSERT INTO clusters (vcenter, moref, cluster_name, vmotion, dasenabled, lastconfigissuetime, lastconfigissue, firstseen, lastseen, active) VALUES (?, ?, ?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?), ?)");
       $sqlInsert->execute(
         $vcenterID,
         $moRef,
@@ -1055,7 +1055,7 @@ sub datastoreinventory {
     my $ref = $sth->fetchrow_hashref();
     if (($rows gt 0)
       && ($ref->{'vcenter'} eq $vcenterID)
-            && ($ref->{'name'} eq $datastore_view->name)
+      && ($ref->{'name'} eq $datastore_view->name)
       && ($ref->{'type'} eq $datastore_view->summary->type)
       && ($ref->{'size'} eq $datastore_view->summary->capacity)
       && ($ref->{'uncommitted'} eq $uncommitted)
@@ -1276,7 +1276,7 @@ sub getAlarms {
       my $ref = $sth->fetchrow_hashref();
       if (($rows gt 0)
         && ($ref->{'entityMoRef'} eq $entityMoRef)
-        && ($ref->{'name'} eq $alarm->{'info.name'})
+        && ($ref->{'alarm_name'} eq $alarm->{'info.name'})
         && ($ref->{'time'} eq $createTime)
         && ($ref->{'status'} eq $triggeredAlarm->overallStatus->val)) {
         # Alarm already exists, have not changed, updated lastseen property
@@ -1290,7 +1290,7 @@ sub getAlarms {
           $sqlUpdate->execute();
           $sqlUpdate->finish();
         }
-        my $sqlInsert = $dbh->prepare("INSERT INTO alarms (vcenter, moref, entityMoRef, name, time, status, firstseen, lastseen, active) VALUES (?, ?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?), ?)");
+        my $sqlInsert = $dbh->prepare("INSERT INTO alarms (vcenter, moref, entityMoRef, alarm_name, time, status, firstseen, lastseen, active) VALUES (?, ?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?), ?)");
         $sqlInsert->execute(
           $vcenterID,
           $moRef,
@@ -1460,14 +1460,14 @@ sub dbGetVC {
   # This subroutine will return vcenter ID if it exists
   # or create a new vcenter ID if not
   my ($vcenterName) = @_;
-  my $query = "SELECT id FROM vcenters WHERE name = '" . $vcenterName . "'";
+  my $query = "SELECT id FROM vcenters WHERE vcname = '" . $vcenterName . "'";
   my $sth = $dbh->prepare($query);
   $sth->execute();
   my $rows = $sth->rows;
   my $vcenterID = 0;
   if ($rows eq 0) {
     # vcenter ID does not exist so we create it and return it
-    my $sqlInsert = $dbh->prepare("INSERT INTO vcenters (name, firstseen, lastseen) VALUES (?, FROM_UNIXTIME (?), FROM_UNIXTIME (?))");
+    my $sqlInsert = $dbh->prepare("INSERT INTO vcenters (vcname, firstseen, lastseen) VALUES (?, FROM_UNIXTIME (?), FROM_UNIXTIME (?))");
     $sqlInsert->execute($vcenterName, $start, $start);
     $sqlInsert->finish();
     # re-execute query after inserting new vcenter
