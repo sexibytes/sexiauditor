@@ -32,11 +32,11 @@ DROP TABLE IF EXISTS `alarms`;
 CREATE TABLE IF NOT EXISTS `alarms` (
 `id` int(11) NOT NULL,
   `vcenter` int(11) NOT NULL,
-  `moref` varchar(255) CHARACTER SET latin1 NOT NULL,
-  `entityMoRef` varchar(255) CHARACTER SET latin1 NOT NULL,
-  `alarm_name` varchar(255) CHARACTER SET latin1 NOT NULL,
+  `moref` varchar(255) CHARACTER SET utf8 NOT NULL,
+  `entityMoRef` varchar(255) CHARACTER SET utf8 NOT NULL,
+  `alarm_name` varchar(255) CHARACTER SET utf8 NOT NULL,
   `time` datetime NOT NULL,
-  `status` varchar(50) CHARACTER SET latin1 NOT NULL,
+  `status` varchar(50) CHARACTER SET utf8 NOT NULL,
   `firstseen` datetime NOT NULL,
   `lastseen` datetime NOT NULL,
   `active` tinyint(1) NOT NULL
@@ -52,10 +52,10 @@ DROP TABLE IF EXISTS `certificates`;
 CREATE TABLE IF NOT EXISTS `certificates` (
 `id` int(11) NOT NULL,
   `vcenter` int(11) NOT NULL,
-  `url` varchar(255) CHARACTER SET latin1 NOT NULL,
+  `url` varchar(255) CHARACTER SET utf8 NOT NULL,
   `start` datetime NOT NULL,
   `end` datetime NOT NULL,
-  `type` varchar(255) CHARACTER SET latin1 NOT NULL,
+  `type` varchar(255) CHARACTER SET utf8 NOT NULL,
   `firstseen` datetime NOT NULL,
   `lastseen` datetime NOT NULL,
   `active` tinyint(1) NOT NULL
@@ -71,12 +71,12 @@ DROP TABLE IF EXISTS `clusters`;
 CREATE TABLE IF NOT EXISTS `clusters` (
 `id` int(11) NOT NULL,
   `vcenter` int(11) NOT NULL,
-  `moref` varchar(255) CHARACTER SET latin1 NOT NULL,
-  `cluster_name` varchar(255) CHARACTER SET latin1 NOT NULL,
+  `moref` varchar(255) CHARACTER SET utf8 NOT NULL,
+  `cluster_name` varchar(255) CHARACTER SET utf8 NOT NULL,
   `vmotion` int(11) NOT NULL,
   `dasenabled` tinyint(1) NOT NULL,
   `lastconfigissuetime` datetime NOT NULL,
-  `lastconfigissue` varchar(255) CHARACTER SET latin1 DEFAULT NULL,
+  `lastconfigissue` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
   `firstseen` datetime NOT NULL,
   `lastseen` datetime NOT NULL,
   `active` tinyint(1) NOT NULL
@@ -91,10 +91,10 @@ CREATE TABLE IF NOT EXISTS `clusters` (
 DROP TABLE IF EXISTS `config`;
 CREATE TABLE IF NOT EXISTS `config` (
 `id` int(11) NOT NULL,
-  `configid` varchar(50) CHARACTER SET latin1 NOT NULL,
+  `configid` varchar(50) CHARACTER SET utf8 NOT NULL,
   `type` int(11) NOT NULL,
-  `label` varchar(255) CHARACTER SET latin1 NOT NULL,
-  `value` varchar(50) CHARACTER SET latin1 NOT NULL
+  `label` varchar(255) CHARACTER SET utf8 NOT NULL,
+  `value` varchar(50) CHARACTER SET utf8 NOT NULL
 ) ENGINE=InnoDB AUTO_INCREMENT=24 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
@@ -134,7 +134,7 @@ INSERT INTO `config` (`id`, `configid`, `type`, `label`, `value`) VALUES
 DROP TABLE IF EXISTS `configtype`;
 CREATE TABLE IF NOT EXISTS `configtype` (
 `id` int(11) NOT NULL,
-  `type` varchar(50) CHARACTER SET latin1 NOT NULL
+  `type` varchar(50) CHARACTER SET utf8 NOT NULL
 ) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
@@ -163,7 +163,7 @@ DROP TABLE IF EXISTS `configurationissues`;
 CREATE TABLE IF NOT EXISTS `configurationissues` (
 `id` int(11) NOT NULL,
   `host` int(11) NOT NULL,
-  `configissue` varchar(255) CHARACTER SET latin1 NOT NULL,
+  `configissue` varchar(255) CHARACTER SET utf8 NOT NULL,
   `firstseen` datetime NOT NULL,
   `lastseen` datetime NOT NULL,
   `active` tinyint(1) NOT NULL
@@ -179,14 +179,14 @@ DROP TABLE IF EXISTS `datastores`;
 CREATE TABLE IF NOT EXISTS `datastores` (
 `id` int(11) NOT NULL,
   `vcenter` int(11) NOT NULL,
-  `moref` varchar(255) CHARACTER SET latin1 NOT NULL,
-  `name` varchar(255) CHARACTER SET latin1 NOT NULL,
-  `type` varchar(50) CHARACTER SET latin1 NOT NULL,
+  `moref` varchar(255) CHARACTER SET utf8 NOT NULL,
+  `name` varchar(255) CHARACTER SET utf8 NOT NULL,
+  `type` varchar(50) CHARACTER SET utf8 NOT NULL,
   `size` bigint(20) NOT NULL,
   `uncommitted` bigint(20) NOT NULL,
   `iormConfiguration` tinyint(1) NOT NULL,
   `freespace` bigint(20) NOT NULL,
-  `maintenanceMode` varchar(50) CHARACTER SET latin1 NOT NULL,
+  `maintenanceMode` varchar(50) CHARACTER SET utf8 NOT NULL,
   `isAccessible` tinyint(1) NOT NULL,
   `shared` tinyint(1) NOT NULL,
   `firstseen` datetime NOT NULL,
@@ -204,8 +204,8 @@ DROP TABLE IF EXISTS `distributedvirtualportgroups`;
 CREATE TABLE IF NOT EXISTS `distributedvirtualportgroups` (
 `id` int(11) NOT NULL,
   `vcenter` int(11) NOT NULL,
-  `moref` varchar(255) CHARACTER SET latin1 NOT NULL,
-  `name` varchar(255) CHARACTER SET latin1 NOT NULL,
+  `moref` varchar(255) CHARACTER SET utf8 NOT NULL,
+  `name` varchar(255) CHARACTER SET utf8 NOT NULL,
   `numports` int(11) NOT NULL,
   `openports` int(11) NOT NULL,
   `autoexpand` tinyint(1) NOT NULL,
@@ -237,9 +237,9 @@ DROP TABLE IF EXISTS `hardwarestatus`;
 CREATE TABLE IF NOT EXISTS `hardwarestatus` (
 `id` int(11) NOT NULL,
   `host` int(11) NOT NULL,
-  `issuename` varchar(255) CHARACTER SET latin1 NOT NULL,
-  `issuestate` varchar(255) CHARACTER SET latin1 NOT NULL,
-  `issuetype` varchar(255) CHARACTER SET latin1 NOT NULL,
+  `issuename` varchar(255) CHARACTER SET utf8 NOT NULL,
+  `issuestate` varchar(255) CHARACTER SET utf8 NOT NULL,
+  `issuetype` varchar(255) CHARACTER SET utf8 NOT NULL,
   `firstseen` datetime NOT NULL,
   `lastseen` datetime NOT NULL,
   `active` tinyint(1) NOT NULL
@@ -256,28 +256,28 @@ CREATE TABLE IF NOT EXISTS `hosts` (
 `id` int(11) NOT NULL,
   `vcenter` int(11) NOT NULL,
   `cluster` int(11) DEFAULT NULL,
-  `moref` varchar(255) CHARACTER SET latin1 NOT NULL,
-  `hostname` varchar(255) CHARACTER SET latin1 NOT NULL,
-  `host_name` varchar(255) CHARACTER SET latin1 NOT NULL,
-  `ntpservers` varchar(255) CHARACTER SET latin1 NOT NULL,
+  `moref` varchar(255) CHARACTER SET utf8 NOT NULL,
+  `hostname` varchar(255) CHARACTER SET utf8 NOT NULL,
+  `host_name` varchar(255) CHARACTER SET utf8 NOT NULL,
+  `ntpservers` varchar(255) CHARACTER SET utf8 NOT NULL,
   `deadlunpathcount` int(11) NOT NULL,
   `numcpucore` int(11) NOT NULL,
-  `syslog_target` varchar(255) CHARACTER SET latin1 NOT NULL,
+  `syslog_target` varchar(255) CHARACTER SET utf8 NOT NULL,
   `rebootrequired` tinyint(1) NOT NULL,
-  `powerpolicy` varchar(255) CHARACTER SET latin1 NOT NULL,
+  `powerpolicy` varchar(255) CHARACTER SET utf8 NOT NULL,
   `bandwidthcapacity` int(11) NOT NULL,
   `memory` bigint(20) NOT NULL,
-  `dnsservers` varchar(255) CHARACTER SET latin1 NOT NULL,
-  `cputype` varchar(255) CHARACTER SET latin1 NOT NULL,
+  `dnsservers` varchar(255) CHARACTER SET utf8 NOT NULL,
+  `cputype` varchar(255) CHARACTER SET utf8 NOT NULL,
   `numcpu` int(11) NOT NULL,
   `inmaintenancemode` tinyint(1) NOT NULL,
   `lunpathcount` int(11) NOT NULL,
-  `model` varchar(255) CHARACTER SET latin1 NOT NULL,
+  `model` varchar(255) CHARACTER SET utf8 NOT NULL,
   `sharedmemory` int(11) NOT NULL,
   `cpumhz` int(11) NOT NULL,
-  `esxbuild` varchar(255) CHARACTER SET latin1 NOT NULL,
-  `ssh_policy` varchar(255) CHARACTER SET latin1 NOT NULL,
-  `shell_policy` varchar(255) CHARACTER SET latin1 NOT NULL,
+  `esxbuild` varchar(255) CHARACTER SET utf8 NOT NULL,
+  `ssh_policy` varchar(255) CHARACTER SET utf8 NOT NULL,
+  `shell_policy` varchar(255) CHARACTER SET utf8 NOT NULL,
   `firstseen` datetime NOT NULL,
   `lastseen` datetime NOT NULL,
   `active` tinyint(1) NOT NULL
@@ -292,13 +292,13 @@ CREATE TABLE IF NOT EXISTS `hosts` (
 DROP TABLE IF EXISTS `licenses`;
 CREATE TABLE IF NOT EXISTS `licenses` (
 `id` int(11) NOT NULL,
-  `licenseKey` varchar(255) CHARACTER SET latin1 NOT NULL,
+  `licenseKey` varchar(255) CHARACTER SET utf8 NOT NULL,
   `vcenter` int(11) NOT NULL,
-  `costUnit` varchar(255) CHARACTER SET latin1 NOT NULL,
-  `editionKey` varchar(255) CHARACTER SET latin1 NOT NULL,
+  `costUnit` varchar(255) CHARACTER SET utf8 NOT NULL,
+  `editionKey` varchar(255) CHARACTER SET utf8 NOT NULL,
   `used` int(11) NOT NULL,
   `total` int(11) NOT NULL,
-  `name` varchar(255) CHARACTER SET latin1 NOT NULL,
+  `name` varchar(255) CHARACTER SET utf8 NOT NULL,
   `firstseen` datetime NOT NULL,
   `lastseen` datetime NOT NULL,
   `active` tinyint(1) NOT NULL
@@ -313,7 +313,7 @@ CREATE TABLE IF NOT EXISTS `licenses` (
 DROP TABLE IF EXISTS `moduleCategory`;
 CREATE TABLE IF NOT EXISTS `moduleCategory` (
 `id` int(11) NOT NULL,
-  `category` varchar(50) CHARACTER SET latin1 NOT NULL
+  `category` varchar(50) CHARACTER SET utf8 NOT NULL
 ) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
@@ -339,11 +339,11 @@ INSERT INTO `moduleCategory` (`id`, `category`) VALUES
 DROP TABLE IF EXISTS `modules`;
 CREATE TABLE IF NOT EXISTS `modules` (
 `id` int(11) NOT NULL,
-  `module﻿_id` varchar(50) CHARACTER SET latin1 NOT NULL,
-  `type` varchar(10) CHARACTER SET latin1 NOT NULL,
-  `displayName` varchar(255) CHARACTER SET latin1 NOT NULL,
+  `module﻿_id` varchar(50) CHARACTER SET utf8 NOT NULL,
+  `type` varchar(10) CHARACTER SET utf8 NOT NULL,
+  `displayName` varchar(255) CHARACTER SET utf8 NOT NULL,
   `version` decimal(10,0) NOT NULL,
-  `description` varchar(255) CHARACTER SET latin1 NOT NULL,
+  `description` varchar(255) CHARACTER SET utf8 NOT NULL,
   `category_id` int(11) NOT NULL
 ) ENGINE=InnoDB AUTO_INCREMENT=63 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
@@ -423,8 +423,8 @@ INSERT INTO `modules` (`id`, `module﻿_id`, `type`, `displayName`, `version`, `
 
 DROP TABLE IF EXISTS `moduleSchedule`;
 CREATE TABLE IF NOT EXISTS `moduleSchedule` (
-  `id` varchar(50) CHARACTER SET latin1 NOT NULL,
-  `schedule` varchar(50) CHARACTER SET latin1 NOT NULL
+  `id` varchar(50) CHARACTER SET utf8 NOT NULL,
+  `schedule` varchar(50) CHARACTER SET utf8 NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
@@ -504,7 +504,7 @@ INSERT INTO `moduleSchedule` (`id`, `schedule`) VALUES
 DROP TABLE IF EXISTS `roles`;
 CREATE TABLE IF NOT EXISTS `roles` (
 `id` int(11) NOT NULL,
-  `role` varchar(10) CHARACTER SET latin1 NOT NULL
+  `role` varchar(10) CHARACTER SET utf8 NOT NULL
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
@@ -524,13 +524,13 @@ INSERT INTO `roles` (`id`, `role`) VALUES
 DROP TABLE IF EXISTS `sessions`;
 CREATE TABLE IF NOT EXISTS `sessions` (
 `id` int(11) NOT NULL,
-  `sessionKey` varchar(255) CHARACTER SET latin1 NOT NULL,
+  `sessionKey` varchar(255) CHARACTER SET utf8 NOT NULL,
   `vcenter` int(11) NOT NULL,
   `lastActiveTime` datetime NOT NULL,
-  `userName` varchar(255) CHARACTER SET latin1 NOT NULL,
+  `userName` varchar(255) CHARACTER SET utf8 NOT NULL,
   `loginTime` datetime NOT NULL,
-  `ipAddress` varchar(255) CHARACTER SET latin1 NOT NULL,
-  `userAgent` varchar(255) CHARACTER SET latin1 NOT NULL,
+  `ipAddress` varchar(255) CHARACTER SET utf8 NOT NULL,
+  `userAgent` varchar(255) CHARACTER SET utf8 NOT NULL,
   `firstseen` datetime NOT NULL,
   `lastseen` datetime NOT NULL,
   `active` tinyint(1) NOT NULL
@@ -546,13 +546,13 @@ DROP TABLE IF EXISTS `snapshots`;
 CREATE TABLE IF NOT EXISTS `snapshots` (
 `id` int(11) NOT NULL,
   `vm` int(11) NOT NULL,
-  `moref` varchar(255) CHARACTER SET latin1 NOT NULL,
-  `name` varchar(255) CHARACTER SET latin1 NOT NULL,
+  `moref` varchar(255) CHARACTER SET utf8 NOT NULL,
+  `name` varchar(255) CHARACTER SET utf8 NOT NULL,
   `createTime` datetime NOT NULL,
   `snapid` int(11) NOT NULL,
-  `description` varchar(255) CHARACTER SET latin1 NOT NULL,
+  `description` varchar(255) CHARACTER SET utf8 NOT NULL,
   `quiesced` tinyint(1) NOT NULL,
-  `state` varchar(255) CHARACTER SET latin1 NOT NULL,
+  `state` varchar(255) CHARACTER SET utf8 NOT NULL,
   `firstseen` datetime NOT NULL,
   `lastseen` datetime NOT NULL,
   `active` tinyint(1) NOT NULL
@@ -567,11 +567,11 @@ CREATE TABLE IF NOT EXISTS `snapshots` (
 DROP TABLE IF EXISTS `users`;
 CREATE TABLE IF NOT EXISTS `users` (
 `id` int(11) NOT NULL,
-  `username` varchar(255) CHARACTER SET latin1 NOT NULL,
-  `displayname` varchar(255) CHARACTER SET latin1 NOT NULL,
-  `email` varchar(255) CHARACTER SET latin1 NOT NULL,
+  `username` varchar(255) CHARACTER SET utf8 NOT NULL,
+  `displayname` varchar(255) CHARACTER SET utf8 NOT NULL,
+  `email` varchar(255) CHARACTER SET utf8 NOT NULL,
   `role` int(11) NOT NULL,
-  `password` char(128) CHARACTER SET latin1 NOT NULL
+  `password` char(128) CHARACTER SET utf8 NOT NULL
 ) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
@@ -591,7 +591,7 @@ INSERT INTO `users` (`id`, `username`, `displayname`, `email`, `role`, `password
 DROP TABLE IF EXISTS `vcenters`;
 CREATE TABLE IF NOT EXISTS `vcenters` (
 `id` int(11) NOT NULL,
-  `vcname` varchar(255) CHARACTER SET latin1 NOT NULL,
+  `vcname` varchar(255) CHARACTER SET utf8 NOT NULL,
   `firstseen` datetime NOT NULL,
   `lastseen` datetime NOT NULL
 ) ENGINE=InnoDB AUTO_INCREMENT=57 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
@@ -607,41 +607,41 @@ CREATE TABLE IF NOT EXISTS `vms` (
 `id` int(11) NOT NULL,
   `host` int(11) NOT NULL,
   `memReservation` int(11) NOT NULL,
-  `guestFamily` varchar(255) CHARACTER SET latin1 NOT NULL,
-  `ip` varchar(255) CHARACTER SET latin1 NOT NULL,
+  `guestFamily` varchar(255) CHARACTER SET utf8 NOT NULL,
+  `ip` varchar(255) CHARACTER SET utf8 NOT NULL,
   `swappedMemory` int(11) NOT NULL,
   `cpuLimit` int(11) NOT NULL,
-  `datastore` varchar(255) CHARACTER SET latin1 NOT NULL,
-  `moref` varchar(255) CHARACTER SET latin1 NOT NULL,
+  `datastore` varchar(255) CHARACTER SET utf8 NOT NULL,
+  `moref` varchar(255) CHARACTER SET utf8 NOT NULL,
   `consolidationNeeded` tinyint(1) NOT NULL,
-  `fqdn` varchar(255) CHARACTER SET latin1 NOT NULL,
+  `fqdn` varchar(255) CHARACTER SET utf8 NOT NULL,
   `numcpu` int(11) NOT NULL,
   `cpuReservation` int(11) NOT NULL,
   `sharedBus` tinyint(1) NOT NULL,
-  `portgroup` varchar(255) CHARACTER SET latin1 NOT NULL,
+  `portgroup` varchar(255) CHARACTER SET utf8 NOT NULL,
   `memory` int(11) NOT NULL,
   `phantomSnapshot` int(11) NOT NULL,
-  `hwversion` varchar(20) CHARACTER SET latin1 NOT NULL,
+  `hwversion` varchar(20) CHARACTER SET utf8 NOT NULL,
   `provisionned` int(11) NOT NULL,
-  `mac` varchar(255) CHARACTER SET latin1 NOT NULL,
+  `mac` varchar(255) CHARACTER SET utf8 NOT NULL,
   `multiwriter` tinyint(1) NOT NULL,
   `memHotAddEnabled` tinyint(1) NOT NULL,
-  `guestOS` varchar(255) CHARACTER SET latin1 NOT NULL,
+  `guestOS` varchar(255) CHARACTER SET utf8 NOT NULL,
   `compressedMemory` int(11) NOT NULL,
   `removable` tinyint(1) NOT NULL,
   `commited` int(11) NOT NULL,
-  `vmpath` varchar(255) CHARACTER SET latin1 NOT NULL,
+  `vmpath` varchar(255) CHARACTER SET utf8 NOT NULL,
   `balloonedMemory` int(11) NOT NULL,
   `vmtools` int(11) NOT NULL,
-  `name` varchar(255) CHARACTER SET latin1 NOT NULL,
-  `configGuestId` varchar(255) CHARACTER SET latin1 NOT NULL,
+  `name` varchar(255) CHARACTER SET utf8 NOT NULL,
+  `configGuestId` varchar(255) CHARACTER SET utf8 NOT NULL,
   `memLimit` int(11) NOT NULL,
-  `vmxpath` varchar(255) CHARACTER SET latin1 NOT NULL,
-  `connectionState` varchar(255) CHARACTER SET latin1 NOT NULL,
+  `vmxpath` varchar(255) CHARACTER SET utf8 NOT NULL,
+  `connectionState` varchar(255) CHARACTER SET utf8 NOT NULL,
   `cpuHotAddEnabled` tinyint(1) NOT NULL,
   `uncommited` int(11) NOT NULL,
-  `powerState` varchar(255) CHARACTER SET latin1 NOT NULL,
-  `guestId` varchar(255) CHARACTER SET latin1 NOT NULL,
+  `powerState` varchar(255) CHARACTER SET utf8 NOT NULL,
+  `guestId` varchar(255) CHARACTER SET utf8 NOT NULL,
   `firstseen` datetime NOT NULL,
   `lastseen` datetime NOT NULL,
   `active` tinyint(1) NOT NULL
