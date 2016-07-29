@@ -18,8 +18,8 @@ $additionalScript = array(  'js/jquery.dataTables.min.js',
 require("header.php");
 require("helper.php");
 
-# Main class loading
 try {
+  # Main class loading
   $check = new SexiCheck();
   # Header generation
   $check->displayHeader($_SERVER['SCRIPT_NAME']);
@@ -29,11 +29,10 @@ try {
 }
 
 if($check->getModuleSchedule('networkDVSportsfree') != 'off') {
-  $check->displayCheck([  'xmlFile' => "distributedvirtualportgroups-global.xml",
-                          'xpathQuery' => "/distributedvirtualportgroups/distributedvirtualportgroup[openports<" . $check->getConfig('networkDVSVSSportsfree') . "]",
+  $check->displayCheck([  'sqlQuery' => "SELECT main.name, main.autoexpand, main.numports, main.openports, v.vcname as vcenter FROM distributedvirtualportgroups main INNER JOIN vcenters v ON main.vcenter = v.id WHERE main.openports < " . $check->getConfig('networkDVSVSSportsfree'),
                           "id" => "NETWORKDVSPORTSFREE",
                           'thead' => array('Portgroup Name', 'Auto Expand', 'NumPorts', 'OpenPorts', 'PercentFree', 'vCenter'),
-                          'tbody' => array('"<td>".$entry->name."</td>"', '"<td>".($entry->autoexpand ? \'<i class="glyphicon glyphicon-ok alarm-green"></i>\' : \'<i class="glyphicon glyphicon-remove alarm-red"></i>\')."</td>"', '"<td>".$entry->numports."</td>"', '"<td>".$entry->openports."</td>"', '"<td>".(($entry->numports > 0) ? round(100 * ($entry->openports / $entry->numports)) : 0)."</td>"', '"<td>".$entry->vcenter."</td>"'),
+                          'tbody' => array('"<td>".$entry["name"]."</td>"', '"<td>".($entry["autoexpand"] ? \'<i class="glyphicon glyphicon-ok alarm-green"></i>\' : \'<i class="glyphicon glyphicon-remove alarm-red"></i>\')."</td>"', '"<td>".$entry["numports"]."</td>"', '"<td>".$entry["openports"]."</td>"', '"<td>".(($entry["numports"] > 0) ? round(100 * ($entry["openports"] / $entry["numports"])) : 0)."</td>"', '"<td>".$entry["vcenter"]."</td>"'),
                           'order' => '[ 0, "desc" ]',
                           'columnDefs' => '{ "orderable": false, className: "dt-body-center", "targets": [ 1 ] }, { className: "dt-body-center", "targets": [ 2, 3, 4 ] }']);
 }

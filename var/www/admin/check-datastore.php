@@ -18,8 +18,8 @@ $additionalScript = array(  'js/jquery.dataTables.min.js',
 require("header.php");
 require("helper.php");
 
-# Main class loading
 try {
+  # Main class loading
   $check = new SexiCheck();
   # Header generation
   $check->displayHeader($_SERVER['SCRIPT_NAME']);
@@ -29,47 +29,42 @@ try {
 }
 
 if($check->getModuleSchedule('datastoreSpacereport') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
-  $check->displayCheck([  'xmlFile' => "datastores-global.xml",
-                          'xpathQuery' => "/datastores/datastore[pct_free<" . $check->getConfig('datastoreFreeSpaceThreshold') . "]",
+  $check->displayCheck([  'sqlQuery' => "SELECT main.name, main.size, main.freespace, ROUND(100*(main.freespace/main.size)) as pct_free, v.vcname as vcenter FROM datastores main INNER JOIN vcenters v ON main.vcenter = v.id WHERE ROUND(100*(main.freespace/main.size)) < ". $check->getConfig('datastoreFreeSpaceThreshold'),
                           "id" => "DATASTORESPACEREPORT",
                           'thead' => array('Datastore Name', 'Capacity', 'FreeSpace', '% Free', 'vCenter'),
-                          'tbody' => array('"<td>".$entry->name."</td>"', '"<td>".human_filesize($entry->size)."</td>"', '"<td>".human_filesize($entry->freespace)."</td>"', '"<td>".round((($entry->freespace / $entry->size) * 100),0)."</td>"', '"<td>".$entry->vcenter."</td>"'),
+                          'tbody' => array('"<td>".$entry["name"]."</td>"', '"<td>".human_filesize($entry["size"])."</td>"', '"<td>".human_filesize($entry["freespace"])."</td>"', '"<td>".$entry["pct_free"]." %</td>"', '"<td>".$entry["vcenter"]."</td>"'),
                           'columnDefs' => '{ type: "file-size", targets: [ 1, 2 ] }']);
 }
 ?>
     <h2>Orphaned VM Files report</h2>
 <?php
 if($check->getModuleSchedule('datastoreOverallocation') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
-  $check->displayCheck([  'xmlFile' => "datastores-global.xml",
-                          'xpathQuery' => "/datastores/datastore[pct_overallocation>" . $check->getConfig('datastoreOverallocation') . "]",
+  $check->displayCheck([  'sqlQuery' => "SELECT main.name, main.size, main.freespace, main.uncommitted, ROUND(100*((main.size-main.freespace+main.uncommitted)/main.size)) as pct_overallocation, v.vcname as vcenter FROM datastores main INNER JOIN vcenters v ON main.vcenter = v.id WHERE ROUND(100*((main.size-main.freespace+main.uncommitted)/main.size)) > ". $check->getConfig('datastoreOverallocation'),
                           "id" => "DATASTOREOVERALLOCATION",
                           'thead' => array('Datastore Name', 'Capacity', 'FreeSpace', 'Uncommitted', 'Overallocation', 'vCenter'),
-                          'tbody' => array('"<td>".$entry->name."</td>"', '"<td>".human_filesize($entry->size)."</td>"', '"<td>".human_filesize($entry->freespace)."</td>"', '"<td>".human_filesize($entry->uncommitted)."</td>"', '"<td>".round(((($entry->size - $entry->freespace + $entry->uncommitted) * 100) / $entry->size),0)." %</td>"', '"<td>".$entry->vcenter."</td>"'),
+                          'tbody' => array('"<td>".$entry["name"]."</td>"', '"<td>".human_filesize($entry["size"])."</td>"', '"<td>".human_filesize($entry["freespace"])."</td>"', '"<td>".human_filesize($entry["uncommitted"])."</td>"', '"<td>".$entry["pct_overallocation"]." %</td>"', '"<td>".$entry["vcenter"]."</td>"'),
                           'columnDefs' => '{ type: "file-size", targets: [ 1, 2, 3 ] }']);
 }
 
 if($check->getModuleSchedule('datastoreSIOCdisabled') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
-  $check->displayCheck([  'xmlFile' => "datastores-global.xml",
-                          'xpathQuery' => "/datastores/datastore[iormConfiguration=0]",
+  $check->displayCheck([  'sqlQuery' => "SELECT main.name, v.vcname as vcenter FROM datastores main INNER JOIN vcenters v ON main.vcenter = v.id WHERE main.iormConfiguration = 0",
                           "id" => "DATASTORESIOCDISABLED",
                           'thead' => array('Datastore Name', 'vCenter'),
-                          'tbody' => array('"<td>".$entry->name."</td>"', '"<td>".$entry->vcenter."</td>"')]);
+                          'tbody' => array('"<td>".$entry["name"]."</td>"', '"<td>".$entry["vcenter"]."</td>"')]);
 }
 
 if($check->getModuleSchedule('datastoremaintenancemode') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
-  $check->displayCheck([  'xmlFile' => "datastores-global.xml",
-                          'xpathQuery' => "/datastores/datastore[maintenanceMode!='normal']",
+  $check->displayCheck([  'sqlQuery' => "SELECT main.name, v.vcname as vcenter FROM datastores main INNER JOIN vcenters v ON main.vcenter = v.id WHERE main.maintenanceMode <> 'normal'",
                           "id" => "DATASTOREMAINTENANCEMODE",
                           'thead' => array('Datastore Name', 'vCenter'),
-                          'tbody' => array('"<td>".$entry->name."</td>"', '"<td>".$entry->vcenter."</td>"')]);
+                          'tbody' => array('"<td>".$entry["name"]."</td>"', '"<td>".$entry["vcenter"]."</td>"')]);
 }
 
 if($check->getModuleSchedule('datastoreAccessible') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
-  $check->displayCheck([  'xmlFile' => "datastores-global.xml",
-                          'xpathQuery' => "/datastores/datastore[accessible!=1]",
+  $check->displayCheck([  'sqlQuery' => "SELECT main.name, v.vcname as vcenter FROM datastores main INNER JOIN vcenters v ON main.vcenter = v.id WHERE main.isAccessible = 0",
                           "id" => "DATASTOREACCESSIBLE",
                           'thead' => array('Datastore Name', 'vCenter'),
-                          'tbody' => array('"<td>".$entry->name."</td>"', '"<td>".$entry->vcenter."</td>"')]);
+                          'tbody' => array('"<td>".$entry["name"]."</td>"', '"<td>".$entry["vcenter"]."</td>"')]);
 }
 ?>
   </div>

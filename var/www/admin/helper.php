@@ -613,6 +613,7 @@ class SexiCheck {
   private $lang;
   private $langDef;
   private $db;
+  // private $SSPCategory;
 
   public function __construct() {
     global $achievementFile;
@@ -701,6 +702,8 @@ class SexiCheck {
       'mismatchProperty' => null,
       'pivotProperty' => null,
       'id' => null,
+      'sqlQueryHaving' => null,
+      'sqlQueryGroupBy' => null,
     ];
     extract($args);
     $this->thead = $thead;
@@ -717,6 +720,19 @@ class SexiCheck {
     $this->footer = "";
     $this->graph = "";
 
+    if ($this->selectedDate != date("Y-m-d")) {
+      # if not the same day, we build our dates objects that will be used in SQL query (after firstseen + before lastseen)
+      $sqlQuery .= " AND main.firstseen < '" . $this->selectedDate . " 23:59:59' AND main.lastseen > '" . $this->selectedDate . " 00:00:01'";
+    }
+
+    if (isset($sqlQueryHaving)) {
+      $sqlQuery .= " HAVING $sqlQueryHaving";
+    }
+    if (isset($sqlQueryGroupBy)) {
+      $sqlQuery .= " GROUP BY $sqlQueryGroupBy";
+    } elseif ($this->id != ("HOSTCONFIGURATIONISSUES" || "HOSTHARDWARESTATUS" || "VCCERTIFICATESREPORT" || "VCLICENCEREPORT")) {
+      $sqlQuery .= " GROUP BY main.moref, v.id";
+    }
     $sqlData = $this->db->rawQuery($sqlQuery);
     if ($this->db->count > 0) {
       $this->header .= '    <h2 class="text-danger anchor" id="' . $this->id . '"><i class="glyphicon glyphicon-exclamation-sign"></i> ' . $this->langDef[$this->id]["title"] . '</h2>'."\n";
@@ -767,9 +783,7 @@ class SexiCheck {
           }
           break;
         case 'pivotTableGraphed':
-          $dataPivot = array_diff(array_count_values(array_map("strval", $xmlContent->xpath($this->xpathQuery))), array("1"));
-          arsort($dataPivot);
-          $this->graph .= '<div id="graph_' . $this->id . '" class="col-lg-8" style="min-height: 550px;">sdf</div>'."\n";
+          $this->graph .= '    <div id="graph_' . $this->id . '" class="col-lg-8" style="min-height: 550px;"></div>'."\n";
           $this->graph .= '            <script>
           var option = {
             tooltip : {
@@ -789,16 +803,12 @@ class SexiCheck {
             calculable : true,
             series : [{
                     name:' . $this->id . ',
-                    type:"pie",
-
-          ';
-
-          foreach ($dataPivot as $key => $value) {
-            $data[] = (object) array('value' => $value, 'name' => $key);
+                    type:"pie",';
+          foreach ($sqlData as $entry) {
+            $data[] = (object) array('value' => $entry["dataValue"], 'name' => $entry["dataKey"]);
             $entries++;
-            $this->body .= '            <tr><td>' . $key . '</td><td>' . $value . '</td></tr>';
+            $this->body .= '            <tr><td>' . $entry["dataKey"] . '</td><td>' . $entry["dataValue"] . '</td></tr>'."\n";
           }
-
           $this->graph .= '
                       data: ' . json_encode($data, JSON_NUMERIC_CHECK) . '
                   }]
@@ -806,8 +816,20 @@ class SexiCheck {
                 var ttbChart = echarts.init(document.getElementById("graph_' . $this->id . '"));
                 ttbChart.setTheme("macarons");
                 ttbChart.setOption(option);
-          </script>';
+          </script>'."\n";
           $this->graph .= '    </div><hr class="divider-dashed" />'."\n";
+          break;
+        case 'ssp':
+          # hack for later loop
+          $entries = $this->db->count;
+          // foreach ($sqlData as $entry) {
+          //   $entries++;
+          //   $this->body .= '          <tr>';
+          //   foreach ($this->tbody as $column) {
+          //     $this->body .= eval("return $column;");
+          //   }
+          //   $this->body .= '</tr>'."\n";
+          // }
           break;
         default:
           foreach ($sqlData as $entry) {
@@ -822,17 +844,29 @@ class SexiCheck {
       if ($entries > 0) {
         $this->footer .= '        </tbody>
     </table>
-  </div>
-  <script type="text/javascript">
+  </div>'."\n";
+        if ($entries < 11 && $this->typeCheck != "pivotTableGraphed") { $this->footer .= '  <div style="clear: both; height: 10px;">&nbsp;</div>'."\n"; }
+        $this->footer .= '  <script type="text/javascript">
   $(document).ready( function () {
-    $("#tab_' . $this->id . '").DataTable( {'."\n";
-      if ($this->typeCheck != "pivotTableGraphed") { $this->footer .= '        "search": { "smart": false, "regex": true },'."\n"; } else { $this->footer .= '        "searching": false, "lengthChange": false, "info": false,'; }
-      if (!is_null($this->order)) { $this->footer .= '        "order": [' . $this->order . '],'."\n"; }
-      if (!is_null($this->columnDefs)) { $this->footer .= '        "columnDefs": [' . $this->columnDefs . '],'."\n"; }
-      $this->footer .= '      } );
-  } );
-  </script>'."\n";
-      if ($this->typeCheck != "pivotTableGraphed") { $this->footer .= '    <hr class="divider-dashed" />'."\n"; }
+    $("#tab_' . $this->id . '").DataTable( {
+      "language": { "infoFiltered": "" },'."\n";
+        if ($entries < 11) {
+          $this->footer .= '      "paging":   false,
+      "info":   false,'."\n";
+        }
+        if ($this->typeCheck != "pivotTableGraphed") { $this->footer .= '      "search": { "smart": false, "regex": true },'."\n"; } else { $this->footer .= '      "searching": false, "lengthChange": false, "info": false,'."\n"; }
+        if (!is_null($this->order)) { $this->footer .= '      "order": [' . $this->order . '],'."\n"; }
+        if (!is_null($this->columnDefs)) { $this->footer .= '      "columnDefs": [' . $this->columnDefs . '],'."\n"; }
+
+        if ($this->typeCheck == 'ssp') {
+          $this->footer .= '      "processing": true,
+      "serverSide": true,
+      "ajax": "server_processing.php?c=' . $this->id . '&t=' . strtotime($this->selectedDate) . '"'."\n";
+        }
+        $this->footer .= '      } );
+    } );
+    </script>'."\n";
+        if ($this->typeCheck != "pivotTableGraphed") { $this->footer .= '    <hr class="divider-dashed" />'."\n"; }
       }
     } elseif ($this->getConfig('showEmpty') == 'enable') {
       $this->body = '    <h2 class="text-success anchor" id="' . $this->id . '"><i class="glyphicon glyphicon-ok-sign"></i> ' . $this->langDef[$this->id]["title"] . ' <small>' . str_replace(array("\n", "\t", "\r"), '', (rand_line($this->achievementFile))) . '</small></h2>'."\n";
@@ -934,6 +968,10 @@ class SexiCheck {
   public function getSelectedDate() {
     return $this->selectedDate;
   }
+
+  // public function setSSPCategory($category) {
+  //   $this->SSPCategory = $category;
+  // }
 
   public function getVMInfos($vmMoRef, $vcenter) {
     $xmlFile = $this->xmlStartPath.$this->xmlSelectedPath.'/vms-global.xml';

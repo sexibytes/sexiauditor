@@ -30,7 +30,7 @@ try {
 
 if($check->getModuleSchedule('vcSessionAge') != 'off') {
   $vcSessionAge = ($check->getConfig('vcSessionAge') != 'undefined') ? $check->getConfig('vcSessionAge') : 0;
-  $check->displayCheck([  'sqlQuery' => "SELECT DATEDIFF('" . $check->getSelectedDate() . "', sessions.lastActiveTime) as age, vcenters.name as vcenter, sessions.lastActiveTime, sessions.userName, sessions.ipAddress, sessions.userAgent FROM sessions, vcenters WHERE sessions.vcenter = vcenters.id AND active = 1 AND lastActiveTime < '" . $check->getSelectedDate() . "' - INTERVAL $vcSessionAge DAY",
+  $check->displayCheck([  'sqlQuery' => "SELECT DATEDIFF('" . $check->getSelectedDate() . "', main.lastActiveTime) as age, v.vcname as vcenter, main.lastActiveTime, main.userName, main.ipAddress, main.userAgent FROM sessions main INNER JOIN vcenters v ON main.vcenter = v.id WHERE main.lastActiveTime < '" . $check->getSelectedDate() . "' - INTERVAL $vcSessionAge DAY",
                           "id" => "VCSESSIONAGE",
                           'thead' => array('Session Age', 'Last ActiveTime', 'UserName', 'ipAddress', 'UserAgent', 'vCenter'),
                           'tbody' => array('"<td>".round($entry["age"])."</td>"', '"<td>".$entry["lastActiveTime"]."</td>"', '"<td>".$entry["userName"]."</td>"', '"<td>".$entry["ipAddress"]."</td>"', '"<td>".$this->getUserAgent($entry["userAgent"])."</td>"', '"<td>".$entry["vcenter"]."</td>"'),
@@ -39,14 +39,14 @@ if($check->getModuleSchedule('vcSessionAge') != 'off') {
 }
 
 if($check->getModuleSchedule('vcLicenceReport') != 'off') {
-  $check->displayCheck([  'sqlQuery' => "SELECT vcenters.name as vcenter, licenses.name, licenses.costUnit, licenses.total, licenses.used, licenses.licenseKey FROM licenses, vcenters WHERE licenses.vcenter = vcenters.id AND active = 1",
+  $check->displayCheck([  'sqlQuery' => "SELECT v.vcname as vcenter, main.name, main.costUnit, main.total, main.used, main.licenseKey FROM licenses main INNER JOIN vcenters v ON main.vcenter = v.id WHERE true",
                           "id" => "VCLICENCEREPORT",
                           'thead' => array('Name', 'Unit', 'Total', 'Used', 'licenseKey', 'vCenter'),
                           'tbody' => array('"<td>".$entry["name"]."</td>"', '"<td>".$entry["costUnit"]."</td>"', '"<td>".$entry["total"]."</td>"', '"<td>".$entry["used"]."</td>"', '"<td>".'.(($check->getConfig('showPlainLicense') == 'disable') ? 'substr($entry["licenseKey"], 0, 5) . "-#####-#####-#####-" . substr($entry["licenseKey"], -5)' : '$entry["licenseKey"]').'."</td>"', '"<td>".$entry["vcenter"]."</td>"')]);
 }
 
 if($check->getModuleSchedule('vcCertificatesReport') != 'off') {
-  $check->displayCheck([  'sqlQuery' => "SELECT v.name as vcenter, c.type, c.url, c.start, c.end, DATEDIFF(c.end, '" . $check->getSelectedDate() . "') as expiry FROM certificates c, vcenters v WHERE c.vcenter = v.id AND active = 1",
+  $check->displayCheck([  'sqlQuery' => "SELECT v.vcname as vcenter, main.type, main.url, main.start, main.end, DATEDIFF(main.end, '" . $check->getSelectedDate() . "') as expiry FROM certificates main INNER JOIN vcenters v ON main.vcenter = v.id WHERE true",
                           "id" => "VCCERTIFICATESREPORT",
                           'thead' => array('Type', 'URL', 'Trust Start', 'Trust End', 'Expiry (d)', 'vCenter'),
                           'tbody' => array('"<td>".$entry["type"]."</td>"', '"<td>".$entry["url"]."</td>"', '"<td>".$entry["start"]."</td>"', '"<td>".$entry["end"]."</td>"', '"<td>".$entry["expiry"]."</td>"', '"<td>".$entry["vcenter"]."</td>"'),
