@@ -738,6 +738,7 @@ sub vminventory {
     my $memory = ($vm_view->{'summary.config.memorySizeMB'} ? $vm_view->{'summary.config.memorySizeMB'} : "0");
     my $provisionned = int(($vm_view->{'summary.storage'}->committed + $vm_view->{'summary.storage'}->uncommitted) / 1073741824);
     my $datastore = (split /\[/, (split /\]/, $vm_view->{'summary.config.vmPathName'})[0])[1];
+    $datastore = dbGetDatastore($datastore, $vcenterID);
     my $consolidationNeeded = (defined($vm_view->runtime->consolidationNeeded) ? $vm_view->runtime->consolidationNeeded : 0);
     my $cpuHotAddEnabled = (defined($vm_view->{'config.cpuHotAddEnabled'}) ? $vm_view->{'config.cpuHotAddEnabled'} : 0);
     my $memHotAddEnabled = (defined($vm_view->{'config.memoryHotAddEnabled'}) ? $vm_view->{'config.memoryHotAddEnabled'} : 0);
@@ -1055,7 +1056,7 @@ sub datastoreinventory {
     my $ref = $sth->fetchrow_hashref();
     if (($rows gt 0)
       && ($ref->{'vcenter'} eq $vcenterID)
-      && ($ref->{'name'} eq $datastore_view->name)
+      && ($ref->{'datastore_name'} eq $datastore_view->name)
       && ($ref->{'type'} eq $datastore_view->summary->type)
       && ($ref->{'size'} eq $datastore_view->summary->capacity)
       && ($ref->{'uncommitted'} eq $uncommitted)
@@ -1076,7 +1077,7 @@ sub datastoreinventory {
         $sqlUpdate->finish();
       }
 
-      my $sqlInsert = $dbh->prepare("INSERT INTO datastores (vcenter, moref, name, type, size, uncommitted, freespace, isAccessible, maintenanceMode, shared, iormConfiguration, firstseen, lastseen, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?), ?)");
+      my $sqlInsert = $dbh->prepare("INSERT INTO datastores (vcenter, moref, datastore_name, type, size, uncommitted, freespace, isAccessible, maintenanceMode, shared, iormConfiguration, firstseen, lastseen, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?), ?)");
       $sqlInsert->execute(
         $vcenterID,
         $moRef,
@@ -1537,6 +1538,33 @@ sub dbGetHost {
   $sth->finish();
   $logger->info("[DEBUG][GETHOST] HostID for host $hostMoref on vCenter $vcenterID is $hostID");
   return $hostID;
+}
+
+sub dbGetDatastore {
+  # This subroutine will return datastore ID if it exists
+  # or create a new datastore ID if not
+  my ($datastoreName,$vcenterID) = @_;
+  my $query = "SELECT id FROM datastores WHERE datastore_name = '" . $datastoreName . "' AND vcenter = '" . $vcenterID . "' AND active = 1";
+  my $sth = $dbh->prepare($query);
+  $sth->execute();
+  my $rows = $sth->rows;
+  if ($rows eq 0) {
+    # datastore ID does not exist so we create it and return it
+    my $sqlInsert = $dbh->prepare("INSERT INTO datastores (vcenter, datastore_name) VALUES (?, ?)");
+    $sqlInsert->execute($vcenterID, $datastoreName);
+    $sqlInsert->finish();
+    # re-execute query after inserting new datastore
+    $sth = $dbh->prepare($query);
+    $sth->execute();
+  }
+  my $datastoreID = 0;
+  while (my $ref = $sth->fetchrow_hashref()) {
+    $datastoreID = $ref->{'id'};
+    last;
+  }
+  $sth->finish();
+  $logger->info("[DEBUG][GETDATASTORE] DatastoreID for datastore $datastoreName on vCenter $vcenterID is $datastoreID");
+  return $datastoreID;
 }
 
 sub dbGetVM {
