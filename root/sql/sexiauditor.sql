@@ -3,7 +3,7 @@
 -- http://www.phpmyadmin.net
 --
 -- Host: localhost
--- Generation Time: Jul 29, 2016 at 03:13 PM
+-- Generation Time: Aug 01, 2016 at 02:19 PM
 -- Server version: 10.0.25-MariaDB-0+deb8u1
 -- PHP Version: 5.6.23-0+deb8u1
 
@@ -42,8 +42,6 @@ CREATE TABLE IF NOT EXISTS `alarms` (
   `active` tinyint(1) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
--- --------------------------------------------------------
-
 --
 -- Table structure for table `certificates`
 --
@@ -60,8 +58,6 @@ CREATE TABLE IF NOT EXISTS `certificates` (
   `lastseen` datetime NOT NULL,
   `active` tinyint(1) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
-
--- --------------------------------------------------------
 
 --
 -- Table structure for table `clusters`
@@ -81,8 +77,6 @@ CREATE TABLE IF NOT EXISTS `clusters` (
   `lastseen` datetime NOT NULL,
   `active` tinyint(1) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
-
--- --------------------------------------------------------
 
 --
 -- Table structure for table `config`
@@ -149,7 +143,7 @@ INSERT INTO `configtype` (`id`, `type`) VALUES
 (5, 'servicePolicy'),
 (6, 'language'),
 (7, 'powerList'),
-(8, 'daily'),
+(8, 'off'),
 (9, 'weekly'),
 (10, 'monthly');
 
@@ -169,8 +163,6 @@ CREATE TABLE IF NOT EXISTS `configurationissues` (
   `active` tinyint(1) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
--- --------------------------------------------------------
-
 --
 -- Table structure for table `datastores`
 --
@@ -180,7 +172,7 @@ CREATE TABLE IF NOT EXISTS `datastores` (
 `id` int(11) NOT NULL,
   `vcenter` int(11) NOT NULL,
   `moref` varchar(255) CHARACTER SET utf8 NOT NULL,
-  `name` varchar(255) CHARACTER SET utf8 NOT NULL,
+  `datastore_name` varchar(255) CHARACTER SET utf8 NOT NULL,
   `type` varchar(50) CHARACTER SET utf8 NOT NULL,
   `size` bigint(20) NOT NULL,
   `uncommitted` bigint(20) NOT NULL,
@@ -193,8 +185,6 @@ CREATE TABLE IF NOT EXISTS `datastores` (
   `lastseen` datetime NOT NULL,
   `active` tinyint(1) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
-
--- --------------------------------------------------------
 
 --
 -- Table structure for table `distributedvirtualportgroups`
@@ -214,8 +204,6 @@ CREATE TABLE IF NOT EXISTS `distributedvirtualportgroups` (
   `active` tinyint(1) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
--- --------------------------------------------------------
-
 --
 -- Table structure for table `executiontime`
 --
@@ -226,8 +214,6 @@ CREATE TABLE IF NOT EXISTS `executiontime` (
   `date` datetime NOT NULL,
   `seconds` smallint(6) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
-
--- --------------------------------------------------------
 
 --
 -- Table structure for table `hardwarestatus`
@@ -244,8 +230,6 @@ CREATE TABLE IF NOT EXISTS `hardwarestatus` (
   `lastseen` datetime NOT NULL,
   `active` tinyint(1) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
-
--- --------------------------------------------------------
 
 --
 -- Table structure for table `hosts`
@@ -283,8 +267,6 @@ CREATE TABLE IF NOT EXISTS `hosts` (
   `active` tinyint(1) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
--- --------------------------------------------------------
-
 --
 -- Table structure for table `licenses`
 --
@@ -303,8 +285,6 @@ CREATE TABLE IF NOT EXISTS `licenses` (
   `lastseen` datetime NOT NULL,
   `active` tinyint(1) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
-
--- --------------------------------------------------------
 
 --
 -- Table structure for table `moduleCategory`
@@ -432,63 +412,63 @@ CREATE TABLE IF NOT EXISTS `moduleSchedule` (
 --
 
 INSERT INTO `moduleSchedule` (`id`, `schedule`) VALUES
-('alarms', 'daily'),
-('clusterAdmissionControl', 'daily'),
-('clusterAutoSlotSize', 'daily'),
-('clusterConfigurationIssues', 'daily'),
-('clusterCPURatio', 'daily'),
-('clusterDatastoreConsistency', 'daily'),
-('clusterHAStatus', 'daily'),
-('clusterMembersLUNPathCountMismatch', 'daily'),
-('clusterMembersOvercommit', 'daily'),
-('clusterMembersVersion', 'daily'),
-('clusterProfile', 'daily'),
-('clusterTPSSavings', 'daily'),
-('datastoreAccessible', 'daily'),
-('datastoremaintenancemode', 'daily'),
-('datastoreOrphanedVMFilesreport', 'daily'),
-('datastoreOverallocation', 'daily'),
-('datastoreSIOCdisabled', 'daily'),
-('datastoreSpacereport', 'daily'),
-('hostballooningzipswap', 'daily'),
-('hostConfigurationIssues', 'daily'),
-('hostDNSCheck', 'daily'),
-('hostFQDNHostnameMismatch', 'daily'),
-('hostHardwareStatus', 'daily'),
-('hostLocalSwapDatastoreCompliance', 'daily'),
-('hostLUNPathDead', 'daily'),
-('hostMaintenanceMode', 'daily'),
-('hostNTPCheck', 'daily'),
-('hostPowerManagementPolicy', 'daily'),
-('hostProfileCompliance', 'daily'),
-('hostRebootrequired', 'daily'),
-('hostSshShell', 'daily'),
-('hostSyslogCheck', 'daily'),
-('networkDVSportsfree', 'daily'),
-('networkDVSprofile', 'daily'),
-('vcCertificatesReport', 'daily'),
-('vcLicenceReport', 'daily'),
-('vcSessionAge', 'daily'),
-('vmballoonzipswap', 'daily'),
-('vmconsolidationneeded', 'daily'),
-('vmcpuramhddlimits', 'daily'),
-('vmcpuramhddreservation', 'daily'),
-('vmcpuramhotadd', 'daily'),
-('vmGuestIdMismatch', 'daily'),
-('vmGuestPivot', 'daily'),
-('vmInconsistent', 'daily'),
-('vmInvalidOrInaccessible', 'daily'),
-('vmMisnamed', 'daily'),
-('vmmultiwritermode', 'daily'),
-('vmNonpersistentmode', 'daily'),
-('vmphantomsnapshot', 'daily'),
-('vmPoweredOff', 'daily'),
-('vmRemovableConnected', 'daily'),
-('vmscsibussharing', 'daily'),
-('vmSnapshotsage', 'daily'),
-('vmToolsPivot', 'daily'),
-('vmvHardwarePivot', 'daily'),
-('VSANHealthCheck', 'daily'),
+('alarms', 'off'),
+('clusterAdmissionControl', 'off'),
+('clusterAutoSlotSize', 'off'),
+('clusterConfigurationIssues', 'off'),
+('clusterCPURatio', 'off'),
+('clusterDatastoreConsistency', 'off'),
+('clusterHAStatus', 'off'),
+('clusterMembersLUNPathCountMismatch', 'off'),
+('clusterMembersOvercommit', 'off'),
+('clusterMembersVersion', 'off'),
+('clusterProfile', 'off'),
+('clusterTPSSavings', 'off'),
+('datastoreAccessible', 'off'),
+('datastoremaintenancemode', 'off'),
+('datastoreOrphanedVMFilesreport', 'off'),
+('datastoreOverallocation', 'off'),
+('datastoreSIOCdisabled', 'off'),
+('datastoreSpacereport', 'off'),
+('hostballooningzipswap', 'off'),
+('hostConfigurationIssues', 'off'),
+('hostDNSCheck', 'off'),
+('hostFQDNHostnameMismatch', 'off'),
+('hostHardwareStatus', 'off'),
+('hostLocalSwapDatastoreCompliance', 'off'),
+('hostLUNPathDead', 'off'),
+('hostMaintenanceMode', 'off'),
+('hostNTPCheck', 'off'),
+('hostPowerManagementPolicy', 'off'),
+('hostProfileCompliance', 'off'),
+('hostRebootrequired', 'off'),
+('hostSshShell', 'off'),
+('hostSyslogCheck', 'off'),
+('networkDVSportsfree', 'off'),
+('networkDVSprofile', 'off'),
+('vcCertificatesReport', 'off'),
+('vcLicenceReport', 'off'),
+('vcSessionAge', 'off'),
+('vmballoonzipswap', 'off'),
+('vmconsolidationneeded', 'off'),
+('vmcpuramhddlimits', 'off'),
+('vmcpuramhddreservation', 'off'),
+('vmcpuramhotadd', 'off'),
+('vmGuestIdMismatch', 'off'),
+('vmGuestPivot', 'off'),
+('vmInconsistent', 'off'),
+('vmInvalidOrInaccessible', 'off'),
+('vmMisnamed', 'off'),
+('vmmultiwritermode', 'off'),
+('vmNonpersistentmode', 'off'),
+('vmphantomsnapshot', 'off'),
+('vmPoweredOff', 'off'),
+('vmRemovableConnected', 'off'),
+('vmscsibussharing', 'off'),
+('vmSnapshotsage', 'off'),
+('vmToolsPivot', 'off'),
+('vmvHardwarePivot', 'off'),
+('VSANHealthCheck', 'off'),
 ('inventory', 'hourly'),
 ('hostBundlebackup', 'off'),
 ('networkDVPGAutoExpand', 'off'),
@@ -536,8 +516,6 @@ CREATE TABLE IF NOT EXISTS `sessions` (
   `active` tinyint(1) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
--- --------------------------------------------------------
-
 --
 -- Table structure for table `snapshots`
 --
@@ -558,8 +536,6 @@ CREATE TABLE IF NOT EXISTS `snapshots` (
   `active` tinyint(1) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
--- --------------------------------------------------------
-
 --
 -- Table structure for table `users`
 --
@@ -572,7 +548,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `email` varchar(255) CHARACTER SET utf8 NOT NULL,
   `role` int(11) NOT NULL,
   `password` char(128) CHARACTER SET utf8 NOT NULL
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
 -- Dumping data for table `users`
@@ -594,9 +570,7 @@ CREATE TABLE IF NOT EXISTS `vcenters` (
   `vcname` varchar(255) CHARACTER SET utf8 NOT NULL,
   `firstseen` datetime NOT NULL,
   `lastseen` datetime NOT NULL
-) ENGINE=InnoDB AUTO_INCREMENT=57 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
-
--- --------------------------------------------------------
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
 -- Table structure for table `vms`
@@ -715,13 +689,13 @@ ALTER TABLE `hardwarestatus`
 -- Indexes for table `hosts`
 --
 ALTER TABLE `hosts`
- ADD PRIMARY KEY (`id`), ADD KEY `id` (`id`), ADD KEY `vcenter` (`vcenter`), ADD KEY `vcenter_2` (`vcenter`), ADD KEY `cluster` (`cluster`), ADD KEY `moref` (`moref`), ADD KEY `name` (`host_name`), ADD KEY `hostname` (`hostname`);
+ ADD PRIMARY KEY (`id`), ADD KEY `id` (`id`), ADD KEY `vcenter` (`vcenter`), ADD KEY `cluster` (`cluster`), ADD KEY `moref` (`moref`);
 
 --
 -- Indexes for table `licenses`
 --
 ALTER TABLE `licenses`
- ADD PRIMARY KEY (`id`), ADD KEY `vcenter` (`vcenter`), ADD KEY `vcenter_2` (`vcenter`);
+ ADD PRIMARY KEY (`id`), ADD KEY `vcenter` (`vcenter`);
 
 --
 -- Indexes for table `moduleCategory`
@@ -733,13 +707,13 @@ ALTER TABLE `moduleCategory`
 -- Indexes for table `modules`
 --
 ALTER TABLE `modules`
- ADD PRIMARY KEY (`id`), ADD KEY `module﻿_id` (`module﻿_id`), ADD KEY `module﻿_id_2` (`module﻿_id`);
+ ADD PRIMARY KEY (`id`), ADD KEY `module﻿_id` (`module﻿_id`);
 
 --
 -- Indexes for table `moduleSchedule`
 --
 ALTER TABLE `moduleSchedule`
- ADD PRIMARY KEY (`id`), ADD KEY `schedule` (`schedule`), ADD KEY `schedule_2` (`schedule`);
+ ADD PRIMARY KEY (`id`), ADD KEY `schedule` (`schedule`);
 
 --
 -- Indexes for table `roles`
@@ -763,7 +737,7 @@ ALTER TABLE `snapshots`
 -- Indexes for table `users`
 --
 ALTER TABLE `users`
- ADD PRIMARY KEY (`id`), ADD UNIQUE KEY `id` (`id`), ADD UNIQUE KEY `username` (`username`), ADD KEY `id_2` (`id`), ADD KEY `username_2` (`username`), ADD KEY `displayname` (`displayname`), ADD KEY `email` (`email`), ADD KEY `role` (`role`);
+ ADD PRIMARY KEY (`id`), ADD UNIQUE KEY `id` (`id`), ADD UNIQUE KEY `username` (`username`);
 
 --
 -- Indexes for table `vcenters`
@@ -870,12 +844,12 @@ MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=10;
+MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=3;
 --
 -- AUTO_INCREMENT for table `vcenters`
 --
 ALTER TABLE `vcenters`
-MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=57;
+MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT for table `vms`
 --
