@@ -170,7 +170,7 @@ function sendMailNewUser($username, $displayname, $password, $role, $access) {
   return $bodyContent;
 }
 
-class SexiCheckOld {
+class SexiCheckXML {
   private $checkType = "";
   private $xmlFile;
   private $xpathQuery;
@@ -581,10 +581,9 @@ class SexiCheckOld {
   }
 }
 
-
 class SexiCheck {
   private $checkType = "";
-  private $xmlFile;
+  // private $xmlFile;
   // private $sqlQuery;
   private $title;
   private $description;
@@ -603,13 +602,13 @@ class SexiCheck {
   private $footer;
   private $graph;
   private $achievementFile;
-  private $xmlConfigsFile;
-  private $xmlModulesFile;
-  private $xmlModuleSchedulesFile;
+  // private $xmlConfigsFile;
+  // private $xmlModulesFile;
+  // private $xmlModuleSchedulesFile;
   private $selectedDate;
-  private $xmlSelectedPath;
-  private $scannedDirectories;
-  private $xmlStartPath;
+  // private $xmlSelectedPath;
+  // private $scannedDirectories;
+  // private $xmlStartPath;
   private $lang;
   private $langDef;
   private $db;
@@ -617,43 +616,43 @@ class SexiCheck {
 
   public function __construct() {
     global $achievementFile;
-    global $xmlConfigsFile;
-    global $xmlModulesFile;
-    global $xmlModuleSchedulesFile;
+    // global $xmlConfigsFile;
+    // global $xmlModulesFile;
+    // global $xmlModuleSchedulesFile;
     $this->achievementFile = $achievementFile;
-    $this->xmlConfigsFile = $xmlConfigsFile;
-    $this->xmlModulesFile = $xmlModulesFile;
-    $this->xmlModuleSchedulesFile = $xmlModuleSchedulesFile;
+    // $this->xmlConfigsFile = $xmlConfigsFile;
+    // $this->xmlModulesFile = $xmlModulesFile;
+    // $this->xmlModuleSchedulesFile = $xmlModuleSchedulesFile;
 
-    if (is_readable($this->xmlConfigsFile)) {
-      $xmlConfigs = simplexml_load_file($this->xmlConfigsFile);
-      # hash table initialization with settings XML file
-      foreach ($xmlConfigs->xpath('/configs/config') as $config) {
-        $this->h_configs[(string) $config->id] = (string) $config->value;
-      }
-    } else {
-      throw new Exception('File ' . $this->xmlConfigsFile . ' is not existant or not readable');
-    }
+    // if (is_readable($this->xmlConfigsFile)) {
+    //   $xmlConfigs = simplexml_load_file($this->xmlConfigsFile);
+    //   # hash table initialization with settings XML file
+    //   foreach ($xmlConfigs->xpath('/configs/config') as $config) {
+    //     $this->h_configs[(string) $config->id] = (string) $config->value;
+    //   }
+    // } else {
+    //   throw new Exception('File ' . $this->xmlConfigsFile . ' is not existant or not readable');
+    // }
 
-    if (is_readable($this->xmlModulesFile)) {
-      $xmlModules = simplexml_load_file($this->xmlModulesFile);
-      # hash table initialization with settings XML file
-      foreach ($xmlModules->xpath('/modules/module') as $module) {
-        $this->h_modules[(string) $module->id] = (string) $module->value;
-      }
-    } else {
-      throw new Exception('File ' . $this->xmlModulesFile . ' is not existant or not readable');
-    }
+    // if (is_readable($this->xmlModulesFile)) {
+    //   $xmlModules = simplexml_load_file($this->xmlModulesFile);
+    //   # hash table initialization with settings XML file
+    //   foreach ($xmlModules->xpath('/modules/module') as $module) {
+    //     $this->h_modules[(string) $module->id] = (string) $module->value;
+    //   }
+    // } else {
+    //   throw new Exception('File ' . $this->xmlModulesFile . ' is not existant or not readable');
+    // }
 
-    if (is_readable($this->xmlModuleSchedulesFile)) {
-      $xmlModuleSchedules = simplexml_load_file($this->xmlModuleSchedulesFile);
-      # hash table initialization with settings XML file
-      foreach ($xmlModuleSchedules->xpath('/modules/module') as $module) {
-        $this->h_moduleschedules[(string) $module->id] = (string) $module->schedule;
-      }
-    } else {
-      throw new Exception('File ' . $this->xmlModuleSchedulesFile . ' is not existant or not readable');
-    }
+    // if (is_readable($this->xmlModuleSchedulesFile)) {
+    //   $xmlModuleSchedules = simplexml_load_file($this->xmlModuleSchedulesFile);
+    //   # hash table initialization with settings XML file
+    //   foreach ($xmlModuleSchedules->xpath('/modules/module') as $module) {
+    //     $this->h_moduleschedules[(string) $module->id] = (string) $module->schedule;
+    //   }
+    // } else {
+    //   throw new Exception('File ' . $this->xmlModuleSchedulesFile . ' is not existant or not readable');
+    // }
 
     $this->lang = (defined($this->h_configs['lang'])) ? $this->h_configs['lang'] : 'en';
     switch ($this->lang) {
@@ -890,7 +889,7 @@ class SexiCheck {
     global $title;
     $this->header = ($visible) ? '  <div style="padding-top: 10px; padding-bottom: 10px;" class="container">'."\n" : '  <div id="purgeLoading" style="display:flex;"><span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>&nbsp; Loading inventory, please wait for awesomeness ...</div>' . "\n" . '  <div style="display:none; padding-top: 10px; padding-bottom: 10px;" class="container" id="wrapper-container">'."\n";
     $this->header .= '    <div class="row">
-      <div class="col-lg-10 alert alert-info" style="margin-top: 20px; text-align: center;">
+      <div class="col-lg-10 alert alert-info" style="padding: 6px; margin-top: 20px; text-align: center;">
         <h1 style="margin-top: 10px;">'.$title.' <small>on ' . DateTime::createFromFormat('Y/m/d', $this->selectedDate)->format('l jS F Y') . '</small></h1>
       </div>
       <div class="alert col-lg-2">
@@ -973,25 +972,38 @@ class SexiCheck {
   //   $this->SSPCategory = $category;
   // }
 
-  public function getVMInfos($vmMoRef, $vcenter) {
-    $xmlFile = $this->xmlStartPath.$this->xmlSelectedPath.'/vms-global.xml';
-    if (is_readable($xmlFile)) {
-      $xmlContent = simplexml_load_file($xmlFile);
-      $xpathFull = $xmlContent->xpath("/vms/vm[moref='" . $vmMoRef . "' and vcenter='" . $vcenter . "']");
-      return ((count($xpathFull) == 1) ? $xpathFull[0] : 'inexistant');
+  public function getVMInfos($vmID) {
+    $this->db->join("hosts h", "vms.host = h.id", "INNER");
+    $this->db->join("clusters c", "h.cluster = c.id", "INNER");
+    $this->db->join("vcenters v", "h.vcenter = v.id", "INNER");
+    $this->db->where('vms.id', $vmID);
+    $resultVM = $this->db->getOne("vms", "vms.*, c.cluster_name as cluster, h.host_name as host, v.vcname as vcenter, v.id as vcenterID");
+    if ($this->db->count > 0) {
+      return $resultVM;
     } else {
-      return 'error';
+      return "undefined";
     }
   }
 
-  public function getDatastoreInfos($datastoreName, $vcenter) {
-    $xmlFile = $this->xmlStartPath.$this->xmlSelectedPath.'/datastores-global.xml';
-    if (is_readable($xmlFile)) {
-      $xmlContent = simplexml_load_file($xmlFile);
-      $xpathFull = $xmlContent->xpath("/datastores/datastore[name='" . $datastoreName . "' and vcenter='" . $vcenter . "']");
-      return ((count($xpathFull) == 1) ? $xpathFull[0] : 'inexistant');
+  public function getDatastoreInfos($datastoreID) {
+    $this->db->where('id', $datastoreID);
+    $resultVM = $this->db->getOne("datastores", "datastore_name, size, ROUND(100*(freespace/size)) as pct_free");
+    if ($this->db->count > 0) {
+      return $resultVM;
     } else {
-      return 'error';
+      return "undefined";
+    }
+  }
+
+  public function getHostInfos($hostID) {
+    $this->db->join("clusters c", "hosts.cluster = c.id", "INNER");
+    $this->db->join("vcenters v", "hosts.vcenter = v.id", "INNER");
+    $this->db->where('hosts.id', $hostID);
+    $resultHost = $this->db->getOne("hosts", "hosts.*, c.cluster_name as cluster, v.vcname as vcenter");
+    if ($this->db->count > 0) {
+      return $resultHost;
+    } else {
+      return "undefined";
     }
   }
 }

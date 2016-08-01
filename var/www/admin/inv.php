@@ -66,37 +66,26 @@ try {
           <th>MAC</th>
         </tr></thead>
         <tbody>
-<?php
-
-// $resultVM = $db->get('vms');
-// foreach ($resultVM as $vm) {
-// $xmlFile = $check->getSelectedPath()."/vms-global.xml";
-// $xml = simplexml_load_file($xmlFile);
-//
-// foreach ($xml->vm as $vm) {
-  // echo "          <tr>";
-  // echo "<td><a href='showvm.php?moref=" . $vm["moref"] . "&vcenter=" . $vm["vcenter"] . "' target=\"_blank\">" . $vm["name"] . "</a></td>";
-  // echo "<td>" . $vm["vcenter"] . "</td>";
-  // echo "<td>" . $vm["cluster"] . "</td>";
-  // echo "<td>" . $vm["host"] . "</td>";
-  // echo "<td>" . $vm["vmxpath"] . "</td>";
-  // echo "<td>" . str_ireplace(',','<br/>',$vm["portgroup"]) . "</td>";
-  // echo "<td>" . str_ireplace(',','<br/>',$vm["ip"]) . "</td>";
-  // echo "<td>" . $vm["numcpu"] . "</td>";
-  // echo "<td>" . $vm["memory"] . "</td>";
-  // echo "<td>" . $vm["commited"] . "</td>";
-  // echo "<td>" . $vm["provisionned"] . "</td>";
-  // echo "<td>" . str_ireplace(',','<br/>',$vm["datastore"]). "</td>";
-  // echo "<td>" . $vm["vmpath"]. "</td>";
-  // echo "<td>" . str_ireplace(',','<br/>',$vm["mac"]) . "</td>";
-  // echo "</tr>\n";
-// }
-
-
-?>
         </tbody>
       </table>
     </div>
+    <div id="modal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="plan-info" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <!-- <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+              <span class="glyphicon glyphicon-remove-circle"></span>
+            </button>
+            <h4 class="modal-title"><strong>VM Details<strong></h4>
+          </div> -->
+          <div class="modal-body"><!-- /# content will goes here after ajax calls --></div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <script type="text/javascript">
       $(document).ready( function () {
         var table = $('#inventory').DataTable( {
@@ -110,6 +99,19 @@ try {
           },
           "columnDefs": [ { "targets": [ 0, 5, 6, 7, 8, 9, 10, 11, 13, 14 ], "visible": false } ]
         } );
+
+        $('#inventory').on('click', 'a[rel=modal]', function(evt) {
+          evt.preventDefault();
+          var modal = $('#modal').modal();
+          modal
+            .find('.modal-body')
+            .load($(this).attr('href'), function (responseText, textStatus) {
+              if ( textStatus === 'success' || textStatus === 'notmodified') {
+                modal.show();
+              }
+          });
+        });
+
         $('button.toggle-vis').on( 'click', function (e) {
           e.preventDefault();
           var column = table.column( $(this).attr('data-column') );
