@@ -59,31 +59,31 @@ if ($totalVCs == 0 || $totalClusters == 0 || $totalHosts == 0 || $totalVMs == 0)
   $averageVMDKCommitedSize = 75.72;
   $averageVMDKUncommitedSize = 0;
   $averageVMDKProvisionedSize = 75.72;
-  $sortedTabGuestOS = array(  "Microsoft Windows Server 2008 R2 (64-bit)" => "20.9%",
-                              "Microsoft Windows Server 2003 Standard (64-bit)" => "12.4%",
-                              "Red Hat Enterprise Linux 5 (64-bit)" => "8.6%",
-                              "Microsoft Windows Server 2003 Standard (32-bit)" => "6.7%",
-                              "Microsoft Windows XP Professional (32-bit)" => "6.2%",
-                              "Ubuntu Linux (64-bit)" => "5.8%",
-                              "Microsoft Windows 7 (64-bit)" => "5.1%",
-                              "Red Hat Enterprise Linux 6 (64-bit)" => "3.9%",
-                              "Microsoft Windows Server 2008 (64-bit)" => "3.4%",
-                              "Microsoft Windows 7 (32-bit)" => "2.5%" );
-  $sortedHostModel = array(  "HP" => "48.5%",
-                              "Dell" => "16.8%",
-                              "Dell Inc." => "15.8%",
-                              "IBM" => "11.1%",
-                              "Cisco Systems Inc" => "5.6%" );
-  $sortedHostCPUType = array( "Intel Xeon E5-2970" => "48.5%",
-                              "Cyrix" => "16.8%",
-                              "AMD G2" => "15.8%",
-                              "Pentium M" => "11.1%",
-                              "A9X" => "5.6%" );
-  $sortedESXBuild = array(    "ESX 5.5 build 23123" => "48.5%",
-                              "sdfsdfs" => "16.8%",
-                              "sdfsdfsdf" => "15.8%",
-                              "sdfsdfsdfaa" => "11.1%",
-                              "eqdnspdfn" => "5.6%" );
+  $sortedTabGuestOS = array(  array("guestOS" => "Microsoft Windows Server 2008 R2 (64-bit)", "total" => "20.9%"),
+                              array("guestOS" => "Microsoft Windows Server 2003 Standard (64-bit)", "total" => "12.4%"),
+                              array("guestOS" => "Red Hat Enterprise Linux 5 (64-bit)", "total" => "8.6%"),
+                              array("guestOS" => "Microsoft Windows Server 2003 Standard (32-bit)", "total" => "6.7%"),
+                              array("guestOS" => "Microsoft Windows XP Professional (32-bit)", "total" => "6.2%"),
+                              array("guestOS" => "Ubuntu Linux (64-bit)", "total" => "5.8%"),
+                              array("guestOS" => "Microsoft Windows 7 (64-bit)", "total" => "5.1%"),
+                              array("guestOS" => "Red Hat Enterprise Linux 6 (64-bit)", "total" => "3.9%"),
+                              array("guestOS" => "Microsoft Windows Server 2008 (64-bit)", "total" => "3.4%"),
+                              array("guestOS" => "Microsoft Windows 7 (32-bit)", "total" => "2.5%") );
+  $sortedHostModel = array(   array("model" => "HP", "total" => "48.5%"),
+                              array("model" => "Dell", "total" => "16.8%"),
+                              array("model" => "Dell Inc.", "total" => "15.8%"),
+                              array("model" => "IBM", "total" => "11.1%"),
+                              array("model" => "Cisco Systems Inc", "total" => "5.6%") );
+  $sortedHostCPUType = array( array("cputype" => "Intel Xeon E5-2970", "total" => "48.5%"),
+                              array("cputype" => "Cyrix", "total" => "16.8%"),
+                              array("cputype" => "AMD G2", "total" => "15.8%"),
+                              array("cputype" => "Pentium M", "total" => "11.1%"),
+                              array("cputype" => "A9X", "total" => "5.6%") );
+  $sortedESXBuild = array(    array("esxbuild" => "ESX 5.5 build 23123", "total" => "48.5%"),
+                              array("esxbuild" => "sdfsdfs", "total" => "16.8%"),
+                              array("esxbuild" => "sdfsdfsdf", "total" => "15.8%"),
+                              array("esxbuild" => "sdfsdfsdfaa", "total" => "11.1%"),
+                              array("esxbuild" => "eqdnspdfn", "total" => "5.6%") );
   $averageHostPervCenter = 37;
   $averageClusterPervCenter = 4;
   $averageHostPerCluster = "5.4";

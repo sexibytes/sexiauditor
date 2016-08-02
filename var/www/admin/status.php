@@ -32,7 +32,7 @@ foreach($processes as $i => $process){
     <div style="padding-top: 10px; padding-bottom: 10px;" class="container">
 	<div class="row">
 		<div class="col-lg-12 alert alert-info" style="margin-top: 20px; text-align: center;">
-			<h1 style="margin-top: 10px;">Scheduler Status at <?php echo (new DateTime)->format('l jS F Y, H:i:s') . "(UTC)"; ?></h1>
+			<h1 style="margin-top: 10px;">Scheduler Status<small> at <?php echo (new DateTime)->format('l jS F Y, H:i:s') . "(UTC)"; ?></small></h1>
 		</div>
 	</div>
 <?php if($nbProcess == 0): ?>

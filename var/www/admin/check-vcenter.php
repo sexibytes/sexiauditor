@@ -2,6 +2,7 @@
 <?php
 $title = "vCenter Checks";
 $additionalStylesheet = array(  'css/jquery.dataTables.min.css',
+                                'css/whhg.css',
                                 'css/bootstrap-datetimepicker.css');
 $additionalScript = array(  'js/jquery.dataTables.min.js',
                             'js/jszip.min.js',
@@ -43,6 +44,14 @@ if($check->getModuleSchedule('vcLicenceReport') != 'off') {
                           "id" => "VCLICENCEREPORT",
                           'thead' => array('Name', 'Unit', 'Total', 'Used', 'licenseKey', 'vCenter'),
                           'tbody' => array('"<td>".$entry["name"]."</td>"', '"<td>".$entry["costUnit"]."</td>"', '"<td>".$entry["total"]."</td>"', '"<td>".$entry["used"]."</td>"', '"<td>".'.(($check->getConfig('showPlainLicense') == 'disable') ? 'substr($entry["licenseKey"], 0, 5) . "-#####-#####-#####-" . substr($entry["licenseKey"], -5)' : '$entry["licenseKey"]').'."</td>"', '"<td>".$entry["vcenter"]."</td>"')]);
+}
+
+if($check->getModuleSchedule('vcPermissionReport') != 'off') {
+  $check->displayCheck([  'sqlQuery' => "SELECT main.id FROM permissions AS main INNER JOIN vcenters v ON main.vcenter = v.id WHERE true",
+                          "id" => "VCPERMISSIONREPORT",
+                          "typeCheck" => 'ssp',
+                          'thead' => array('Inventory Path', 'Principal', 'Role', 'vCenter'),
+                          'columnDefs' => '{ "visible": false, "targets": [ 4 ] }']);
 }
 
 if($check->getModuleSchedule('vcCertificatesReport') != 'off') {

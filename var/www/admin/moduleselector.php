@@ -62,7 +62,7 @@ if ($db->count > 0) {
     $modulelist = $modulelist . '      <div role="tabpanel" class="tab-pane fade' . ($firstmodule ? ' in active' : '') . '" id="' . str_replace(" ", "", strtolower($category['category'])) . '">
           <table class="table table-hover table-noborder"><thead><th>Module</th><th>Description</th><th>Schedule</th></thead><tbody>' . "\n";
     $firstmodule = false;
-    $db->join("moduleSchedule s", "m.module﻿_id=s.id", "LEFT");
+    $db->join("moduleSchedule s", "m.module_id=s.id", "LEFT");
     $db->where('category_id', $category['id']);
     $resultModule = $db->get("modules m");
     foreach ($resultModule as $module) {

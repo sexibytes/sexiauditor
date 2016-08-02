@@ -27,6 +27,24 @@ if (isset($_GET['c'])) {
 	}
 
 	switch($_GET['c']) {
+		case 'VCPERMISSIONREPORT':
+			$table = 'permissions';
+			$primaryKey = 'id';
+			$columns = array(
+				array( 'db' => 'permissions.inventory_path', 'dt' => 0, 'field' => 'inventory_path' ),
+				array( 'db' => 'permissions.principal', 'dt' => 1, 'field' => 'principal', 'formatter' => function( $d, $row ) { if ($row[4] == '1') {return "<i class=\"icon-user\"></i> $d";} else {return "<i class=\"icon-groups-friends\"></i> $d";}}),
+				array( 'db' => 'permissions.role_name', 'dt' => 2, 'field' => 'role_name' ),
+				array( 'db' => 'v.vcname', 'dt' => 3, 'field' => 'vcname' ),
+				array( 'db' => 'permissions.isGroup', 'dt' => 4, 'field' => 'isGroup' )
+			);
+
+			$joinQuery = "FROM {$table} INNER JOIN vcenters AS v ON (permissions.vcenter = v.id)";
+			if ($latest) {
+				$extraCondition = "permissions.active = 1";
+			} else {
+				$extraCondition = "permissions.firstseen < '" . $dateStart . "' AND permissions.lastseen > '" . $dateEnd . "'";
+			}
+		break;
 		case 'VMCPURAMHDDRESERVATION':
 			$table = 'vms';
 			$primaryKey = 'id';

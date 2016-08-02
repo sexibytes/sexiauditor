@@ -4,12 +4,12 @@
 #########################
 $achievementFile = "/var/www/admin/achievements.txt";
 $credstoreFile = "/var/www/.vmware/credstore/vicredentials.xml";
-$xmlSettingsFile = "/var/www/admin/conf/settings.xml";
-$xmlModulesFile = "/var/www/admin/conf/modules.xml";
-$xmlModuleSchedulesFile = "/var/www/admin/conf/moduleschedules.xml";
-$xmlConfigsFile = "/var/www/admin/conf/configs.xml";
-$xmlTTBFile = "/opt/vcron/scheduler-ttb.xml";
-$xmlStartPath = "/opt/vcron/data/";
+// $xmlSettingsFile = "/var/www/admin/conf/settings.xml";
+// $xmlModulesFile = "/var/www/admin/conf/modules.xml";
+// $xmlModuleSchedulesFile = "/var/www/admin/conf/moduleschedules.xml";
+// $xmlConfigsFile = "/var/www/admin/conf/configs.xml";
+// $xmlTTBFile = "/opt/vcron/scheduler-ttb.xml";
+// $xmlStartPath = "/opt/vcron/data/";
 $powerChoice = array("static" => "High performance", "dynamic" => "Balanced", "low" => "Low power", "custom" => "Custom", "off" => "Not supported (BIOS config)");
 $servicePolicyChoice = array("off" => "Start and stop manually", "on" => "Start and stop with host", "automatic" => "Start and stop automatically");
 $langChoice = array("en" => "English");
@@ -654,7 +654,11 @@ class SexiCheck {
     //   throw new Exception('File ' . $this->xmlModuleSchedulesFile . ' is not existant or not readable');
     // }
 
-    $this->lang = (defined($this->h_configs['lang'])) ? $this->h_configs['lang'] : 'en';
+    # database instanciation so we can use $db object in this class methods
+    require("dbconnection.php");
+    $this->db = $db;
+
+    $this->lang = (defined($this->getConfig('lang'))) ? $this->getConfig('lang') : 'en';
     switch ($this->lang) {
       case 'en':
         $lang_file = 'lang.en.php';
@@ -665,10 +669,6 @@ class SexiCheck {
       default:
       $lang_file = 'lang.en.php';
     }
-
-    # database instanciation so we can use $db object in this class methods
-    require("dbconnection.php");
-    $this->db = $db;
 
     include_once 'locales/'.$lang_file;
     $this->langDef = $lang;
@@ -881,6 +881,9 @@ class SexiCheck {
     if (count($dateAvailable) < 1) {
       throw new Exception('There is no data generated yet. Please add some vCenter to the <a href="credstore.php">Credential Store</a> and come back as soon as data will be retrieved (should take just a couple of minutes).');
     }
+    if ($this->dbGetCheckQuantity($formPage) < 1) {
+      throw new Exception('There is no check enabled for this section (which is by default). You can enable some checks on the <a href="moduleselector.php">Module Selector</a> and come back as soon as data will be retrieved (by default it should be daily, but you can force the execution on the <a href="onetime.php">One Time Report</a>).');
+    }
     if ($_SERVER['REQUEST_METHOD'] == 'POST'){
       $this->selectedDate = $_POST["selectedDate"];
     } else {
@@ -1006,8 +1009,43 @@ class SexiCheck {
       return "undefined";
     }
   }
+
+  private function dbGetCheckQuantity($formPage) {
+    # hack for handling inventory page
+    if ($formPage == '/inv.php') { return 1; }
+    # this will return eabled checks for the requested formpage
+    $this->db->join("modules", "modules.module_id = moduleSchedule.id", "INNER");
+    $this->db->join("moduleCategory", "modules.category_id = moduleCategory.id", "INNER");
+    $this->db->where('moduleSchedule.schedule', 'off', '<>');
+    switch($formPage) {
+      case '/check-cluster.php':
+        $this->db->where('moduleCategory.category', 'Cluster');
+      break;
+      case '/check-datastore.php':
+        $this->db->where('moduleCategory.category', 'Datastore');
+      break;
+      case '/check-host.php':
+        $this->db->where('moduleCategory.category', 'Host');
+      break;
+      case '/check-network.php':
+        $this->db->where('moduleCategory.category', 'Network');
+      break;
+      case '/check-vsan.php':
+        $this->db->where('moduleCategory.category', 'VSAN');
+      break;
+      case '/check-vcenter.php':
+        $this->db->where('moduleCategory.category', 'vCenter');
+      break;
+      case '/check-vm.php':
+        $this->db->where('moduleCategory.category', 'Virtual Machine');
+      break;
+      default:
+        $this->db->where('moduleCategory.category', null);
+    }
+    return $this->db->getValue("moduleSchedule", "COUNT(moduleSchedule.id)");
+    // var_dump($this->db->getLastQuery());
+    // return $total;
+  }
 }
-
-
 
 ?>
