@@ -319,7 +319,7 @@ INSERT INTO `moduleCategory` (`id`, `category`) VALUES
 DROP TABLE IF EXISTS `modules`;
 CREATE TABLE IF NOT EXISTS `modules` (
 `id` int(11) NOT NULL,
-  `module﻿_id` varchar(50) CHARACTER SET utf8 NOT NULL,
+  `module_id` varchar(50) CHARACTER SET utf8 NOT NULL,
   `type` varchar(10) CHARACTER SET utf8 NOT NULL,
   `displayName` varchar(255) CHARACTER SET utf8 NOT NULL,
   `version` decimal(10,0) NOT NULL,
@@ -331,7 +331,7 @@ CREATE TABLE IF NOT EXISTS `modules` (
 -- Dumping data for table `modules`
 --
 
-INSERT INTO `modules` (`id`, `module﻿_id`, `type`, `displayName`, `version`, `description`, `category_id`) VALUES
+INSERT INTO `modules` (`id`, `module_id`, `type`, `displayName`, `version`, `description`, `category_id`) VALUES
 (1, 'VSANHealthCheck', 'report', 'VSAN Health Check', '0', 'Display VSAN information about Health Check.', 1),
 (2, 'vcSessionAge', 'report', 'Session Age', '1', 'Display vCenter session that are older than (x)days.', 2),
 (3, 'vcLicenceReport', 'report', 'License Report', '1', 'Display licence consumption based on vCenter licence defined.', 2),
@@ -707,7 +707,7 @@ ALTER TABLE `moduleCategory`
 -- Indexes for table `modules`
 --
 ALTER TABLE `modules`
- ADD PRIMARY KEY (`id`), ADD KEY `module﻿_id` (`module﻿_id`);
+ ADD PRIMARY KEY (`id`), ADD KEY `module_id` (`module_id`);
 
 --
 -- Indexes for table `moduleSchedule`
