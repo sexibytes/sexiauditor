@@ -48,6 +48,7 @@ my @user_list;
 my $password;
 my $url;
 my $href = ();
+my $activeVC;
 # my $xmlModuleFile = '/var/www/admin-db/conf/modules.xml';
 # my $xmlModuleScheduleFile = '/var/www/admin-db/conf/moduleschedules.xml';
 # my $xmlConfigsFile = '/var/www/admin-db/conf/configs.xml';
@@ -191,7 +192,7 @@ my %actions = ( inventory => \&inventory,
                 VSANHealthCheck => \&sessionage,
                 vcSessionAge => \&sessionage,
                 vcLicenceReport => \&licenseReport,
-                vcPermissionReport => \&dummy,
+                vcPermissionReport => \&getPermissions,
                 vcTerminateSession => \&dummy,
                 vcCertificatesReport => \&certificatesReport,
                 clusterConfigurationIssues => \&dummy,
@@ -272,6 +273,7 @@ if ($purgeThreshold ne 0) {
 VMware::VICredStore::init (filename => $filename) or $logger->logdie ("[ERROR] Unable to initialize Credential Store.");
 @server_list = VMware::VICredStore::get_hosts ();
 foreach $s_item (@server_list) {
+  $activeVC = $s_item;
   $logger->info("[INFO][VCENTER] Start processing vCenter $s_item");
   my $normalizedServerName = $s_item;
   @user_list = VMware::VICredStore::get_usernames (server => $s_item);
@@ -587,29 +589,35 @@ sub certificatesReport {
   my $vpxSetting = Vim::get_view(mo_ref => Vim::get_service_content()->setting);
   my $vpxSettings = $vpxSetting->setting;
   my $vcentersdk = new URI::URL $vpxSetting->{'vim'}->{'service_url'};
-  foreach(@$vpxSettings) {
+  foreach my $vpxSetting (@$vpxSettings) {
     # Query SDK, WS, SSO uri
-    if($_->key eq "VirtualCenter.VimApiUrl" or $_->key eq "config.vpxd.sso.admin.uri") {
-      my $urlToCheck = new URI::URL $_->value;
+    if($vpxSetting->key eq "VirtualCenter.VimApiUrl" or $vpxSetting->key eq "config.vpxd.sso.admin.uri") {
+      my $urlToCheck = new URI::URL $vpxSetting->value;
       my $startDate = '0000-00-00 00:00:00';
       my $endDate = '0000-00-00 00:00:00';
       if (gethostbyname($urlToCheck->host) && $urlToCheck->host ne 'localhost') {
         $urlToCheck = $urlToCheck->host . ":" . $urlToCheck->port;
         my $command = `echo "QUIT" | timeout 3 openssl s_client -connect $urlToCheck 2>/dev/null | openssl x509 -noout -dates`;
-        $command =~ /^notBefore=(.*)$/m;
-        $startDate = `date --date="$1" --iso-8601`;
-        my $startTime = (split(/ /, $1))[2];
-        $startDate =~ s/\r|\n//g;
-        $startDate = $startDate . " " . $startTime;
-        $command =~ /^notAfter=(.*)$/m;
-        $endDate = `date --date="$1" --iso-8601`;
-        my $endTime = (split(/ /, $1))[2];
-        $endDate =~ s/\r|\n//g;
-        $endDate = $endDate . " " . $endTime;
+        if (defined($command)) {
+          $command =~ /notBefore=(.*)/;
+          $startDate = `date --date="$1" --iso-8601`;
+          my $normalizedStartDate = $1;
+          $normalizedStartDate =~ s/ +/ /;
+          my $startTime = (split(/ /, $normalizedStartDate))[2];
+          $startDate =~ s/\r|\n//g;
+          $startDate = $startDate . " " . $startTime;
+          $command =~ /notAfter=(.*)/;
+          $endDate = `date --date="$1" --iso-8601`;
+          my $normalizedEndDate = $1;
+          $normalizedEndDate =~ s/ +/ /;
+          my $endTime = (split(/ /, $normalizedEndDate))[2];
+          $endDate =~ s/\r|\n//g;
+          $endDate = $endDate . " " . $endTime;
+        }
       }
       # get vcenter id from database
       my $vcenterID = dbGetVC($vcentersdk->host);
-      my $certificateUrl = $_->value;
+      my $certificateUrl = $vpxSetting->value;
       my $query = "SELECT * FROM certificates WHERE vcenter = '" . $vcenterID . "' AND url = '" . $certificateUrl . "' AND active = 1";
       my $sth = $dbh->prepare($query);
       $sth->execute();
@@ -618,8 +626,8 @@ sub certificatesReport {
       my $ref = $sth->fetchrow_hashref();
       if (($rows gt 0)
         && ($ref->{'vcenter'} eq $vcenterID)
-        && ($ref->{'url'} eq $_->value)
-        && ($ref->{'type'} eq $_->key)
+        && ($ref->{'url'} eq $vpxSetting->value)
+        && ($ref->{'type'} eq $vpxSetting->key)
         && ($ref->{'start'} eq $startDate)
         && ($ref->{'end'} eq $endDate)) {
         # certificate already exists, have not changed, updated lastseen property
@@ -637,8 +645,8 @@ sub certificatesReport {
         my $sqlInsert = $dbh->prepare("INSERT INTO certificates (vcenter, url, type, start, end, firstseen, lastseen, active) VALUES (?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?), ?)");
         $sqlInsert->execute(
           $vcenterID,
-          $_->value,
-          $_->key,
+          $vpxSetting->value,
+          $vpxSetting->key,
           $startDate,
           $endDate,
           $start,
@@ -695,6 +703,7 @@ sub vminventory {
     my $vm_toolsVersion = 0;
     if(defined($vm_view->guest) && defined($vm_view->guest->toolsVersion)) { $vm_toolsVersion = 0+$vm_view->guest->toolsVersion; }
     my $devices = $vm_view->{'config.hardware.device'};
+    my $extraConfigs = $vm_view->{'config.extraConfig'};
     my $removableExist = 0;
     foreach my $device (@$devices) {
       if(($device->isa('VirtualFloppy') or $device->isa('VirtualCdrom')) and $device->connectable->connected) {
@@ -710,8 +719,8 @@ sub vminventory {
       }
     }
     my $multiwriter = 0;
-    foreach(@{$vm_view->{'config.extraConfig'}}) {
-      if ($_->key =~ /scsi.*sharing/ && $_->value eq 'multi-writer') {
+    foreach my $extraConfig (@$extraConfigs) {
+      if ($extraConfig->key =~ /scsi.*sharing/ && $extraConfig->value eq 'multi-writer') {
         $multiwriter = 1;
         last;
      }
@@ -1403,6 +1412,49 @@ sub getConfigurationIssue {
         $sth->finish();
       }
     }
+  }
+}
+
+sub getPermissions {
+  my $authorizationMgr = Vim::get_view(mo_ref => Vim::get_service_content()->authorizationManager);
+  my $roleList = $authorizationMgr->roleList;
+  my %h_role = ();
+  foreach(@$roleList) { $h_role{$_->roleId} = $_->name; }
+  my $perms = $authorizationMgr->RetrieveAllPermissions;
+  # get vcenter id from database
+  my $vcenterID = dbGetVC($activeVC);
+  for my $perm (@$perms) {
+    my $principal = $perm->principal;
+    $principal =~ s/\\/\\\\/g;
+    my $query = "SELECT * FROM permissions WHERE principal LIKE '" . $principal . "' ESCAPE '|' AND vcenter = '" . $vcenterID . "' AND role_name = '" . $h_role{$perm->roleId} . "' AND active = 1";
+    my $sth = $dbh->prepare($query);
+    $sth->execute();
+    my $rows = $sth->rows;
+    # TODO > generate error and skip if multiple + manage deletion (execute query on lastseen != $start)
+    my $ref = $sth->fetchrow_hashref();
+    if ($rows gt 0) {
+      # Permission already exists, have not changed, updated lastseen property
+      $logger->info("[DEBUG][PERMISSION-INVENTORY] Permission for role '" . $h_role{$perm->roleId} . " on user '" . $principal . "' already exists and have not changed since last check, updating lastseen property");
+      my $sqlUpdate = $dbh->prepare("UPDATE permissions set lastseen = FROM_UNIXTIME (?) WHERE id = '" . $ref->{'id'} . "'");
+      $sqlUpdate->execute($start);
+      $sqlUpdate->finish();
+    } else {
+      $logger->info("[DEBUG][PERMISSION-INVENTORY] Adding Permission data for role '" . $h_role{$perm->roleId} . " on user '" . $principal . "'");
+      my $sqlInsert = $dbh->prepare("INSERT INTO permissions (vcenter, principal, role_name, isGroup, inventory_path, firstseen, lastseen, active) VALUES (?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?), ?)");
+      my $inventory_path = '/' . Util::get_inventory_path(Vim::get_view(mo_ref => $perm->entity, properties => ['name']), Vim::get_vim());
+      $sqlInsert->execute(
+        $vcenterID,
+        $perm->principal,
+        $h_role{$perm->roleId},
+        $perm->group,
+        $inventory_path,
+        $start,
+        $start,
+        1
+      );
+      $sqlInsert->finish();
+    }
+    $sth->finish();
   }
 }
 
