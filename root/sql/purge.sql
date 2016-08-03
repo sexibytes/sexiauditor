@@ -1,0 +1,14 @@
+TRUNCATE alarms;
+TRUNCATE certificates;
+TRUNCATE clusters;
+TRUNCATE configurationissues;
+TRUNCATE datastores;
+TRUNCATE distributedvirtualportgroups;
+TRUNCATE hardwarestatus;
+TRUNCATE hosts;
+TRUNCATE licenses;
+TRUNCATE permissions;
+TRUNCATE sessions;
+TRUNCATE snapshots;
+TRUNCATE vcenters;
+TRUNCATE vms;
