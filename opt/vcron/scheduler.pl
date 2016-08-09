@@ -5,10 +5,12 @@ use warnings;
 use Data::Dumper;
 use Date::Format qw(time2str);
 use Date::Parse;
+# use DateTime qw( );
 use File::Path qw( make_path );
 use Getopt::Long;
 use JSON;
 use Log::Log4perl qw(:easy);
+use MIME::Lite::TT::HTML;
 use Number::Bytes::Human qw(format_bytes);
 use POSIX qw(strftime);
 use Socket;
@@ -47,13 +49,15 @@ my $u_item;
 my @user_list;
 my $password;
 my $url;
-my $href = ();
+# my $href = ();
 my $activeVC;
 # my $xmlModuleFile = '/var/www/admin-db/conf/modules.xml';
 # my $xmlModuleScheduleFile = '/var/www/admin-db/conf/moduleschedules.xml';
 # my $xmlConfigsFile = '/var/www/admin-db/conf/configs.xml';
 # my $schedulerTTBFile = '/opt/vcron/scheduler-ttb.xml';
 my %boolHash = (true => "1", false => "0");
+my $perfMgr;
+my %perfCntr;
 
 # Using --force switch will bypass scheduler and run every subroutine
 my $force;
@@ -98,21 +102,24 @@ my $monthlySchedule = dbGetConfig("monthlySchedule", 1);
 # browsing modules and fetching schedule
 $logger->info("[INFO] Start processing modules list");
 
-my $query = "SELECT * FROM moduleSchedule";
+my $query = "SELECT module, schedule FROM modules ORDER BY id";
 my $sth = $dbh->prepare($query);
 $sth->execute();
+my $nbActiveModule = 0;
 while (my $ref = $sth->fetchrow_hashref()) {
   if ($ref->{'schedule'} ne 'off') {
-  	$href->{ $ref->{'id'} } = $ref->{'schedule'};
-    $logger->info("[INFO] Found module " . $ref->{'id'} . " with schedule " . $ref->{'schedule'});
+  	# $href->{ $ref->{'module'} } = $ref->{'schedule'};
+    $nbActiveModule++;
+    $logger->info("[INFO] Found module " . $ref->{'module'} . " with schedule " . $ref->{'schedule'});
   } else {
-    $logger->info("[INFO] Found module " . $ref->{'id'} . " with schedule off, skipping...");
+    $logger->info("[INFO] Found module " . $ref->{'module'} . " with schedule off, skipping...");
   }
 }
 $sth->finish();
-
+# print(Dumper($href));
+# exit;
 # fetching active modules
-my $nbActiveModule = scalar keys(%$href);
+# my $nbActiveModule = $sth->rows;
 $logger->info("[INFO] End processing modules list, found $nbActiveModule active modules");
 
 # exiting if no active module
@@ -193,7 +200,7 @@ my %actions = ( inventory => \&inventory,
                 vcSessionAge => \&sessionage,
                 vcLicenceReport => \&licenseReport,
                 vcPermissionReport => \&getPermissions,
-                vcTerminateSession => \&dummy,
+                vcTerminateSession => \&terminateSession,
                 vcCertificatesReport => \&certificatesReport,
                 clusterConfigurationIssues => \&dummy,
                 clusterAdmissionControl => \&dummy,
@@ -220,6 +227,7 @@ my %actions = ( inventory => \&inventory,
                 hostNTPCheck => \&dummy,
                 hostSshShell => \&dummy,
                 hostLUNPathDead => \&dummy,
+                hostBundlebackup => \&dummy,
                 vmSnapshotsage => \&dummy,
                 vmphantomsnapshot => \&dummy,
                 vmballoonzipswap => \&dummy,
@@ -321,25 +329,28 @@ foreach $s_item (@server_list) {
   # check version
   # watchdog
 
+  $perfMgr = (Vim::get_view(mo_ref => Vim::get_service_content()->perfManager));
+  %perfCntr = map { $_->groupInfo->key . "." . $_->nameInfo->key . "." . $_->rollupType->val => $_ } @{$perfMgr->perfCounter};
+
   # vCenter connection should be OK at this point
   # generating meta objects
   $logger->info("[INFO][OBJECTS] Start retrieving ClusterComputeResource objects");
-  $view_ClusterComputeResource = Vim::find_entity_views(view_type => 'ClusterComputeResource', properties => ['name', 'host', 'summary', 'configIssue']);
+  $view_ClusterComputeResource = Vim::find_entity_views(view_type => 'ClusterComputeResource', properties => ['name', 'host', 'summary', 'configIssue', 'configuration.dasConfig.admissionControlPolicy', 'configuration.dasConfig.admissionControlEnabled']);
   $logger->info("[INFO][OBJECTS] End retrieving ClusterComputeResource objects");
   $logger->info("[INFO][OBJECTS] Start retrieving HostSystem objects");
-  $view_HostSystem = Vim::find_entity_views(view_type => 'HostSystem', properties => ['name', 'config.dateTimeInfo.ntpConfig.server', 'config.network.dnsConfig', 'config.powerSystemInfo.currentPolicy.shortName', 'configIssue', 'configManager.advancedOption', 'configManager.healthStatusSystem', 'configManager.storageSystem', 'configManager.serviceSystem', 'runtime.inMaintenanceMode', 'summary.config.product.fullName', 'summary.hardware.cpuMhz', 'summary.hardware.cpuModel', 'summary.hardware.memorySize', 'summary.hardware.model', 'summary.hardware.numCpuCores', 'summary.hardware.numCpuPkgs', 'summary.rebootRequired']);
+  # $view_HostSystem = Vim::find_entity_views(view_type => 'HostSystem', properties => ['name', 'config.dateTimeInfo.ntpConfig.server', 'config.network.dnsConfig', 'config.powerSystemInfo.currentPolicy.shortName', 'configIssue', 'configManager.advancedOption', 'configManager.healthStatusSystem', 'configManager.storageSystem', 'configManager.serviceSystem', 'runtime.inMaintenanceMode', 'summary.config.product.fullName', 'summary.hardware.cpuMhz', 'summary.hardware.cpuModel', 'summary.hardware.memorySize', 'summary.hardware.model', 'summary.hardware.numCpuCores', 'summary.hardware.numCpuPkgs', 'summary.rebootRequired', 'datastore']);
   $logger->info("[INFO][OBJECTS] End retrieving HostSystem objects");
   $logger->info("[INFO][OBJECTS] Start retrieving DistributedVirtualPortgroup objects");
-  $view_DistributedVirtualPortgroup = Vim::find_entity_views(view_type => 'DistributedVirtualPortgroup', properties => ['name', 'vm', 'config.numPorts', 'config.autoExpand', 'tag']);
+  # $view_DistributedVirtualPortgroup = Vim::find_entity_views(view_type => 'DistributedVirtualPortgroup', properties => ['name', 'vm', 'config.numPorts', 'config.autoExpand', 'tag']);
   $logger->info("[INFO][OBJECTS] End retrieving DistributedVirtualPortgroup objects");
   $logger->info("[INFO][OBJECTS] Start retrieving Datastore objects");
-  $view_Datastore = Vim::find_entity_views(view_type => 'Datastore', properties => ['name', 'summary', 'iormConfiguration']);
+  # $view_Datastore = Vim::find_entity_views(view_type => 'Datastore', properties => ['name', 'summary', 'iormConfiguration']);
   $logger->info("[INFO][OBJECTS] End retrieving Datastore objects");
   $logger->info("[INFO][OBJECTS] Start retrieving Datacenter objects");
-  $view_Datacenter = Vim::find_entity_views(view_type => 'Datacenter', properties => ['name','triggeredAlarmState']);
+  # $view_Datacenter = Vim::find_entity_views(view_type => 'Datacenter', properties => ['name','triggeredAlarmState']);
   $logger->info("[INFO][OBJECTS] End retrieving Datacenter objects");
   $logger->info("[INFO][OBJECTS] Start retrieving VirtualMachine objects");
-  $view_VirtualMachine = Vim::find_entity_views(view_type => 'VirtualMachine', properties => ['name','guest','summary.config.vmPathName','config.guestId','runtime','network','summary.config.numCpu','summary.config.memorySizeMB','summary.storage','triggeredAlarmState','config.hardware.device','config.version','resourceConfig','config.cpuHotAddEnabled','config.memoryHotAddEnabled','config.extraConfig','summary.quickStats','snapshot']);
+  # $view_VirtualMachine = Vim::find_entity_views(view_type => 'VirtualMachine', properties => ['name','guest','summary.config.vmPathName','config.guestId','runtime','network','summary.config.numCpu','summary.config.memorySizeMB','summary.storage','triggeredAlarmState','config.hardware.device','config.version','resourceConfig','config.cpuHotAddEnabled','config.memoryHotAddEnabled','config.extraConfig','summary.quickStats','snapshot']);
   $logger->info("[INFO][OBJECTS] End retrieving VirtualMachine objects");
   # hastables creation to speed later queries
   foreach my $cluster_view (@$view_ClusterComputeResource) {
@@ -360,10 +371,33 @@ foreach $s_item (@server_list) {
       $h_host{$StandaloneResourceVMHost[0][0]->{'mo_ref'}->value} = $StandaloneResourceVMHostName;
     }
   }
+  # my $href;
 
-  for my $key ( keys(%$href) ) {
+  # $sth = $dbh->prepare($query);
+  # $sth->execute();
+  # while (my $ref = $sth->fetchrow_hashref()) {
+  #   print(Dumper($ref));
+  #   if ($ref->{'schedule'} ne 'off') {
+  #   	# $href->{ $ref->{'module'} } = $ref->{'schedule'};
+  #     $nbActiveModule++;
+  #     $logger->info("[INFO] Found module " . $ref->{'module'} . " with schedule " . $ref->{'schedule'});
+  #   } else {
+  #     $logger->info("[INFO] Found module " . $ref->{'module'} . " with schedule off, skipping...");
+  #   }
+  # }
+# exit;
+
+
+
+  $sth = $dbh->prepare($query);
+  $sth->execute();
+  while (my $ref = $sth->fetchrow_hashref()) {
+    # print(Dumper($ref));
+  # for my $key ( keys(%$href) ) {
     # using dispatch table to call dynamically named subroutine
-    my $value = $href->{$key};
+    # my $value = $href->{$key};
+    my $key = $ref->{'module'};
+    my $value = $ref->{'schedule'};
     my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
     if ($force) {
       # --force switch have been triggered, unleashed the subroutine
@@ -409,6 +443,7 @@ foreach $s_item (@server_list) {
       }
     }
   }
+  $sth->finish();
   $logger->info("[INFO][VCENTER] End processing vCenter $s_item");
 }
 
@@ -493,12 +528,10 @@ sub sessionage {
     # TODO > generate error and skip if multiple + manage deletion (execute query on lastseen != $start)
     my $ref = $sth->fetchrow_hashref();
     if (($rows gt 0)
-      && ($ref->{'vcenter'} eq $vcenterID)
       && ($ref->{'sessionKey'} eq $sessionKey)
       && ($ref->{'loginTime'} eq $loginTime)
       && ($ref->{'userAgent'} eq $userAgent)
       && ($ref->{'ipAddress'} eq $ipAddress)
-      && ($ref->{'lastActiveTime'} eq $lastActiveTime)
       && ($ref->{'userName'} eq $session->userName)) {
       # Sessions already exists, have not changed, updated lastseen property
       my $sqlUpdate = $dbh->prepare("UPDATE sessions set lastseen = FROM_UNIXTIME (?) WHERE id = '" . $ref->{'id'} . "'");
@@ -672,6 +705,7 @@ sub vminventory {
   foreach my $vm_view (@$view_VirtualMachine) {
     my $vmPath = Util::get_inventory_path($vm_view, Vim::get_vim());
     $vmPath = (split(/\/([^\/]+)$/, $vmPath))[0] || "Unknown";
+    if ($vmPath ne "Unknown") { $vmPath = '/'.$vmPath; }
     my $vnics = $vm_view->guest->net;
     my @vm_pg_string = ();
     my @vm_ip_string = ();
@@ -739,7 +773,7 @@ sub vminventory {
     my $vcenterID = dbGetVC($vcentersdk->host);
     my $hostID = dbGetHost($vm_view->runtime->host->type."-".$vm_view->runtime->host->value, $vcenterID);
     my $moRef = $vm_view->{'mo_ref'}->{'type'}."-".$vm_view->{'mo_ref'}->{'value'};
-    my $query = "SELECT vms.* FROM vms INNER JOIN hosts h ON vms.host = h.id WHERE h.vcenter = '" . $vcenterID . "' AND vms.moref = '" . $moRef . "' AND vms.active = 1";
+    my $query = "SELECT * FROM vms WHERE vcenter = '" . $vcenterID . "' AND moref = '" . $moRef . "' AND active = 1";
     my $sth = $dbh->prepare($query);
     $sth->execute();
     my $rows = $sth->rows;
@@ -800,14 +834,53 @@ sub vminventory {
     } else {
       if ($rows gt 0) {
         # VM have changed, we must decom old one before create a new one
+        compareAndLog($ref->{'host'}, $hostID);
+        compareAndLog($ref->{'memReservation'}, $vm_view->resourceConfig->memoryAllocation->reservation);
+        compareAndLog($ref->{'guestFamily'}, $vm_guestFamily);
+        compareAndLog($ref->{'ip'}, join(',', @vm_ip_string));
+        compareAndLog($ref->{'swappedMemory'}, 1048576*$vm_view->{'summary.quickStats'}->swappedMemory);
+        compareAndLog($ref->{'cpuLimit'}, $vm_view->resourceConfig->cpuAllocation->limit);
+        compareAndLog($ref->{'consolidationNeeded'}, $consolidationNeeded);
+        compareAndLog($ref->{'fqdn'}, $vm_guestHostName);
+        compareAndLog($ref->{'numcpu'}, $numcpu);
+        compareAndLog($ref->{'cpuReservation'}, $vm_view->resourceConfig->cpuAllocation->reservation);
+        compareAndLog($ref->{'sharedBus'}, $sharedBus);
+        compareAndLog($ref->{'portgroup'}, join(',', @vm_pg_string));
+        compareAndLog($ref->{'memory'}, $memory);
+        compareAndLog($ref->{'phantomSnapshot'}, $phantomSnapshot);
+        compareAndLog($ref->{'hwversion'}, $vm_view->{'config.version'});
+        compareAndLog($ref->{'provisionned'}, $provisionned);
+        compareAndLog($ref->{'mac'}, join(',', @vm_mac));
+        compareAndLog($ref->{'multiwriter'}, $multiwriter);
+        compareAndLog($ref->{'memHotAddEnabled'}, $boolHash{$memHotAddEnabled});
+        compareAndLog($ref->{'guestOS'}, $vm_guestfullname);
+        compareAndLog($ref->{'compressedMemory'}, 1024*$vm_view->{'summary.quickStats'}->compressedMemory);
+        compareAndLog($ref->{'removable'}, $removableExist);
+        compareAndLog($ref->{'commited'}, int($vm_view->{'summary.storage'}->committed / 1073741824));
+        compareAndLog($ref->{'datastore'}, $datastore);
+        compareAndLog($ref->{'balloonedMemory'}, 1048576*$vm_view->{'summary.quickStats'}->balloonedMemory);
+        compareAndLog($ref->{'vmtools'}, $vm_toolsVersion);
+        compareAndLog($ref->{'name'}, $vm_view->name);
+        compareAndLog($ref->{'memLimit'}, $vm_view->resourceConfig->memoryAllocation->limit);
+        compareAndLog($ref->{'vmxpath'}, $vm_view->{'summary.config.vmPathName'});
+        compareAndLog($ref->{'connectionState'}, $vm_view->runtime->connectionState->val);
+        compareAndLog($ref->{'cpuHotAddEnabled'}, $boolHash{$cpuHotAddEnabled});
+        compareAndLog($ref->{'uncommited'}, int($vm_view->{'summary.storage'}->uncommitted / 1073741824));
+        compareAndLog($ref->{'powerState'}, $vm_view->runtime->powerState->val);
+        compareAndLog($ref->{'guestId'}, $vm_guestId);
+        compareAndLog($ref->{'configGuestId'}, $vm_configGuestId);
+        compareAndLog($ref->{'vmpath'}, $vmPath);
+
         $logger->info("[DEBUG][VM-INVENTORY] VM $moRef on host $hostID have changed since last check, sending old entry " . $ref->{'id'} . " it into oblivion");
         my $sqlUpdate = $dbh->prepare("UPDATE vms set active = 0 WHERE id = '" . $ref->{'id'} . "'");
         $sqlUpdate->execute();
         $sqlUpdate->finish();
       }
       $logger->info("[DEBUG][VM-INVENTORY] Adding data for VM $moRef on host $hostID");
-      my $sqlInsert = $dbh->prepare("INSERT INTO vms (host, moref, memReservation, guestFamily, ip, swappedMemory, cpuLimit, consolidationNeeded, fqdn, numcpu, cpuReservation, sharedBus, portgroup, memory, phantomSnapshot, hwversion, provisionned, mac, multiwriter, memHotAddEnabled, guestOS, compressedMemory, removable, commited, datastore, balloonedMemory, vmtools, name, memLimit, vmxpath, connectionState, cpuHotAddEnabled, uncommited, powerState, guestId, configGuestId, vmpath, firstseen, lastseen, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?), ?)");
-      $sqlInsert->execute(
+      my $sqlInsert = $dbh->prepare("INSERT INTO vms (vcenter, host, moref, memReservation, guestFamily, ip, swappedMemory, cpuLimit, consolidationNeeded, fqdn, numcpu, cpuReservation, sharedBus, portgroup, memory, phantomSnapshot, hwversion, provisionned, mac, multiwriter, memHotAddEnabled, guestOS, compressedMemory, removable, commited, datastore, balloonedMemory, vmtools, name, memLimit, vmxpath, connectionState, cpuHotAddEnabled, uncommited, powerState, guestId, configGuestId, vmpath, firstseen, lastseen, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?), ?)");
+      # $sqlInsert->execute(
+      my @h_tmp = (
+        $vcenterID,
         $hostID,
         $moRef,
         $vm_view->resourceConfig->memoryAllocation->reservation,
@@ -849,6 +922,7 @@ sub vminventory {
         $start,
         1
       );
+      $sqlInsert->execute(@h_tmp);
       $sqlInsert->finish();
     }
     $sth->finish();
@@ -877,28 +951,31 @@ sub hostinventory {
     my $dnsservers = $host_view->{'config.network.dnsConfig'}->address;
     my @sorted_dnsservers = map { $_->[1] } sort { $a->[0] <=> $b->[0] } map {[ unpack('N',inet_aton($_)), $_ ]} @$dnsservers;
     my $ntpservers = $host_view->{'config.dateTimeInfo.ntpConfig.server'} || [];
-    my $storageSys = Vim::get_view(mo_ref => $host_view->{'configManager.storageSystem'}, properties => ['storageDeviceInfo']);
+    my $storageSys = Vim::get_view(mo_ref => $host_view->{'configManager.storageSystem'}, properties => ['storageDeviceInfo.multipathInfo']);
     my $lunpathcount = 0;
     my $lundeadpathcount = 0;
-    my $luns = eval{$storageSys->storageDeviceInfo->multipathInfo->lun || []};
+    my $luns = eval{$storageSys->{'storageDeviceInfo.multipathInfo'}->lun || []};
     foreach my $lun (@$luns) {
       $lunpathcount += (0+@{$lun->path});
       foreach my $path (@{$lun->path}) {
         if ($path->{pathState} eq "dead") { $lundeadpathcount++; }
       }
     }
-    my $advOpt = Vim::get_view(mo_ref => $host_view->{'configManager.advancedOption'});
+    my $advOpt = Vim::get_view(mo_ref => $host_view->{'configManager.advancedOption'}, properties => ['setting']);
     my $syslog_target = '';
     eval {
       $syslog_target = $advOpt->QueryOptions(name => 'Syslog.global.logHost');
       $syslog_target = @$syslog_target[0]->value;
     };
+    my $datastorecount = 0+@{$host_view->{'datastore'}};
+    my $memoryShared = QuickQueryPerf($host_view, 'mem', 'shared', 'average', '*');
+    $memoryShared = (defined($memoryShared)) ? 0+$memoryShared : 0;
     my $vcentersdk = new URI::URL $host_view->{'vim'}->{'service_url'};
     my $moRef = $host_view->{'mo_ref'}->{'type'}."-".$host_view->{'mo_ref'}->{'value'};
     # get vcenter id from database
     my $vcenterID = dbGetVC($vcentersdk->host);
     $logger->info("[DEBUG][HOST-INVENTORY] Retrieved vCenterID = $vcenterID for host $moRef");
-    my $clusterID = dbGetCluster((defined($h_hostcluster{$host_view->{'mo_ref'}->{'type'}."-".$host_view->{'mo_ref'}->{'value'}}) ? $h_hostcluster{$host_view->{'mo_ref'}->{'type'}."-".$host_view->{'mo_ref'}->{'value'}} : 0), $vcenterID);
+    my $clusterID = (defined($h_hostcluster{$host_view->{'mo_ref'}->{'type'}."-".$host_view->{'mo_ref'}->{'value'}}) ? dbGetCluster($h_hostcluster{$host_view->{'mo_ref'}->{'type'}."-".$host_view->{'mo_ref'}->{'value'}}, $vcenterID) : 0);
     $logger->info("[DEBUG][HOST-INVENTORY] Retrieved clusterID = $clusterID for host $moRef");
     my $query = "SELECT * FROM hosts WHERE vcenter = '" . $vcenterID . "' AND moref = '" . $moRef . "' AND active = 1";
     my $sth = $dbh->prepare($query);
@@ -907,7 +984,6 @@ sub hostinventory {
     # TODO > generate error and skip if multiple + manage deletion (execute query on lastseen != $start)
     my $ref = $sth->fetchrow_hashref();
     if (($rows gt 0)
-      && ($ref->{'vcenter'} eq $vcenterID)
       && ($ref->{'cluster'} eq $clusterID)
       && ($ref->{'hostname'} eq $host_view->{'config.network.dnsConfig'}->hostName)
       && ($ref->{'host_name'} eq $host_view->name)
@@ -924,8 +1000,9 @@ sub hostinventory {
       && ($ref->{'numcpu'} eq $host_view->{'summary.hardware.numCpuPkgs'})
       && ($ref->{'inmaintenancemode'} eq $boolHash{$host_view->{'runtime.inMaintenanceMode'}})
       && ($ref->{'lunpathcount'} eq $lunpathcount)
+      && ($ref->{'datastorecount'} eq $datastorecount)
       && ($ref->{'model'} eq $host_view->{'summary.hardware.model'})
-      && ($ref->{'sharedmemory'} eq 0)
+      && ($ref->{'sharedmemory'} eq $memoryShared)
       && ($ref->{'cpumhz'} eq $host_view->{'summary.hardware.cpuMhz'})
       && ($ref->{'esxbuild'} eq $host_view->{'summary.config.product.fullName'})
       && ($ref->{'ssh_policy'} eq $service_ssh)
@@ -939,13 +1016,37 @@ sub hostinventory {
     } else {
       if ($rows gt 0) {
         # Host have changed, we must decom old one before create a new one
+        compareAndLog($ref->{'cluster'}, $clusterID);
+        compareAndLog($ref->{'hostname'}, $host_view->{'config.network.dnsConfig'}->hostName);
+        compareAndLog($ref->{'host_name'}, $host_view->name);
+        compareAndLog($ref->{'ntpservers'}, join(';', sort @$ntpservers));
+        compareAndLog($ref->{'deadlunpathcount'}, $lundeadpathcount);
+        compareAndLog($ref->{'numcpucore'}, $host_view->{'summary.hardware.numCpuCores'});
+        compareAndLog($ref->{'syslog_target'}, $syslog_target);
+        compareAndLog($ref->{'rebootrequired'}, $boolHash{$host_view->{'summary.rebootRequired'}});
+        compareAndLog($ref->{'powerpolicy'}, (defined($host_view->{'config.powerSystemInfo.currentPolicy.shortName'}) ? $host_view->{'config.powerSystemInfo.currentPolicy.shortName'} : 'off'));
+        compareAndLog($ref->{'bandwidthcapacity'}, 0);
+        compareAndLog($ref->{'memory'}, $host_view->{'summary.hardware.memorySize'});
+        compareAndLog($ref->{'dnsservers'}, join(';', @sorted_dnsservers));
+        compareAndLog($ref->{'cputype'}, $host_view->{'summary.hardware.cpuModel'});
+        compareAndLog($ref->{'numcpu'}, $host_view->{'summary.hardware.numCpuPkgs'});
+        compareAndLog($ref->{'inmaintenancemode'}, $boolHash{$host_view->{'runtime.inMaintenanceMode'}});
+        compareAndLog($ref->{'lunpathcount'}, $lunpathcount);
+        compareAndLog($ref->{'datastorecount'}, $datastorecount);
+        compareAndLog($ref->{'model'}, $host_view->{'summary.hardware.model'});
+        compareAndLog($ref->{'sharedmemory'}, $memoryShared);
+        compareAndLog($ref->{'cpumhz'}, $host_view->{'summary.hardware.cpuMhz'});
+        compareAndLog($ref->{'esxbuild'}, $host_view->{'summary.config.product.fullName'});
+        compareAndLog($ref->{'ssh_policy'}, $service_ssh);
+        compareAndLog($ref->{'shell_policy'}, $service_shell);
+
         $logger->info("[DEBUG][HOST-INVENTORY] Host $moRef have changed since last check, sending old entry it into oblivion");
         my $sqlUpdate = $dbh->prepare("UPDATE hosts set active = 0 WHERE id = '" . $ref->{'id'} . "'");
         $sqlUpdate->execute();
         $sqlUpdate->finish();
       }
       $logger->info("[DEBUG][HOST-INVENTORY] Adding data for host $moRef");
-      my $sqlInsert = $dbh->prepare("INSERT INTO hosts (vcenter, cluster, moref, hostname, host_name, ntpservers, deadlunpathcount, numcpucore, syslog_target, rebootrequired, powerpolicy, bandwidthcapacity, memory, dnsservers, cputype, numcpu, inmaintenancemode, lunpathcount, model, sharedmemory, cpumhz, esxbuild, ssh_policy, shell_policy, firstseen, lastseen, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?), ?)");
+      my $sqlInsert = $dbh->prepare("INSERT INTO hosts (vcenter, cluster, moref, hostname, host_name, ntpservers, deadlunpathcount, numcpucore, syslog_target, rebootrequired, powerpolicy, bandwidthcapacity, memory, dnsservers, cputype, numcpu, inmaintenancemode, lunpathcount, datastorecount, model, sharedmemory, cpumhz, esxbuild, ssh_policy, shell_policy, firstseen, lastseen, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?), ?)");
       $sqlInsert->execute(
         $vcenterID,
         $clusterID,
@@ -965,8 +1066,9 @@ sub hostinventory {
         $host_view->{'summary.hardware.numCpuPkgs'},
         $boolHash{$host_view->{'runtime.inMaintenanceMode'}},
         $lunpathcount,
+        $datastorecount,
         $host_view->{'summary.hardware.model'},
-        0,
+        $memoryShared,
         $host_view->{'summary.hardware.cpuMhz'},
         $host_view->{'summary.config.product.fullName'},
         $service_ssh,
@@ -978,11 +1080,19 @@ sub hostinventory {
       $sqlInsert->finish();
     }
     $sth->finish();
+    if ($rows gt 0) {
+      # We must update vms if needed
+      my $hostID = dbGetHost($moRef,$vcenterID);
+      my $sqlUpdate = $dbh->prepare("UPDATE vms SET host =  '" . $hostID . "' WHERE host = '" . $ref->{'id'} . "' and active = 1");
+      $sqlUpdate->execute();
+      $sqlUpdate->finish();
+    }
   }
 }
 
 sub clusterinventory {
   foreach my $cluster_view (@$view_ClusterComputeResource) {
+    if ($cluster_view->name ne 'ADMO01') { next;}
     my $lastconfigissue = 0;
     my $lastconfigissuetime = "0000-00-00 00:00:00";
     if (defined($cluster_view->configIssue)){
@@ -991,6 +1101,27 @@ sub clusterinventory {
         $lastconfigissuetime = substr($issue->createdTime, 0, 19);
         $lastconfigissuetime =~ s/T/ /g;
         last;
+      }
+    }
+    my $isAdmissionEnable = 0;
+    my $admissionModel = 0;
+    my $admissionThreshold = 0;
+    my $admissionValue = 0;
+    if ($cluster_view->{'configuration.dasConfig.admissionControlEnabled'} eq 'true') {
+      $isAdmissionEnable = 1;
+      my $admissionControlPolicy = $cluster_view->{'configuration.dasConfig.admissionControlPolicy'};
+      if ($admissionControlPolicy->isa('ClusterFailoverHostAdmissionControlPolicy')) {
+        $admissionModel = 'ClusterFailoverHostAdmissionControlPolicy';
+        $admissionThreshold = scalar @{$admissionControlPolicy->failoverHosts};
+        $admissionValue = $cluster_view->summary->currentFailoverLevel;
+      } elsif ($admissionControlPolicy->isa('ClusterFailoverLevelAdmissionControlPolicy')) {
+        $admissionModel = 'ClusterFailoverLevelAdmissionControlPolicy';
+        $admissionThreshold = $admissionControlPolicy->failoverLevel;
+        $admissionValue = $cluster_view->summary->currentFailoverLevel;
+      } elsif ($admissionControlPolicy->isa('ClusterFailoverResourcesAdmissionControlPolicy')) {
+        $admissionModel = 'ClusterFailoverResourcesAdmissionControlPolicy';
+        $admissionThreshold = "CPU:".$admissionControlPolicy->cpuFailoverResourcesPercent."% | MEM:".$admissionControlPolicy->memoryFailoverResourcesPercent."%";;
+        $admissionValue = "CPU:".$cluster_view->summary->admissionControlInfo->currentCpuFailoverResourcesPercent."% | MEM:".$cluster_view->summary->admissionControlInfo->currentMemoryFailoverResourcesPercent."%";
       }
     }
     my $dasenabled = (defined($cluster_view->summary->dasData) ? 1 : 0);
@@ -1008,6 +1139,10 @@ sub clusterinventory {
       && ($ref->{'cluster_name'} eq $cluster_view->name)
       && ($ref->{'dasenabled'} eq $dasenabled)
       && ($ref->{'lastconfigissuetime'} eq $lastconfigissuetime)
+      && ($ref->{'isAdmissionEnable'} eq $isAdmissionEnable)
+      && ($ref->{'admissionModel'} eq $admissionModel)
+      && ($ref->{'admissionThreshold'} eq $admissionThreshold)
+      && ($ref->{'admissionValue'} eq $admissionValue)
       && ($ref->{'lastconfigissue'} eq $lastconfigissue)) {
       # Cluster already exists, have not changed, updated lastseen property
       $logger->info("[DEBUG][CLUSTER-INVENTORY] Cluster $moRef already exists and have not changed since last check, updating lastseen property");
@@ -1017,19 +1152,32 @@ sub clusterinventory {
     } else {
       if ($rows gt 0) {
         # Cluster have changed, we must decom old one before create a new one
+        compareAndLog($ref->{'cluster_name'}, $cluster_view->name);
+        compareAndLog($ref->{'dasenabled'}, $dasenabled);
+        compareAndLog($ref->{'lastconfigissuetime'}, $lastconfigissuetime);
+        compareAndLog($ref->{'isAdmissionEnable'}, $isAdmissionEnable);
+        compareAndLog($ref->{'admissionModel'}, $admissionModel);
+        compareAndLog($ref->{'admissionThreshold'}, $admissionThreshold);
+        compareAndLog($ref->{'admissionValue'}, $admissionValue);
+        compareAndLog($ref->{'lastconfigissue'}, $lastconfigissue);
+
         $logger->info("[DEBUG][CLUSTER-INVENTORY] Cluster $moRef have changed since last check, sending old entry it into oblivion");
         my $sqlUpdate = $dbh->prepare("UPDATE clusters set active = 0 WHERE id = '" . $ref->{'id'} . "'");
         $sqlUpdate->execute();
         $sqlUpdate->finish();
       }
       $logger->info("[DEBUG][CLUSTER-INVENTORY] Adding data for cluster $moRef");
-      my $sqlInsert = $dbh->prepare("INSERT INTO clusters (vcenter, moref, cluster_name, vmotion, dasenabled, lastconfigissuetime, lastconfigissue, firstseen, lastseen, active) VALUES (?, ?, ?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?), ?)");
+      my $sqlInsert = $dbh->prepare("INSERT INTO clusters (vcenter, moref, cluster_name, vmotion, dasenabled, isAdmissionEnable, admissionModel, admissionThreshold, admissionValue, lastconfigissuetime, lastconfigissue, firstseen, lastseen, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?), ?)");
       $sqlInsert->execute(
         $vcenterID,
         $moRef,
         $cluster_view->name,
         $cluster_view->summary->numVmotions,
         $dasenabled,
+        $isAdmissionEnable,
+        $admissionModel,
+        $admissionThreshold,
+        $admissionValue,
         $lastconfigissuetime,
         $lastconfigissue,
         $start,
@@ -1064,7 +1212,6 @@ sub datastoreinventory {
     # TODO > generate error and skip if multiple + manage deletion (execute query on lastseen != $start)
     my $ref = $sth->fetchrow_hashref();
     if (($rows gt 0)
-      && ($ref->{'vcenter'} eq $vcenterID)
       && ($ref->{'datastore_name'} eq $datastore_view->name)
       && ($ref->{'type'} eq $datastore_view->summary->type)
       && ($ref->{'size'} eq $datastore_view->summary->capacity)
@@ -1081,11 +1228,20 @@ sub datastoreinventory {
     } else {
       if ($rows gt 0) {
         # Cluster have changed, we must decom old one before create a new one
+        compareAndLog($ref->{'datastore_name'}, $datastore_view->name);
+        compareAndLog($ref->{'type'}, $datastore_view->summary->type);
+        compareAndLog($ref->{'size'}, $datastore_view->summary->capacity);
+        compareAndLog($ref->{'uncommitted'}, $uncommitted);
+        compareAndLog($ref->{'freespace'}, $datastore_view->summary->freeSpace);
+        compareAndLog($ref->{'maintenanceMode'}, $maintenanceMode);
+        compareAndLog($ref->{'isAccessible'}, $datastore_view->summary->accessible);
+        compareAndLog($ref->{'shared'}, $datastore_view->summary->multipleHostAccess);
+        compareAndLog($ref->{'iormConfiguration'}, $datastore_view->iormConfiguration->enabled);
+
         my $sqlUpdate = $dbh->prepare("UPDATE datastores set active = 0 WHERE id = '" . $ref->{'id'} . "'");
         $sqlUpdate->execute();
         $sqlUpdate->finish();
       }
-
       my $sqlInsert = $dbh->prepare("INSERT INTO datastores (vcenter, moref, datastore_name, type, size, uncommitted, freespace, isAccessible, maintenanceMode, shared, iormConfiguration, firstseen, lastseen, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?), ?)");
       $sqlInsert->execute(
         $vcenterID,
@@ -1104,6 +1260,13 @@ sub datastoreinventory {
         1
       );
       $sqlInsert->finish();
+      if ($rows gt 0) {
+        # We must update vms if needed
+        my $datastoreID = dbGetDatastore($datastore_view->name,$vcenterID);
+        my $sqlUpdate = $dbh->prepare("UPDATE vms SET datastore =  '" . $datastoreID . "' WHERE datastore = '" . $ref->{'id'} . "' and active = 1");
+        $sqlUpdate->execute();
+        $sqlUpdate->finish();
+      }
     }
   }
 }
@@ -1545,16 +1708,18 @@ sub dbGetCluster {
   my $query = "SELECT id FROM clusters WHERE moref = '" . $clusterMoref . "' AND vcenter = '" . $vcenterID . "' AND active = 1";
   my $sth = $dbh->prepare($query);
   $sth->execute();
-  my $rows = $sth->rows;
-  if ($rows eq 0) {
-    # vcenter ID does not exist so we create it and return it
-    my $sqlInsert = $dbh->prepare("INSERT INTO clusters (vcenter, moref) VALUES (?, ?)");
-    $sqlInsert->execute($vcenterID, $clusterMoref);
-    $sqlInsert->finish();
-    # re-execute query after inserting new vcenter
-    $sth = $dbh->prepare($query);
-    $sth->execute();
-  }
+  # my $rows = $sth->rows;
+  # if ($rows eq 0) {
+  #   print(Dumper($clusterMoref));
+  #   exit;
+  #   # cluster ID does not exist so we create it and return it
+  #   my $sqlInsert = $dbh->prepare("INSERT INTO clusters (vcenter, moref) VALUES (?, ?)");
+  #   $sqlInsert->execute($vcenterID, $clusterMoref);
+  #   $sqlInsert->finish();
+  #   # re-execute query after inserting new vcenter
+  #   $sth = $dbh->prepare($query);
+  #   $sth->execute();
+  # }
   my $clusterID = 0;
   while (my $ref = $sth->fetchrow_hashref()) {
     $clusterID = $ref->{'id'};
@@ -1572,16 +1737,16 @@ sub dbGetHost {
   my $query = "SELECT id FROM hosts WHERE moref = '" . $hostMoref . "' AND vcenter = '" . $vcenterID . "' AND active = 1";
   my $sth = $dbh->prepare($query);
   $sth->execute();
-  my $rows = $sth->rows;
-  if ($rows eq 0) {
-    # host ID does not exist so we create it and return it
-    my $sqlInsert = $dbh->prepare("INSERT INTO hosts (vcenter, moref) VALUES (?, ?)");
-    $sqlInsert->execute($vcenterID, $hostMoref);
-    $sqlInsert->finish();
-    # re-execute query after inserting new vcenter
-    $sth = $dbh->prepare($query);
-    $sth->execute();
-  }
+  # my $rows = $sth->rows;
+  # if ($rows eq 0) {
+  #   # host ID does not exist so we create it and return it
+  #   my $sqlInsert = $dbh->prepare("INSERT INTO hosts (vcenter, moref) VALUES (?, ?)");
+  #   $sqlInsert->execute($vcenterID, $hostMoref);
+  #   $sqlInsert->finish();
+  #   # re-execute query after inserting new vcenter
+  #   $sth = $dbh->prepare($query);
+  #   $sth->execute();
+  # }
   my $hostID = 0;
   while (my $ref = $sth->fetchrow_hashref()) {
     $hostID = $ref->{'id'};
@@ -1599,16 +1764,16 @@ sub dbGetDatastore {
   my $query = "SELECT id FROM datastores WHERE datastore_name = '" . $datastoreName . "' AND vcenter = '" . $vcenterID . "' AND active = 1";
   my $sth = $dbh->prepare($query);
   $sth->execute();
-  my $rows = $sth->rows;
-  if ($rows eq 0) {
-    # datastore ID does not exist so we create it and return it
-    my $sqlInsert = $dbh->prepare("INSERT INTO datastores (vcenter, datastore_name) VALUES (?, ?)");
-    $sqlInsert->execute($vcenterID, $datastoreName);
-    $sqlInsert->finish();
-    # re-execute query after inserting new datastore
-    $sth = $dbh->prepare($query);
-    $sth->execute();
-  }
+  # my $rows = $sth->rows;
+  # if ($rows eq 0) {
+  #   # datastore ID does not exist so we create it and return it
+  #   my $sqlInsert = $dbh->prepare("INSERT INTO datastores (vcenter, datastore_name) VALUES (?, ?)");
+  #   $sqlInsert->execute($vcenterID, $datastoreName);
+  #   $sqlInsert->finish();
+  #   # re-execute query after inserting new datastore
+  #   $sth = $dbh->prepare($query);
+  #   $sth->execute();
+  # }
   my $datastoreID = 0;
   while (my $ref = $sth->fetchrow_hashref()) {
     $datastoreID = $ref->{'id'};
@@ -1687,4 +1852,76 @@ sub dbPurgeOldData {
   # After purging data, we run some optimisation task on db
   # TODO = switch to InnoDb RECREATE + ANALYZE tasks as OPTIMIZE is supported only on MyISAM
   $dbh->do("OPTIMIZE TABLE alarms, certificates, clusters, configurationissues, datastores, distributedvirtualportgroups, hardwarestatus, hosts, licenses, sessions, snapshots, vcenters, vms");
+}
+
+sub compareAndLog {
+  my ($source, $destination) = @_;
+  if ($source ne $destination) {
+    $logger->info("[COMPAREANDLOG] old=$source | new=$destination");
+  }
+}
+
+sub terminateSession {
+  my $sessionMgr = Vim::get_view(mo_ref => Vim::get_service_content()->sessionManager);
+  my $sessionList = eval {$sessionMgr->sessionList || []};
+  my $thresholdSession = dbGetConfig('vcSessionAge');
+  my $senderMail = dbGetConfig('senderMail');
+  my $recipientMail = dbGetConfig('recipientMail');
+  my $smtpAddress = dbGetConfig('smtpAddress');
+  my $killedSession = 0;
+  my %options;
+  $options{INCLUDE_PATH} = '/var/www/admin/mail-template';
+  chomp(my $HOSTNAME = `hostname -s`);
+  my $sessionBody = "";
+  foreach my $session (@$sessionList) {
+    if ((abs(str2time($session->lastActiveTime) - $start) / 86400) > $thresholdSession) {
+      $sessionBody = $sessionBody . "<tr><td style='border:1px solid #CCC'>" . $session->userName . "</td><td style='border:1px solid #CCC'>" . $session->lastActiveTime . "</td></tr>";
+      $logger->info("[TERMINATESESSION] Killing session " . $session->key . " of user " . $session->userName . " since it's idle since " . $session->lastActiveTime);
+   		$sessionMgr->TerminateSession(sessionId => [$session->key]);
+      $killedSession++;
+    }
+  }
+
+  if ($killedSession > 0) {
+    my %params;
+    $params{VCSESSIONAGE} = $thresholdSession;
+    $params{TERMINATESESSIONBODY} = $sessionBody;
+    my $msg = MIME::Lite::TT::HTML->new(
+      From        =>  $senderMail,
+      To          =>  $recipientMail,
+      Subject     =>  '['.uc($HOSTNAME).'] Terminate vCenter '.$activeVC.' Sessions Report',
+      Template    =>  { html => 'terminatesession.html' },
+      TmplOptions =>  \%options,
+      TmplParams  =>  \%params,
+    );
+    $msg->send('smtp', $smtpAddress, Timeout => 60 );
+  }
+}
+
+sub QuickQueryPerf {
+	my ($query_entity_view, $query_group, $query_counter, $query_rollup, $query_instance) = @_;
+	my $perfKey = $perfCntr{"$query_group.$query_counter.$query_rollup"}->key;
+	my @metricIDs = ();
+	my $metricId = PerfMetricId->new(counterId => $perfKey, instance => $query_instance);
+	push @metricIDs,$metricId;
+	my $perfQuerySpec = PerfQuerySpec->new(entity => $query_entity_view, maxSample => 15, intervalId => 20, metricId => \@metricIDs);
+	my $metrics = $perfMgr->QueryPerf(querySpec => [$perfQuerySpec]);
+	foreach(@$metrics) {
+		my $perfValues = $_->value;
+		foreach(@$perfValues) {
+			my $values = $_->value;
+			my @s_values = sort { $a <=> $b } @$values;
+			my $sum = 0;
+			my $count = 0;
+			foreach (@s_values) {
+				if ($count < 13) {
+					$sum += $_;
+					$count += 1;
+				}
+			}
+			my $perfavg = $sum/$count;
+			$perfavg =~ s/\.\d+$//;
+			return $perfavg;
+		}
+	}
 }
