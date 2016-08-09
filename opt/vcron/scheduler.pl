@@ -1092,7 +1092,6 @@ sub hostinventory {
 
 sub clusterinventory {
   foreach my $cluster_view (@$view_ClusterComputeResource) {
-    if ($cluster_view->name ne 'ADMO01') { next;}
     my $lastconfigissue = 0;
     my $lastconfigissuetime = "0000-00-00 00:00:00";
     if (defined($cluster_view->configIssue)){
