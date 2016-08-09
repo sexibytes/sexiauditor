@@ -1,5 +1,5 @@
-<?php require("session.php"); ?>
 <?php
+require("session.php");
 $title = "Cluster Checks";
 $additionalStylesheet = array(  'css/jquery.dataTables.min.css',
                                 'css/bootstrap-datetimepicker.css');
@@ -51,9 +51,26 @@ if($check->getModuleSchedule('clusterHAStatus') != 'off' && $check->getModuleSch
                           'thead' => array('Cluster Name', 'HA Status', 'vCenter'),
                           'tbody' => array('"<td>".$entry["name"]."</td>"', '"<td class=\"text-danger\"><i class=\"glyphicon glyphicon-remove-sign\"></i> no HA</td>"', '"<td>".$entry["vcenter"]."</td>"')]);
 }
+
+if($check->getModuleSchedule('clusterAdmissionControl') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
+  $check->displayCheck([  'sqlQuery' => "SELECT main.id FROM clusters main INNER JOIN vcenters v ON main.vcenter = v.id WHERE main.isAdmissionEnable = 0 OR (main.isAdmissionEnable = 1 AND main.admissionValue <= main.admissionThreshold)",
+                          "id" => "CLUSTERADMISSIONCONTROL",
+                          "typeCheck" => 'ssp',
+                          'thead' => array('Cluster Name', 'isAdmissionEnable', 'admissionThreshold', 'admissionValue', 'vCenter'),
+                          'columnDefs' => '{ "searchable": false, "targets": [ 1 ] }']);
+}
 ?>
     <h2>clusterAdmissionControl</h2>
-    <h2>clusterDatastoreConsistency</h2>
+<?php
+if($check->getModuleSchedule('clusterMembersLUNPathCountMismatch') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
+  $check->displayCheck([  'sqlQuery' => "SELECT main.id as clusterId, main.cluster_name as cluster, h.host_name, h.datastorecount, v.vcname as vcenter FROM hosts h INNER JOIN clusters main ON h.cluster = main.id INNER JOIN vcenters v ON h.vcenter = v.id WHERE h.active = 1",
+                          "id" => "CLUSTERDATASTORECONSISTENCY",
+                          'typeCheck' => 'majorityPerCluster',
+                          'majorityProperty' => 'datastorecount',
+                          'thead' => array('Cluster Name', 'Majority Datastore Count', 'Host Name', 'Datastore Count', 'vCenter'),
+                          'tbody' => array('"<td>" . $entry["cluster"] . "</td>"', '"<td>" . ($hMajority[$entry["clusterId"]]) . "</td>"', '"<td>" . $entry["host_name"] . "</td>"', '"<td>" . $entry["datastorecount"] . "</td>"', '"<td>" . $entry["vcenter"] . "</td>"')]);
+}
+?>
     <h2>clusterMembersOvercommit</h2>
 
 <?php
@@ -83,8 +100,17 @@ if($check->getModuleSchedule('clusterCPURatio') != 'off' && $check->getModuleSch
                           'tbody' => array('"<td>".$entry["name"]."</td>"', '"<td>".$entry["pcpu"]."</td>"', '"<td>".$entry["vcpu"]."</td>"', '"<td>".$entry["vp_cpuratio"]." : 1</td>"', '"<td>".$entry["vcenter"]."</td>"')]);
 }
 
+if($check->getModuleSchedule('clusterTPSSavings') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
+  $check->displayCheck([  'sqlQuery' => "SELECT c.cluster_name, SUM(main.sharedmemory) FROM hosts main INNER JOIN clusters c ON main.cluster = c.id WHERE true",
+                          "sqlQueryGroupBy" => "c.cluster_name",
+                          "id" => "CLUSTERTPSSAVINGS",
+                          "typeCheck" => 'ssp',
+                          'thead' => array('Cluster Name', 'Total Memory', 'TPS Savings', 'Percentage Saved', 'vCenter'),
+                          'columnDefs' => '{ "searchable": false, "targets": [ 1, 2, 3 ] }']);
+}
 ?>
-    <h2>clusterTPSSavings</h2>
+
+
     <h2>clusterAutoSlotSize</h2>
     <h2>clusterProfile</h2>
   </div>

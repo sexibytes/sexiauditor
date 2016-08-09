@@ -45,6 +45,42 @@ if (isset($_GET['c'])) {
 				$extraCondition = "permissions.firstseen < '" . $dateStart . "' AND permissions.lastseen > '" . $dateEnd . "'";
 			}
 		break;
+		case 'CLUSTERTPSSAVINGS':
+			$table = 'hosts';
+			$primaryKey = 'id';
+			$columns = array(
+				array( 'db' => 'c.cluster_name', 'dt' => 0, 'field' => 'cluster_name' ),
+				array( 'db' => 'SUM(h.memory) as memory', 'dt' => 1, 'field' => 'memory', 'formatter' => function( $d, $row ) { return human_filesize($d,0);}),
+				array( 'db' => 'SUM(h.sharedmemory) as sharedmemory', 'dt' => 2, 'field' => 'sharedmemory', 'formatter' => function( $d, $row ) { return human_filesize($d*1024,0);}),
+				array( 'db' => 'ROUND(100*1024*SUM(h.sharedmemory)/SUM(h.memory)) as savedmemory', 'dt' => 3, 'field' => 'savedmemory', 'formatter' => function( $d, $row ) { return "$d %";}),
+				array( 'db' => 'v.vcname', 'dt' => 4, 'field' => 'vcname' )
+			);
+			$joinQuery = "FROM {$table} h INNER JOIN clusters AS c ON (h.cluster = c.id) INNER JOIN vcenters AS v ON (h.vcenter = v.id)";
+			if ($latest) {
+				$timeCondition = "h.active = 1";
+			} else {
+				$timeCondition = "h.firstseen < '" . $dateStart . "' AND h.lastseen > '" . $dateEnd . "'";
+			}
+			$extraCondition = $timeCondition . " GROUP BY c.cluster_name";
+		break;
+		case 'CLUSTERADMISSIONCONTROL':
+			$table = 'clusters';
+			$primaryKey = 'id';
+			$columns = array(
+				array( 'db' => 'c.cluster_name', 'dt' => 0, 'field' => 'cluster_name' ),
+				array( 'db' => 'c.isAdmissionEnable', 'dt' => 1, 'field' => 'isAdmissionEnable' ),
+				array( 'db' => 'c.admissionThreshold', 'dt' => 2, 'field' => 'admissionThreshold' ),
+				array( 'db' => 'c.admissionValue', 'dt' => 3, 'field' => 'admissionValue' ),
+				array( 'db' => 'v.vcname', 'dt' => 4, 'field' => 'vcname' )
+			);
+			$joinQuery = "FROM {$table} c INNER JOIN vcenters AS v ON (c.vcenter = v.id)";
+			if ($latest) {
+				$timeCondition = "c.active = 1";
+			} else {
+				$timeCondition = "c.firstseen < '" . $dateStart . "' AND c.lastseen > '" . $dateEnd . "'";
+			}
+			$extraCondition = $timeCondition . " AND c.isAdmissionEnable = 0 OR (c.isAdmissionEnable = 1 AND c.admissionValue <= c.admissionThreshold)";
+		break;
 		case 'VMCPURAMHDDRESERVATION':
 			$table = 'vms';
 			$primaryKey = 'id';

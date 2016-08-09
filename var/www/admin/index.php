@@ -158,7 +158,8 @@ if ($totalVCs == 0 || $totalClusters == 0 || $totalHosts == 0 || $totalVMs == 0)
   $totalvMotion = $db->getValue("clusters", "SUM(clusters.vmotion)");
   // $totalvMotion = (int) $xpathCluster->evaluate('sum(/clusters/cluster/vmotion)');
   $totalBandwidth = 0;
-  $totalTPSSavings = 0;
+  $db->where('hosts.active', 1);
+  $totalTPSSavings = $db->getValue("hosts", "SUM(hosts.sharedmemory)");
   $averageVMPervCenter = round($totalVMs / $totalVCs);
   $averageVMPerCluster = round($totalVMs / $totalClusters);
   $averageVMPerHost = round($totalVMs / $totalHosts);
@@ -506,7 +507,7 @@ if ($totalVCs == 0 || $totalClusters == 0 || $totalHosts == 0 || $totalVMs == 0)
             <div class='stat stat-host'>
               <div class='widget widget-host'>
                 <div class='title'>Host</div>
-                <div class='value'><?php echo $totalTPSSavings; ?></div>
+                <div class='value'><?php echo human_filesize($totalTPSSavings*1024,0); ?></div>
                 <div class='more-info2'>Total TPS Savings</div>
                 <div class='updated-at'></div>
               </div>
