@@ -10,6 +10,7 @@ $lang = array();
 # vcenter items
 $lang['VCSESSIONAGE'] = array("title" => "Session Age", "description" => 'The following displays vCenter sessions that exceed the maximum session age days).');
 $lang['VCLICENCEREPORT'] = array("title" => "License Report", "description" => 'The following displays vCenter licenses.');
+$lang['VCPERMISSIONREPORT'] = array("title" => "Permission Report", "description" => 'The following displays vCenter permissions.');
 $lang['VCCERTIFICATESREPORT'] = array("title" => "Certificate Report", "description" => 'List of all certificates with their expiry date used in your vSphere platform.');
 
 # cluster items
@@ -17,7 +18,10 @@ $lang['CLUSTERCONFIGURATIONISSUES'] = array('title' => 'Cluster with Configurati
 $lang['CLUSTERHASTATUS'] = array('title' => 'Cluster Without HA','description' => 'The following cluster does not have HA enabled. You should check if that\'s expected as this is a must have feature!');
 $lang['ALARMSCLUSTER'] = array('title' => 'Cluster Alarms','description' => 'This module will display triggered alarms on Cluster objects level (including VSAN ones) with status and time of creation.');
 $lang['CLUSTERMEMBERSVERSION'] = array('title' => 'Hosts Build Number Mismatch','description' => 'Display ESX build number by cluster, in order to spot potential intracluster build mismatch.');
+$lang['CLUSTERDATASTORECONSISTENCY'] = array('title' => 'Cluster With Datastore Count Mismatch','description' => 'The following cluster members does not have the same number of datastore.');
 $lang['CLUSTERMEMBERSLUNPATHCOUNTMISMATCH'] = array('title' => 'Cluster With Members LUN Path Count Mismatch','description' => 'The following cluster members does not have the same number of LUN, please check for mapping or masking misconfiguration.');
+$lang['CLUSTERTPSSAVINGS'] = array('title' => 'TPS Savings','description' => 'Display TPS savings on all clusters, can be null if disabled or with enforced salting');
+$lang['CLUSTERADMISSIONCONTROL'] = array('title' => 'Admission Control Overtake','description' => 'These cluster have admission control constraint and should be overlook.');
 $lang['CLUSTERCPURATIO'] = array('title' => 'Ratio Virtual/Physical CPU','description' => 'Display ratio of virtual CPU per physical CPU that goes over threshold of ' . $this->getConfig('thresholdCPURatio'));
 
 # host items
