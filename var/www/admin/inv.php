@@ -1,5 +1,5 @@
-<?php require("session.php"); ?>
 <?php
+require("session.php");
 $title = "VM Inventory";
 $additionalStylesheet = array(  'css/jquery.dataTables.min.css',
                                 'css/bootstrap-datetimepicker.css');
@@ -93,6 +93,7 @@ try {
           "processing": true,
           "serverSide": true,
           "ajax": "server_processing.php?c=VMINVENTORY&t=<?php echo strtotime($check->getSelectedDate()); ?>",
+          "deferRender": true,
           "search": {
             "smart": false,
             "regex": true

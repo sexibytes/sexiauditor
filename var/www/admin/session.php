@@ -3,5 +3,5 @@
 session_name('SexiAuditor');
 session_start();
 header('Cache-control: private'); // IE 6 FIX
-if (!isset($_SESSION) || !isset($_SESSION['isLogged']) || !$_SESSION['isLogged']) { header('Location: login.php'); }
+if (!isset($_SESSION) || !isset($_SESSION['isLogged']) || !$_SESSION['isLogged']) { header('Location: login.php?e=timeout'); }
 ?>

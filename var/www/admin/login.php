@@ -29,6 +29,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST'){
     $_SESSION['isLogged'] = true;
     header('Location: index.php');
   } while (0);
+} elseif (!empty($_GET['e']) && $_GET['e'] == "timeout") {
+  $issue = true;
+  $issueMessage = "Your session have timeout, please reconnect...";
 }
 ?>
 <!DOCTYPE HTML>
