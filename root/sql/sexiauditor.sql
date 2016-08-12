@@ -123,7 +123,10 @@ INSERT INTO `config` (`id`, `configid`, `type`, `label`, `value`) VALUES
 (19, 'recipientMail', 3, 'Recipient email to be used for report export feature', 'frederic.c.martin-ext@socgen.com'),
 (20, 'pdfAuthor', 2, 'Username that will be used as the ''Author'' of generated PDFs', 'Gordon Freeman'),
 (21, 'showEmpty', 1, 'Show checks that return empty values (ie when there is nothing to report)', 'enable'),
-(22, 'showAuthors', 1, 'Show authors page of generated PDF''s, be aware that disabling it may kill some kitten...', 'enable');
+(22, 'showAuthors', 1, 'Show authors page of generated PDF''s, be aware that disabling it may kill some kitten...', 'enable'),
+(23, 'sexigrafNode', 2, 'SexiGraf node IP or FQDN (used for Capacity Planning)', '127.0.0.1'),
+(24, 'capacityPlanningDays', 4, 'Number of days Capacity Planning will used for computationcalculation of ''Days Left'' value', '7'),
+(25, 'showInfinite', 1, 'Does Capacity Planning display clusters with ''Infinite'' days left ?)', 'enable');
 
 -- --------------------------------------------------------
 
