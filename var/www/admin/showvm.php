@@ -36,7 +36,7 @@ if (!is_array($vm = $check->getVMInfos($_GET['vmid']))) {
             <div class="num">
                 <?php echo $vm["numcpu"]; ?> vCPU
             </div>
-            <h3>Number of vCPU and cores</h3>
+            <h3>Number of vCPU</h3>
         </div>
     </div>
     <div class="col-sm-4 col-xs-6">
@@ -64,7 +64,7 @@ if (!is_array($vm = $check->getVMInfos($_GET['vmid']))) {
     </div>
 </div>
 <div style="min-height:20px;">&nbsp;</div>
-<div class="row">
+<div class="row table" style="margin-bottom:0px;">
   <div class="col-sm-6">
     <div class="panel panel-default">
       <div class="panel-heading text-center"><strong>vHardware Configuration</strong></div>
@@ -128,4 +128,5 @@ if (is_array($datastore = $check->getDatastoreInfos($vm["datastore"], $vm["vcent
   document.head.appendChild(linkElement);
 </script>
 
-<?php require("footer.php"); ?>
+</body>
+</html>

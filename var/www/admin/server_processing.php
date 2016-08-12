@@ -1,5 +1,5 @@
-<?php require("session.php"); ?>
 <?php
+require("session.php");
 require("helper.php");
 
 // SQL server connection information
@@ -68,11 +68,12 @@ if (isset($_GET['c'])) {
 			$primaryKey = 'id';
 			$columns = array(
 				array( 'db' => 'c.cluster_name', 'dt' => 0, 'field' => 'cluster_name' ),
-				array( 'db' => 'c.isAdmissionEnable', 'dt' => 1, 'field' => 'isAdmissionEnable' ),
-				array( 'db' => 'c.admissionThreshold', 'dt' => 2, 'field' => 'admissionThreshold' ),
-				array( 'db' => 'c.admissionValue', 'dt' => 3, 'field' => 'admissionValue' ),
+				array( 'db' => 'c.isAdmissionEnable', 'dt' => 1, 'field' => 'isAdmissionEnable', 'formatter' => function( $d, $row ) { if ($row[5] == '1') {return "<i class=\"glyphicon glyphicon-ok-sign text-success\"></i> $d";} else {return "<i class=\"icon-groups-friends\"></i> $d";}}),
+				array( 'db' => 'c.admissionThreshold', 'dt' => 2, 'field' => 'admissionThreshold', 'formatter' => function( $d, $row ) { if ($row[1] == '0') {return "N/A";}}),
+				array( 'db' => 'c.admissionValue', 'dt' => 3, 'field' => 'admissionValue', 'formatter' => function( $d, $row ) { if ($row[1] == '0') {return "N/A";}}),
 				array( 'db' => 'v.vcname', 'dt' => 4, 'field' => 'vcname' )
 			);
+			
 			$joinQuery = "FROM {$table} c INNER JOIN vcenters AS v ON (c.vcenter = v.id)";
 			if ($latest) {
 				$timeCondition = "c.active = 1";
