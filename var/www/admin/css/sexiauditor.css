@@ -506,7 +506,7 @@ input[readonly] {
 .table-title {
   background-color: #f5f5f5;
   padding: 10px;
-  min-width: 150px;
+  /*min-width: 150px;*/
   color: black;
   font-weight: bold;
 }
