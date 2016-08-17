@@ -677,13 +677,7 @@ ALTER TABLE `moduleCategory`
 -- Indexes for table `modules`
 --
 ALTER TABLE `modules`
- ADD PRIMARY KEY (`id`), ADD KEY `module﻿_id` (`module_id`);
-
---
--- Indexes for table `moduleSchedule`
---
-ALTER TABLE `moduleSchedule`
- ADD PRIMARY KEY (`id`), ADD KEY `schedule` (`schedule`);
+ ADD PRIMARY KEY (`id`), ADD KEY `module` (`module`);
 
 --
 -- Indexes for table `permissions`
