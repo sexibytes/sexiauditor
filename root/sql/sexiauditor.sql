@@ -339,6 +339,7 @@ INSERT INTO `moduleCategory` (`id`, `category`) VALUES
 -- Table structure for table `modules`
 --
 
+DROP TABLE IF EXISTS `modules`;
 CREATE TABLE IF NOT EXISTS `modules` (
 `id` int(11) NOT NULL,
   `module` varchar(50) CHARACTER SET utf8 NOT NULL,
