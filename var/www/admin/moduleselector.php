@@ -34,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
   foreach (array_keys($_POST) as $postKey) {
     $data = Array ('schedule' => $_POST[$postKey]);
     $db->where ('id', preg_replace('/schedule-(\w+)/i', '${1}', $postKey));
-    if (!$db->update ('moduleSchedule', $data)) {
+    if (!$db->update ('modules', $data)) {
       $issueOnUpdate = true;
     }
   }
@@ -62,13 +62,12 @@ if ($db->count > 0) {
     $modulelist = $modulelist . '      <div role="tabpanel" class="tab-pane fade' . ($firstmodule ? ' in active' : '') . '" id="' . str_replace(" ", "", strtolower($category['category'])) . '">
           <table class="table table-hover table-noborder"><thead><th>Module</th><th>Description</th><th>Schedule</th></thead><tbody>' . "\n";
     $firstmodule = false;
-    $db->join("moduleSchedule s", "m.module_id=s.id", "LEFT");
     $db->where('category_id', $category['id']);
-    $resultModule = $db->get("modules m");
+    $resultModule = $db->get("modules");
     foreach ($resultModule as $module) {
       $modulelist = $modulelist . '        <tr>
                               <td class="col-sm-2"><b>' . ($module['type'] == "action" ? "<i class=\"glyphicon glyphicon-bookmark glyphicon-danger\"></i> " : "") . $module['displayName'] . '</b><br />version ' . $module['version'] . '</td>
-                              <td class="col-sm-6">' .  $module['description'] . '<br /><span class="modulePath">subroutine ' . $module['id'] . '()</span></td>
+                              <td class="col-sm-6">' .  $module['description'] . '<br /><span class="modulePath">subroutine ' . $module['module'] . '()</span></td>
                               <td class="col-sm-4">
   <div class="btn-group" data-toggle="buttons">
     <button name="radio" class="btn btn-danger' . ($module['schedule'] == "off" ? ' active' : '') . '"><input type="radio" name="schedule-' . $module['id'] . '" value="off">Off</button>';
