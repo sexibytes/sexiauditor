@@ -5,7 +5,7 @@ $isAdminPage = true;
 $title = "Users Management";
 require("header.php");
 require("helper.php");
-require 'PHPMailer/PHPMailerAutoload.php';
+require 'phpmailer/PHPMailerAutoload.php';
 // $xmlPasswordsFile = "/var/www/admin/conf/passwords.xml";
 // if (is_writeable($xmlPasswordsFile)):
   // $xmlPassword = simplexml_load_file($xmlPasswordsFile);
