@@ -338,19 +338,19 @@ foreach $s_item (@server_list) {
   $view_ClusterComputeResource = Vim::find_entity_views(view_type => 'ClusterComputeResource', properties => ['name', 'host', 'summary', 'configIssue', 'configuration.dasConfig.admissionControlPolicy', 'configuration.dasConfig.admissionControlEnabled']);
   $logger->info("[INFO][OBJECTS] End retrieving ClusterComputeResource objects");
   $logger->info("[INFO][OBJECTS] Start retrieving HostSystem objects");
-  # $view_HostSystem = Vim::find_entity_views(view_type => 'HostSystem', properties => ['name', 'config.dateTimeInfo.ntpConfig.server', 'config.network.dnsConfig', 'config.powerSystemInfo.currentPolicy.shortName', 'configIssue', 'configManager.advancedOption', 'configManager.healthStatusSystem', 'configManager.storageSystem', 'configManager.serviceSystem', 'runtime.inMaintenanceMode', 'summary.config.product.fullName', 'summary.hardware.cpuMhz', 'summary.hardware.cpuModel', 'summary.hardware.memorySize', 'summary.hardware.model', 'summary.hardware.numCpuCores', 'summary.hardware.numCpuPkgs', 'summary.rebootRequired', 'datastore']);
+  $view_HostSystem = Vim::find_entity_views(view_type => 'HostSystem', properties => ['name', 'config.dateTimeInfo.ntpConfig.server', 'config.network.dnsConfig', 'config.powerSystemInfo.currentPolicy.shortName', 'configIssue', 'configManager.advancedOption', 'configManager.healthStatusSystem', 'configManager.storageSystem', 'configManager.serviceSystem', 'runtime.inMaintenanceMode', 'summary.config.product.fullName', 'summary.hardware.cpuMhz', 'summary.hardware.cpuModel', 'summary.hardware.memorySize', 'summary.hardware.model', 'summary.hardware.numCpuCores', 'summary.hardware.numCpuPkgs', 'summary.rebootRequired', 'datastore']);
   $logger->info("[INFO][OBJECTS] End retrieving HostSystem objects");
   $logger->info("[INFO][OBJECTS] Start retrieving DistributedVirtualPortgroup objects");
-  # $view_DistributedVirtualPortgroup = Vim::find_entity_views(view_type => 'DistributedVirtualPortgroup', properties => ['name', 'vm', 'config.numPorts', 'config.autoExpand', 'tag']);
+  $view_DistributedVirtualPortgroup = Vim::find_entity_views(view_type => 'DistributedVirtualPortgroup', properties => ['name', 'vm', 'config.numPorts', 'config.autoExpand', 'tag']);
   $logger->info("[INFO][OBJECTS] End retrieving DistributedVirtualPortgroup objects");
   $logger->info("[INFO][OBJECTS] Start retrieving Datastore objects");
-  # $view_Datastore = Vim::find_entity_views(view_type => 'Datastore', properties => ['name', 'summary', 'iormConfiguration']);
+  $view_Datastore = Vim::find_entity_views(view_type => 'Datastore', properties => ['name', 'summary', 'iormConfiguration']);
   $logger->info("[INFO][OBJECTS] End retrieving Datastore objects");
   $logger->info("[INFO][OBJECTS] Start retrieving Datacenter objects");
-  # $view_Datacenter = Vim::find_entity_views(view_type => 'Datacenter', properties => ['name','triggeredAlarmState']);
+  $view_Datacenter = Vim::find_entity_views(view_type => 'Datacenter', properties => ['name','triggeredAlarmState']);
   $logger->info("[INFO][OBJECTS] End retrieving Datacenter objects");
   $logger->info("[INFO][OBJECTS] Start retrieving VirtualMachine objects");
-  # $view_VirtualMachine = Vim::find_entity_views(view_type => 'VirtualMachine', properties => ['name','guest','summary.config.vmPathName','config.guestId','runtime','network','summary.config.numCpu','summary.config.memorySizeMB','summary.storage','triggeredAlarmState','config.hardware.device','config.version','resourceConfig','config.cpuHotAddEnabled','config.memoryHotAddEnabled','config.extraConfig','summary.quickStats','snapshot']);
+  $view_VirtualMachine = Vim::find_entity_views(view_type => 'VirtualMachine', properties => ['name','guest','summary.config.vmPathName','config.guestId','runtime','network','summary.config.numCpu','summary.config.memorySizeMB','summary.storage','triggeredAlarmState','config.hardware.device','config.version','resourceConfig','config.cpuHotAddEnabled','config.memoryHotAddEnabled','config.extraConfig','summary.quickStats','snapshot']);
   $logger->info("[INFO][OBJECTS] End retrieving VirtualMachine objects");
   # hastables creation to speed later queries
   foreach my $cluster_view (@$view_ClusterComputeResource) {
