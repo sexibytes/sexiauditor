@@ -58,6 +58,7 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == '1') {
                   <li><a href="check-datastore.php"><img src="images/vc-datastore.gif" class="glyphicon-custom" /> Datastore Checks</a></li>
                   <li><a href="check-network.php"><img src="images/vc-network.gif" class="glyphicon-custom" /> Network Checks</a></li>
                   <li><a href="check-vm.php"><img src="images/vc-vm.gif" class="glyphicon-custom" /> VM Checks</a></li>
+                  <li><a href="capacityplanning.php"><i class="glyphicon glyphicon-signal glyphicon-custom"></i> Capacity Planning</a></li>
                   <li><a href="inv.php"><i class="glyphicon glyphicon-list-alt glyphicon-custom"></i> Global Inventory</a></li>
                 </ul>
               </div>
@@ -79,6 +80,7 @@ if (isset($_SESSION['role']) && $_SESSION['role'] == '1') {
 <?php if (isset($_SESSION['role']) && $_SESSION['role'] == '1'): ?>
                   <li><a href="config.php"><i class="glyphicon glyphicon-pencil glyphicon-custom"></i> Module Settings</a></li>
                   <li><a href="users.php"><i class="glyphicon glyphicon-user glyphicon-custom"></i> Users Management</a></li>
+                  <li><a href="import-export.php"><i class="glyphicon glyphicon-transfer glyphicon-custom"></i> Import/Export</a></li>
 <?php endif; ?>
                   <li><a href="onetime.php"><i class="glyphicon glyphicon-book glyphicon-custom"></i> One Time Report</a></li>
                   <li><a href="pdfreports.php"><i class="glyphicon glyphicon-print glyphicon-custom"></i> PDF Reports</a></li>

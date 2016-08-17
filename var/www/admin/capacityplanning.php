@@ -101,7 +101,7 @@ foreach ($jsonVC as $entryVC) {
           },
           "columnDefs": [
             { "orderable": false, "targets": 4 },
-            { "className": "dt-body-center", "targets": [ 2,3 ] }
+            { "className": "dt-body-center", "targets": [ 2,3,4 ] }
           ]
         } );
       } );
