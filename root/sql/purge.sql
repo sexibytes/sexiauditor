@@ -3,6 +3,7 @@ TRUNCATE certificates;
 TRUNCATE clusters;
 TRUNCATE configurationissues;
 TRUNCATE datastores;
+TRUNCATE datastoreMetrics;
 TRUNCATE distributedvirtualportgroups;
 TRUNCATE hardwarestatus;
 TRUNCATE hosts;
