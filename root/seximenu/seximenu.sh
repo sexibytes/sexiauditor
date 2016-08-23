@@ -383,8 +383,6 @@ pause(){
 
 # Menu header
 func_echo-header(){
-  statecarboncache=`/etc/init.d/carbon-cache status`
-  statecollectd=`/etc/init.d/collectd status`
   statemariadb=`/etc/init.d/mysql status`
   stateapache2=`/etc/init.d/apache2 status`
   if [ ! -f /etc/sexiauditor_version ]; then
@@ -408,16 +406,6 @@ func_echo-header(){
   echo ""
   echo -e "`df -h | egrep "Filesystem|dm-0"`"
   echo ""
-  if [[ $statecarboncache =~ "Active: active (running)" ]]; then
-    echo -e -n " carbon-cache  [$green RUNNING $clean]"
-  else
-    echo -e -n " carbon-cache  [$red FAILED  $clean]"
-  fi
-  if [[ $statecollectd =~ "Active: active (running)" ]]; then
-    echo -e "                 collectd [$green RUNNING $clean]"
-  else
-    echo -e "                 collectd [$red FAILED  $clean]"
-  fi
   if [[ $statemariadb =~ "Active: active (running)" ]]; then
     echo -e -n " mariadb       [$green RUNNING $clean]"
   else
