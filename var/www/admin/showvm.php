@@ -106,7 +106,7 @@ if (is_array($datastore = $check->getDatastoreInfos($vm["datastore"], $vm["vcent
   } else {
     $labelFreeColor = "success";
   }
-  $additionalDatastoreInfos = " <span class=\"label label-primary\">" . human_filesize($datastore["size"]) . " total size</span> <span class=\"label label-" . $labelFreeColor . "\">" . $datastore["pct_free"] . "% free</span>";
+  $additionalDatastoreInfos = " <span class=\"label label-primary\">" . human_filesize($datastore["size"]*1073741824) . " total size</span> <span class=\"label label-" . $labelFreeColor . "\">" . $datastore["pct_free"] . "% free</span>";
 } else {
   $datastoreName = "Undefined";
   $additionalDatastoreInfos = " <span class=\"label label-default\">Unknow infos</span>";

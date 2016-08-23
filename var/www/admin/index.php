@@ -151,8 +151,10 @@ if ($totalVCs == 0 || $totalClusters == 0 || $totalHosts == 0 || $totalVMs == 0)
   $db->where('hosts.active', 1);
   $totalHostsMemory = $db->getValue("hosts", "SUM(hosts.memory)");
   // $totalHostsMemory = (int) $xpathHost->evaluate('sum(/hosts/host/memory)');
+  $db->join("datastoreMetrics", "datastores.id = datastoreMetrics.datastore_id", "INNER");
   $db->where('datastores.active', 1);
-  $totalDatastoreSize = $db->getValue("datastores", "SUM(datastores.size)");
+  $db->orderBy("datastoreMetrics.id","desc");
+  $totalDatastoreSize = $db->getValue("datastores", "SUM(datastoreMetrics.size)", 1);
   // $totalDatastoreSize = (int) $xpathDatastore->evaluate('sum(/datastores/datastore/size)');
   $db->where('clusters.active', 1);
   $totalvMotion = $db->getValue("clusters", "SUM(clusters.vmotion)");

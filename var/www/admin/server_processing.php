@@ -1,7 +1,7 @@
 <?php
 require("session.php");
 require("helper.php");
-
+$check = new SexiCheck();
 // SQL server connection information
 $sql_details = array(
 	'user' => 'sexiauditor',
@@ -81,6 +81,45 @@ if (isset($_GET['c'])) {
 				$timeCondition = "c.firstseen < '" . $dateStart . "' AND c.lastseen > '" . $dateEnd . "'";
 			}
 			$extraCondition = $timeCondition . " AND c.isAdmissionEnable = 0 OR (c.isAdmissionEnable = 1 AND c.admissionValue <= c.admissionThreshold)";
+		break;
+		case 'DATASTORESPACEREPORT':
+			$table = 'datastores';
+			$primaryKey = 'id';
+			$columns = array(
+				array( 'db' => 'd.datastore_name', 'dt' => 0, 'field' => 'datastore_name' ),
+				array( 'db' => 'dm.size', 'dt' => 1, 'field' => 'size', 'formatter' => function( $d, $row ) { return human_filesize($d,0);}),
+				array( 'db' => 'dm.freespace', 'dt' => 2, 'field' => 'freespace', 'formatter' => function( $d, $row ) { return human_filesize($d,0);}),
+				array( 'db' => 'ROUND(100*(dm.freespace/dm.size)) as pct_free', 'dt' => 3, 'field' => 'pct_free', 'formatter' => function( $d, $row ) { return "$d %"; }),
+				array( 'db' => 'v.vcname', 'dt' => 4, 'field' => 'vcname' )
+			);
+			
+			$joinQuery = "FROM {$table} d INNER JOIN datastoreMetrics AS dm ON (d.id = dm.datastore_id) INNER JOIN vcenters AS v ON (d.vcenter = v.id)";
+			if ($latest) {
+				$timeCondition = "d.active = 1";
+			} else {
+				$timeCondition = "d.firstseen < '" . $dateStart . "' AND d.lastseen > '" . $dateEnd . "'";
+			}
+			$extraCondition = $timeCondition . " AND ROUND(100*(dm.freespace/dm.size)) < " . $check->getConfig('datastoreFreeSpaceThreshold');
+		break;
+		case 'DATASTOREOVERALLOCATION':
+			$table = 'datastores';
+			$primaryKey = 'id';
+			$columns = array(
+				array( 'db' => 'd.datastore_name', 'dt' => 0, 'field' => 'datastore_name' ),
+				array( 'db' => 'dm.size', 'dt' => 1, 'field' => 'size', 'formatter' => function( $d, $row ) { return human_filesize($d,0);}),
+				array( 'db' => 'dm.freespace', 'dt' => 2, 'field' => 'freespace', 'formatter' => function( $d, $row ) { return human_filesize($d,0);}),
+				array( 'db' => 'dm.uncommitted', 'dt' => 3, 'field' => 'uncommitted', 'formatter' => function( $d, $row ) { return human_filesize($d,0);}),
+				array( 'db' => 'ROUND(100*((dm.size-dm.freespace+dm.uncommitted)/dm.size)) as pct_overallocation', 'dt' => 4, 'field' => 'pct_overallocation', 'formatter' => function( $d, $row ) { return round(100*(($row[1]-$row[2]+$row[3])/$row[1])) . " %"; }),
+				array( 'db' => 'v.vcname', 'dt' => 5, 'field' => 'vcname' )
+			);
+
+			$joinQuery = "FROM {$table} d INNER JOIN datastoreMetrics AS dm ON (d.id = dm.datastore_id) INNER JOIN vcenters AS v ON (d.vcenter = v.id)";
+			if ($latest) {
+				$timeCondition = "d.active = 1";
+			} else {
+				$timeCondition = "d.firstseen < '" . $dateStart . "' AND d.lastseen > '" . $dateEnd . "' AND dm.firstseen < '" . $dateStart . "' AND dm.lastseen > '" . $dateEnd . "'";
+			}
+			$extraCondition = $timeCondition . " AND ROUND(100*((dm.size-dm.freespace+dm.uncommitted)/dm.size)) > ". $check->getConfig('datastoreOverallocation');
 		break;
 		case 'VMCPURAMHDDRESERVATION':
 			$table = 'vms';

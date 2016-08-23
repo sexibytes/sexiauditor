@@ -29,20 +29,20 @@ try {
 }
 
 if($check->getModuleSchedule('datastoreSpacereport') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
-  $check->displayCheck([  'sqlQuery' => "SELECT main.datastore_name, main.size, main.freespace, ROUND(100*(main.freespace/main.size)) as pct_free, v.vcname as vcenter FROM datastores main INNER JOIN vcenters v ON main.vcenter = v.id WHERE ROUND(100*(main.freespace/main.size)) < ". $check->getConfig('datastoreFreeSpaceThreshold'),
+  $check->displayCheck([  'sqlQuery' => "SELECT main.id FROM datastores AS main INNER JOIN datastoreMetrics AS dm ON (main.id = dm.datastore_id) WHERE ROUND(100*(dm.freespace/dm.size)) < ". $check->getConfig('datastoreFreeSpaceThreshold'),
                           "id" => "DATASTORESPACEREPORT",
+                          "typeCheck" => 'ssp',
                           'thead' => array('Datastore Name', 'Capacity', 'FreeSpace', '% Free', 'vCenter'),
-                          'tbody' => array('"<td>".$entry["datastore_name"]."</td>"', '"<td>".human_filesize($entry["size"])."</td>"', '"<td>".human_filesize($entry["freespace"])."</td>"', '"<td>".$entry["pct_free"]." %</td>"', '"<td>".$entry["vcenter"]."</td>"'),
-                          'columnDefs' => '{ type: "file-size", targets: [ 1, 2 ] }']);
+                          'columnDefs' => '{type: "file-size", targets: [ 1, 2 ]}']);
 }
 ?>
     <h2>Orphaned VM Files report</h2>
 <?php
 if($check->getModuleSchedule('datastoreOverallocation') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
-  $check->displayCheck([  'sqlQuery' => "SELECT main.datastore_name, main.size, main.freespace, main.uncommitted, ROUND(100*((main.size-main.freespace+main.uncommitted)/main.size)) as pct_overallocation, v.vcname as vcenter FROM datastores main INNER JOIN vcenters v ON main.vcenter = v.id WHERE ROUND(100*((main.size-main.freespace+main.uncommitted)/main.size)) > ". $check->getConfig('datastoreOverallocation'),
+  $check->displayCheck([  'sqlQuery' => "SELECT main.id FROM datastores AS main INNER JOIN datastoreMetrics AS dm ON (main.id = dm.datastore_id) WHERE ROUND(100*((dm.size-dm.freespace+dm.uncommitted)/dm.size)) > ". $check->getConfig('datastoreOverallocation'),
                           "id" => "DATASTOREOVERALLOCATION",
-                          'thead' => array('Datastore Name', 'Capacity', 'FreeSpace', 'Uncommitted', 'Overallocation', 'vCenter'),
-                          'tbody' => array('"<td>".$entry["datastore_name"]."</td>"', '"<td>".human_filesize($entry["size"])."</td>"', '"<td>".human_filesize($entry["freespace"])."</td>"', '"<td>".human_filesize($entry["uncommitted"])."</td>"', '"<td>".$entry["pct_overallocation"]." %</td>"', '"<td>".$entry["vcenter"]."</td>"'),
+                          "typeCheck" => 'ssp',
+                          'thead' => array('Datastore Name', 'Capacity', 'FreeSpace', 'Uncommitted', 'Allocation', 'vCenter'),
                           'columnDefs' => '{ type: "file-size", targets: [ 1, 2, 3 ] }']);
 }
 

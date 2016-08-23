@@ -1,5 +1,5 @@
-<?php require("session.php"); ?>
 <?php
+require("session.php");
 require("dbconnection.php");
 $isAdminPage = true;
 $title = "Time To Build";

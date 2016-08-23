@@ -108,13 +108,13 @@ class SSP {
 
                 $columnIdx = array_search( $requestColumn['data'], $dtColumns );
                 $column = $columns[ $columnIdx ];
-
+                
                 if ( $requestColumn['orderable'] == 'true' ) {
                     $dir = $request['order'][$i]['dir'] === 'asc' ?
                         'ASC' :
                         'DESC';
 
-                    $orderBy[] = ($isJoin) ? $column['db'].' '.$dir : '`'.$column['db'].'` '.$dir;
+                    $orderBy[] = ($isJoin) ? explode(" as", $column['db'])[0].' '.$dir : '`'.explode(" as", $column['db'])[0].'` '.$dir;
                 }
             }
 
@@ -251,7 +251,6 @@ class SSP {
 			 $order
 			 $limit";
         }
-
         $data = SSP::sql_exec( $db, $bindings,$query);
 
         // Data set length after filtering
