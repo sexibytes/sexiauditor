@@ -342,9 +342,10 @@ class SexiCheck {
   public function getVMInfos($vmID) {
     $this->db->join("hosts h", "vms.host = h.id", "INNER");
     $this->db->join("clusters c", "h.cluster = c.id", "INNER");
-    $this->db->join("vcenters v", "h.vcenter = v.id", "INNER");
+    $this->db->join("vcenters v", "vms.vcenter = v.id", "INNER");
+    $this->db->join("vmMetrics vmm", "vms.id = vmm.vm_id", "INNER");
     $this->db->where('vms.id', $vmID);
-    $resultVM = $this->db->getOne("vms", "vms.*, c.cluster_name as cluster, h.host_name as host, v.vcname as vcenter, v.id as vcenterID");
+    $resultVM = $this->db->getOne("vms", "vms.*, vmm.*, c.cluster_name as cluster, h.host_name as host, v.vcname as vcenter, v.id as vcenterID");
     if ($this->db->count > 0) {
       return $resultVM;
     } else {
@@ -353,7 +354,8 @@ class SexiCheck {
   }
 
   public function getDatastoreInfos($datastoreID) {
-    $this->db->where('id', $datastoreID);
+    $this->db->join("datastoreMetrics dm", "datastores.id = dm.datastore_id", "INNER");
+    $this->db->where('datastores.id', $datastoreID);
     $resultVM = $this->db->getOne("datastores", "datastore_name, size, ROUND(100*(freespace/size)) as pct_free");
     if ($this->db->count > 0) {
       return $resultVM;
