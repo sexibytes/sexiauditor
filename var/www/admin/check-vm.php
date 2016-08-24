@@ -100,7 +100,7 @@ if($check->getModuleSchedule('vmvHardwarePivot') != 'off' && $check->getModuleSc
 }
 
 if($check->getModuleSchedule('vmballoonzipswap') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
-  $check->displayCheck([  'sqlQuery' => "SELECT main.id FROM vms AS main INNER JOIN hosts h ON main.host = h.id INNER JOIN vcenters v ON h.vcenter = v.id WHERE (main.swappedMemory > 0 OR main.balloonedMemory > 0 OR main.compressedMemory > 0)",
+  $check->displayCheck([  'sqlQuery' => "SELECT main.id FROM vms AS main INNER JOIN vmMetrics AS vmm ON (main.id = vmm.vm_id) WHERE (vmm.swappedMemory > 0 OR vmm.balloonedMemory > 0 OR vmm.compressedMemory > 0)",
                           "id" => "VMBALLOONZIPSWAP",
                           "typeCheck" => 'ssp',
                           'thead' => array('VM Name', 'Ballooned', 'Compressed', 'Swapped', 'vCenter')]);

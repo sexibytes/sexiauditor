@@ -32,7 +32,7 @@ if($check->getModuleSchedule('clusterConfigurationIssues') != 'off' && $check->g
   $check->displayCheck([  'sqlQuery' => "SELECT main.cluster_name, main.dasenabled, main.lastconfigissue, main.lastconfigissuetime, v.vcname as vcenter FROM clusters main INNER JOIN vcenters v ON main.vcenter = v.id WHERE main.lastconfigissue NOT LIKE '0'",
                           "id" => "CLUSTERCONFIGURATIONISSUES",
                           'thead' => array('Cluster Name', 'HA Status', 'Last Config Issue', 'Time', 'vCenter'),
-                          'tbody' => array('"<td>".$entry["name"]."</td>"', '"<td>".(($entry["dasenabled"] == "1") ? "<i class=\"glyphicon glyphicon-ok-sign text-success\"></i>" : "<i class=\"glyphicon glyphicon-remove-sign text-danger\"></i>")."</td>"', '"<td>".$entry["lastconfigissue"]."</td>"', '"<td>".$entry["lastconfigissuetime"]."</td>"', '"<td>".$entry["vcenter"]."</td>"'),
+                          'tbody' => array('"<td>".$entry["cluster_name"]."</td>"', '"<td>".(($entry["dasenabled"] == "1") ? "<i class=\"glyphicon glyphicon-ok-sign text-success\"></i>" : "<i class=\"glyphicon glyphicon-remove-sign text-danger\"></i>")."</td>"', '"<td>".$entry["lastconfigissue"]."</td>"', '"<td>".$entry["lastconfigissuetime"]."</td>"', '"<td>".$entry["vcenter"]."</td>"'),
                           'columnDefs' => '{ "orderable": false, className: "dt-body-center", "targets": [ 4 ] }']);
 }
 
@@ -49,7 +49,7 @@ if($check->getModuleSchedule('clusterHAStatus') != 'off' && $check->getModuleSch
   $check->displayCheck([  'sqlQuery' => "SELECT main.cluster_name, v.vcname as vcenter FROM clusters main INNER JOIN vcenters v ON main.vcenter = v.id WHERE main.dasenabled NOT LIKE '1'",
                           "id" => "CLUSTERHASTATUS",
                           'thead' => array('Cluster Name', 'HA Status', 'vCenter'),
-                          'tbody' => array('"<td>".$entry["name"]."</td>"', '"<td class=\"text-danger\"><i class=\"glyphicon glyphicon-remove-sign\"></i> no HA</td>"', '"<td>".$entry["vcenter"]."</td>"')]);
+                          'tbody' => array('"<td>".$entry["cluster_name"]."</td>"', '"<td class=\"text-danger\"><i class=\"glyphicon glyphicon-remove-sign\"></i> no HA</td>"', '"<td>".$entry["vcenter"]."</td>"')]);
 }
 
 if($check->getModuleSchedule('clusterAdmissionControl') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
@@ -57,7 +57,7 @@ if($check->getModuleSchedule('clusterAdmissionControl') != 'off' && $check->getM
                           "id" => "CLUSTERADMISSIONCONTROL",
                           "typeCheck" => 'ssp',
                           'thead' => array('Cluster Name', 'isAdmissionEnable', 'admissionThreshold', 'admissionValue', 'vCenter'),
-                          'columnDefs' => '{ "searchable": false, "targets": [ 1 ] }']);
+                          'columnDefs' => '{ "orderable": false, className: "dt-body-center", "targets": [ 1, 2, 3 ] }']);
 }
 ?>
     <h2>clusterAdmissionControl</h2>
@@ -101,7 +101,7 @@ if($check->getModuleSchedule('clusterCPURatio') != 'off' && $check->getModuleSch
 }
 
 if($check->getModuleSchedule('clusterTPSSavings') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
-  $check->displayCheck([  'sqlQuery' => "SELECT c.cluster_name, SUM(main.sharedmemory) FROM hosts main INNER JOIN clusters c ON main.cluster = c.id WHERE true",
+  $check->displayCheck([  'sqlQuery' => "SELECT c.cluster_name FROM hosts main INNER JOIN clusters c ON main.cluster = c.id WHERE true",
                           "sqlQueryGroupBy" => "c.cluster_name",
                           "id" => "CLUSTERTPSSAVINGS",
                           "typeCheck" => 'ssp',

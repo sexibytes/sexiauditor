@@ -51,15 +51,15 @@ if (isset($_GET['c'])) {
       $columns = array(
         array( 'db' => 'c.cluster_name', 'dt' => 0, 'field' => 'cluster_name' ),
         array( 'db' => 'SUM(h.memory) as memory', 'dt' => 1, 'field' => 'memory', 'formatter' => function( $d, $row ) { return human_filesize($d,0);}),
-        array( 'db' => 'SUM(h.sharedmemory) as sharedmemory', 'dt' => 2, 'field' => 'sharedmemory', 'formatter' => function( $d, $row ) { return human_filesize($d*1024,0);}),
-        array( 'db' => 'ROUND(100*1024*SUM(h.sharedmemory)/SUM(h.memory)) as savedmemory', 'dt' => 3, 'field' => 'savedmemory', 'formatter' => function( $d, $row ) { return "$d %";}),
+        array( 'db' => 'SUM(hm.sharedmemory) as sharedmemory', 'dt' => 2, 'field' => 'sharedmemory', 'formatter' => function( $d, $row ) { return human_filesize($d*1024,0);}),
+        array( 'db' => 'ROUND(100*1024*SUM(hm.sharedmemory)/SUM(h.memory)) as savedmemory', 'dt' => 3, 'field' => 'savedmemory', 'formatter' => function( $d, $row ) { return "$d %";}),
         array( 'db' => 'v.vcname', 'dt' => 4, 'field' => 'vcname' )
       );
-      $joinQuery = "FROM {$table} h INNER JOIN clusters AS c ON (h.cluster = c.id) INNER JOIN vcenters AS v ON (h.vcenter = v.id)";
+      $joinQuery = "FROM {$table} h INNER JOIN clusters AS c ON (h.cluster = c.id) INNER JOIN vcenters AS v ON (h.vcenter = v.id) INNER JOIN hostMetrics AS hm ON (h.id = hm.host_id)";
       if ($latest) {
         $timeCondition = "h.active = 1";
       } else {
-        $timeCondition = "h.firstseen < '" . $dateStart . "' AND h.lastseen > '" . $dateEnd . "'";
+        $timeCondition = "h.firstseen < '" . $dateStart . "' AND h.lastseen > '" . $dateEnd . "' AND hm.firstseen < '" . $dateStart . "' AND hm.lastseen > '" . $dateEnd . "'";
       }
       $extraCondition = $timeCondition . " GROUP BY c.cluster_name";
     break;
@@ -68,9 +68,9 @@ if (isset($_GET['c'])) {
       $primaryKey = 'id';
       $columns = array(
         array( 'db' => 'c.cluster_name', 'dt' => 0, 'field' => 'cluster_name' ),
-        array( 'db' => 'c.isAdmissionEnable', 'dt' => 1, 'field' => 'isAdmissionEnable', 'formatter' => function( $d, $row ) { if ($row[5] == '1') {return "<i class=\"glyphicon glyphicon-ok-sign text-success\"></i> $d";} else {return "<i class=\"icon-groups-friends\"></i> $d";}}),
-        array( 'db' => 'c.admissionThreshold', 'dt' => 2, 'field' => 'admissionThreshold', 'formatter' => function( $d, $row ) { if ($row[1] == '0') {return "N/A";}}),
-        array( 'db' => 'c.admissionValue', 'dt' => 3, 'field' => 'admissionValue', 'formatter' => function( $d, $row ) { if ($row[1] == '0') {return "N/A";}}),
+        array( 'db' => 'c.isAdmissionEnable', 'dt' => 1, 'field' => 'isAdmissionEnable', 'formatter' => function( $d, $row ) { if ($d) {return "<i class=\"glyphicon glyphicon-ok-sign text-success\"></i>";} else {return "<i class=\"glyphicon glyphicon-remove-sign text-danger\"></i>";}}),
+        array( 'db' => 'c.admissionThreshold', 'dt' => 2, 'field' => 'admissionThreshold', 'formatter' => function( $d, $row ) { if ($row[1] == '0') {return "N/A";}else{return $d;}}),
+        array( 'db' => 'c.admissionValue', 'dt' => 3, 'field' => 'admissionValue', 'formatter' => function( $d, $row ) { if ($row[1] == '0') {return "N/A";}else{return $d;}}),
         array( 'db' => 'v.vcname', 'dt' => 4, 'field' => 'vcname' )
       );
       
@@ -207,18 +207,18 @@ if (isset($_GET['c'])) {
       $primaryKey = 'id';
       $columns = array(
         array( 'db' => 'vms.name', 'dt' => 0, 'field' => 'name' ),
-        array( 'db' => 'vms.swappedMemory', 'dt' => 1, 'field' => 'swappedMemory', 'formatter' => function( $d, $row ) { return human_filesize($d);}),
-        array( 'db' => 'vms.balloonedMemory', 'dt' => 2, 'field' => 'balloonedMemory', 'formatter' => function( $d, $row ) { return human_filesize($d);}),
-        array( 'db' => 'vms.compressedMemory', 'dt' => 3, 'field' => 'compressedMemory', 'formatter' => function( $d, $row ) { return human_filesize($d);}),
+        array( 'db' => 'vmm.balloonedMemory', 'dt' => 1, 'field' => 'balloonedMemory', 'formatter' => function( $d, $row ) { return human_filesize($d);}),
+        array( 'db' => 'vmm.compressedMemory', 'dt' => 2, 'field' => 'compressedMemory', 'formatter' => function( $d, $row ) { return human_filesize($d);}),
+        array( 'db' => 'vmm.swappedMemory', 'dt' => 3, 'field' => 'swappedMemory', 'formatter' => function( $d, $row ) { return human_filesize($d);}),
         array( 'db' => 'v.vcname', 'dt' => 4, 'field' => 'vcname' )
       );
-      $joinQuery = "FROM {$table} INNER JOIN hosts AS h ON (vms.host = h.id) INNER JOIN vcenters AS v ON (h.vcenter = v.id)";
+      $joinQuery = "FROM {$table} INNER JOIN vcenters AS v ON (vms.vcenter = v.id) INNER JOIN vmMetrics AS vmm ON (vmm.vm_id = vms.id)";
       if ($latest) {
         $timeCondition = "vms.active = 1";
       } else {
-        $timeCondition = "vms.firstseen < '" . $dateStart . "' AND vms.lastseen > '" . $dateEnd . "'";
+        $timeCondition = "vms.firstseen < '" . $dateStart . "' AND vms.lastseen > '" . $dateEnd . "' AND vmm.firstseen < '" . $dateStart . "' AND vmm.lastseen > '" . $dateEnd . "'";
       }
-      $extraCondition = $timeCondition . " AND (vms.swappedMemory > 0 OR vms.balloonedMemory > 0 OR vms.compressedMemory > 0) GROUP BY vms.moref, v.id";
+      $extraCondition = $timeCondition . " AND (vmm.swappedMemory > 0 OR vmm.balloonedMemory > 0 OR vmm.compressedMemory > 0) GROUP BY vms.moref, v.id";
     break;
     case 'VMMULTIWRITERMODE':
       $table = 'vms';
@@ -379,14 +379,14 @@ if (isset($_GET['c'])) {
         array( 'db' => 'vms.ip', 'dt' => 7, 'field' => 'ip', 'formatter' => function( $d, $row ) { return str_ireplace(',','<br/>',$d); }),
         array( 'db' => 'vms.numcpu', 'dt' => 8, 'field' => 'numcpu' ),
         array( 'db' => 'vms.memory', 'dt' => 9, 'field' => 'memory' ),
-        array( 'db' => 'vms.commited', 'dt' => 10, 'field' => 'commited' ),
+        array( 'db' => 'vmm.commited', 'dt' => 10, 'field' => 'commited' ),
         array( 'db' => 'vms.provisionned', 'dt' => 11, 'field' => 'provisionned' ),
         array( 'db' => 'd.datastore_name', 'dt' => 12, 'field' => 'datastore_name' ),
         array( 'db' => 'vms.vmpath', 'dt' => 13, 'field' => 'vmpath' ),
         array( 'db' => 'vms.mac', 'dt' => 14, 'field' => 'mac', 'formatter' => function( $d, $row ) { return str_ireplace(',','<br/>',$d); }),
         array( 'db' => 'vms.host', 'dt' => 15, 'field' => 'host' )
       );
-      $joinQuery = "FROM {$table} INNER JOIN hosts AS h ON (vms.host = h.id) INNER JOIN clusters c ON h.cluster = c.id INNER JOIN vcenters AS v ON (h.vcenter = v.id) INNER JOIN datastores AS d ON (vms.datastore = d.id)";
+      $joinQuery = "FROM {$table} INNER JOIN vmMetrics AS vmm ON (vms.id = vmm.vm_id) INNER JOIN hosts AS h ON (vms.host = h.id) INNER JOIN clusters c ON h.cluster = c.id INNER JOIN vcenters AS v ON (h.vcenter = v.id) INNER JOIN datastores AS d ON (vms.datastore = d.id)";
       if ($latest) {
         $extraCondition = "vms.active = 1";
       } else {

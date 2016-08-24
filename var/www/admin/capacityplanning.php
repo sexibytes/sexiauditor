@@ -30,6 +30,12 @@ try {
   exit('  <div class="alert alert-danger" role="alert"><span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span><span class="sr-only">Error:</span> ' . $e->getMessage() . '</div>');
 }
 ?>
+
+<script>
+document.getElementById("wrapper-container").style.display = "block";
+document.getElementById("purgeLoading").style.display = "none";
+</script>
+
     <style>
     .highcharts-tooltip>span {
       background: white;
@@ -39,6 +45,8 @@ try {
       padding: 8px;
     }
     </style>
+
+    <div class="col-lg-12 alert alert-warning"><i><small>This capacity planning was computed based on the statistics of the last <?php echo $check->getConfig('capacityPlanningDays'); ?> days, you can change it in the <a href="/config.php">settings</a> of the appliance.</small></i></div>
 
     <table id="table-sparkline" class="display table" cellspacing="0" width="100%">
       <thead>
@@ -66,9 +74,11 @@ foreach ($jsonVC as $entryVC) {
     foreach ($jsonCluster as $entryCluster) {
       $cluster = $entryCluster['text'];
       $clusterID = $entryCluster['id'];
-      $urlCapaPlan = "http://$sexigrafNode:8080/render?target=scale(diffSeries(divideSeries(scale(sumSeries($clusterID.runtime.vm.on),100),maxSeries(asPercent(sumSeries($clusterID.quickstats.cpu.usage),sumSeries($clusterID.quickstats.cpu.effective)),asPercent(sumSeries($clusterID.quickstats.mem.usage),sumSeries($clusterID.quickstats.mem.effective)))),sumSeries($clusterID.runtime.vm.on)),1)";
+      $urlCapaPlan = "http://$sexigrafNode:8080/render?target=minSeries(scale(diffSeries(divideSeries(scale(sumSeries($clusterID.runtime.vm.on),100),asPercent(diffSeries(sumSeries($clusterID.datastore.*.summary.capacity),sumSeries($clusterID.datastore.*.summary.freeSpace)),sumSeries($clusterID.datastore.*.summary.capacity))),sumSeries($clusterID.runtime.vm.on)),1),scale(diffSeries(divideSeries(scale(sumSeries($clusterID.runtime.vm.on),100),maxSeries(asPercent(sumSeries($clusterID.quickstats.cpu.usage),sumSeries($clusterID.quickstats.cpu.effective)),asPercent(sumSeries($clusterID.quickstats.mem.usage),sumSeries($clusterID.quickstats.mem.effective)))),sumSeries($clusterID.runtime.vm.on)),1))";
+
       $optionsJson = "&from=-".$capacityPlanningDays."days&format=json";
       $dataCapaPlan = json_decode(file_get_contents($urlCapaPlan.$optionsJson), TRUE)[0]["datapoints"];
+      
       $dataCapaPlanInversed = array();
       foreach ($dataCapaPlan as $tmpDataCapaPlan) {
         $dataCapaPlanInversed[] = (int)round($tmpDataCapaPlan[0]);
@@ -136,7 +146,7 @@ foreach ($jsonVC as $entryVC) {
               margin: [2, 0, 2, 0],
               width: 500,
               height: 50,
-              style: { overflow: 'visible' },
+              style: { overflow: 'visible', fontFamily: 'Helvetica' },
               skipClone: true
             },
             title: { text: '' },

@@ -1,12 +1,5 @@
-<?php require("session.php"); ?>
 <?php
-// $title = "VM Information";
-// $noNavBar = true;
-// $additionalStylesheet = array(  'css/whhg.css',
-//                                 'css/bootstrap-datetimepicker.css');
-// $additionalScript = array(  'js/moment.js',
-//                             'js/bootstrap-datetimepicker.js');
-// require("header.php");
+require("session.php");
 require("helper.php");
 
 if (empty($_GET['vmid'])) {  exit('  <div class="alert alert-danger" role="alert"><span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span><span class="sr-only">Error:</span> Missing mandatory values</div>'); }
@@ -15,7 +8,6 @@ try {
   # Main class loading
   $check = new SexiCheck();
   # Header generation
-  // $check->displayHeader($_SERVER['SCRIPT_NAME'], $visible = false);
 } catch (Exception $e) {
   # Any exception will be ending the script, we want exception-free run
   exit('  <div class="alert alert-danger" role="alert"><span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span><span class="sr-only">Error:</span> ' . $e->getMessage() . '</div>');
@@ -106,7 +98,7 @@ if (is_array($datastore = $check->getDatastoreInfos($vm["datastore"], $vm["vcent
   } else {
     $labelFreeColor = "success";
   }
-  $additionalDatastoreInfos = " <span class=\"label label-primary\">" . human_filesize($datastore["size"]*1073741824) . " total size</span> <span class=\"label label-" . $labelFreeColor . "\">" . $datastore["pct_free"] . "% free</span>";
+  $additionalDatastoreInfos = " <span class=\"label label-primary\">" . human_filesize($datastore["size"]) . " total size</span> <span class=\"label label-" . $labelFreeColor . "\">" . $datastore["pct_free"] . "% free</span>";
 } else {
   $datastoreName = "Undefined";
   $additionalDatastoreInfos = " <span class=\"label label-default\">Unknow infos</span>";
