@@ -16,4 +16,4 @@ TRUNCATE snapshots;
 TRUNCATE vcenters;
 TRUNCATE vmMetrics;
 TRUNCATE vms;
-INSERT INTO clusters (id, cluster_name) VALUES (1, 'Standalone');
+INSERT INTO clusters (id, cluster_name, active) VALUES (1, 'Standalone', 1);
