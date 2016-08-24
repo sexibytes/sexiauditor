@@ -64,7 +64,7 @@ $lang['VMSCSIBUSSHARING'] = array('title' => 'VM with scsi bus sharing', 'descri
 $lang['VMINVALIDORINACCESSIBLE'] = array('title' => 'VM invalid or innaccessible', 'description' => 'The following VMs are marked as inaccessible or invalid.');
 $lang['VMINCONSISTENT'] = array('title' => 'VM in inconsistent folder', 'description' => 'The following VMs are not stored in folders consistent to their names, this may cause issues when trying to locate them from the datastore manually.');
 $lang['VMREMOVABLECONNECTED'] = array('title' => 'VM with removable devices', 'description' => 'This module will display VM that have removable devices (floppy, CD-Rom, ...) connected.');
-$lang['ALARMSVM'] = array('title' => 'Host Alarms', 'description' => 'This module will display triggered alarms on VirtualMachine objects level with status and time of creation.');
+$lang['ALARMSVM'] = array('title' => 'VM Alarms', 'description' => 'This module will display triggered alarms on VirtualMachine objects level with status and time of creation.');
 $lang['VMGUESTIDMISMATCH'] = array('title' => 'VM GuestId Mismatch', 'description' => 'This module will display VM that have GuestOS setting different from GuestOS retrived through vmtools.');
 $lang['VMPOWEREDOFF'] = array('title' => 'VM Powered Off', 'description' => 'This module will display VM that are Powered Off. This can be useful to check if this state is expected.');
 $lang['VMMISNAMED'] = array('title' => 'VM misnamed', 'description' => 'This module will display VM that have FQDN (based on vmtools) mismatched with the VM object name.');
