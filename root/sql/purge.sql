@@ -14,4 +14,5 @@ TRUNCATE permissions;
 TRUNCATE sessions;
 TRUNCATE snapshots;
 TRUNCATE vcenters;
+TRUNCATE vmMetrics;
 TRUNCATE vms;
