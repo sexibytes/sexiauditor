@@ -1,11 +1,13 @@
 TRUNCATE alarms;
 TRUNCATE certificates;
+TRUNCATE clusterMetrics;
 TRUNCATE clusters;
 TRUNCATE configurationissues;
 TRUNCATE datastores;
 TRUNCATE datastoreMetrics;
 TRUNCATE distributedvirtualportgroups;
 TRUNCATE hardwarestatus;
+TRUNCATE hostMetrics;
 TRUNCATE hosts;
 TRUNCATE licenses;
 TRUNCATE permissions;
