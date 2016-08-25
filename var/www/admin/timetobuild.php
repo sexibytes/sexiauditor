@@ -27,7 +27,7 @@ if ($db->count > 0) :
 ?>
   <div class="container">
     <h2>Execution Time <small>(last <?php echo $timeToBuildCount['value']; ?> builds)</small></h2>
-    <div id="main" style="height:600px"></div>
+    <div id="main" style="height:400px"></div>
   </div>
 
   <script type="text/javascript">
