@@ -23,6 +23,13 @@ SET time_zone = "+00:00";
 USE `sexiauditor`;
 
 --
+-- Dumping data for table `clusters`
+--
+
+INSERT INTO `clusters` (`id`, `vcenter`, `moref`, `cluster_name`, `dasenabled`, `lastconfigissuetime`, `lastconfigissue`, `isAdmissionEnable`, `admissionModel`, `admissionThreshold`, `admissionValue`, `firstseen`, `lastseen`, `active`) VALUES
+(1, 0, '', 'Standalone', 0, '0000-00-00 00:00:00', NULL, 0, '', '', '', '0000-00-00 00:00:00', '0000-00-00 00:00:00', 1);
+
+--
 -- Dumping data for table `roles`
 --
 
