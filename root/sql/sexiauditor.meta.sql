@@ -98,7 +98,7 @@ CREATE TABLE IF NOT EXISTS `clusters` (
   `firstseen` datetime NOT NULL,
   `lastseen` datetime NOT NULL,
   `active` tinyint(1) NOT NULL
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -690,7 +690,7 @@ MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
 -- AUTO_INCREMENT for table `clusters`
 --
 ALTER TABLE `clusters`
-MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
+MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=2;
 --
 -- AUTO_INCREMENT for table `config`
 --
