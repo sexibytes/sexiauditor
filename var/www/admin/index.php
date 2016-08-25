@@ -1,17 +1,11 @@
-<?php require("session.php"); ?>
 <?php
+require("session.php");
 $title = "Platform stats";
 $additionalStylesheet = array('css/vopendata.css');
 $additionalScript = array(  'js/vopendata.js',
                             'js/isotope.min.js');
 require("header.php");
 require("helper.php");
-
-// $xmlPath = "/opt/vcron/data/";
-// if (!file_exists($xmlPath)) :
-//     echo '<div class="alert alert-danger" role="alert"><span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span><span class="sr-only">Error:</span> Folder ' . $xmlPath . ' don\'t exist, aborting... </div>';
-// else:
-
 require("dbconnection.php");
 # get vcenters info
 $totalVCs = $db->getValue("vcenters", "COUNT(vcenters.id)");
@@ -31,13 +25,14 @@ $db->join("vcenters", "hosts.vcenter = vcenters.id", "INNER");
 $db->where('vms.active', 1);
 $totalVMs = $db->getValue("vms", "COUNT(vms.id)");
 
-if ($totalVCs == 0 || $totalClusters == 0 || $totalHosts == 0 || $totalVMs == 0) {
-// if (!file_exists("$xmlPath/latest/vms-global.xml") or !file_exists("$xmlPath/latest/hosts-global.xml") or !file_exists("$xmlPath/latest/clusters-global.xml") or !file_exists("$xmlPath/latest/datastores-global.xml")) {
-##########################################
-# vOpenData default sample               #
-# It's used only at the beginning before #
-# any infrastructure have been added     #
-##########################################
+if ($totalVCs == 0 || $totalClusters == 0 || $totalHosts == 0 || $totalVMs == 0)
+{
+
+  ##########################################
+  # vOpenData default sample               #
+  # It's used only at the beginning before #
+  # any infrastructure have been added     #
+  ##########################################
   $introductionLabel = 'This is a selection of statistics from the <a href="http://www.vopendata.org">vOpenData project</a>. Want to see you infrastructure metrics instead? Add your infrastructure in the Admin View > Credential Store!';
   $totalVMs = "168K";
   $totalVCs = 395;
@@ -93,75 +88,48 @@ if ($totalVCs == 0 || $totalClusters == 0 || $totalHosts == 0 || $totalVMs == 0)
   $averageDatastoreSize = 0;
   $averageVMMemory = 0;
   $averageVMCPU = 0;
-} else {
+  
+}
+else
+{
+  
   $introductionLabel = 'This is a selection of statistics from your platform, based on the <a href="http://www.vopendata.org">vOpenData project</a>. These will be updated every time scheduler is running !';
-  // $xmlVMFile = "$xmlPath/latest/vms-global.xml";
-  // $xmlHostFile = "$xmlPath/latest/hosts-global.xml";
-  // $xmlClusterFile = "$xmlPath/latest/clusters-global.xml";
-  // $xmlDatastoreFile = "$xmlPath/latest/datastores-global.xml";
-  // $xmlVM = simplexml_load_file($xmlVMFile);
-  // $xmlHost = simplexml_load_file($xmlHostFile);
-  // $xmlVM2 = new DOMDocument;
-  // $xmlVM2->load($xmlVMFile);
-  // $xpathVM = new DOMXPath($xmlVM2);
-  // $xmlHost2 = new DOMDocument;
-  // $xmlHost2->load($xmlHostFile);
-  // $xpathHost = new DOMXPath($xmlHost2);
-  // $xmlCluster = new DOMDocument;
-  // $xmlCluster->load($xmlClusterFile);
-  // $xpathCluster = new DOMXPath($xmlCluster);
-  // $xmlDatastore = simplexml_load_file($xmlDatastoreFile);
-  // $xmlDatastoreDOM = new DOMDocument;
-  // $xmlDatastoreDOM->load($xmlDatastoreFile);
-  // $xpathDatastore = new DOMXPath($xmlDatastoreDOM);
+  $db->join("vms", "vms.id = vmMetrics.vm_id", "INNER");
   $db->where('vms.active', 1);
-  $totalCommited = $db->getValue("vms", "SUM(vms.commited)");
-  // $totalCommited = (int) $xpathVM->evaluate('sum(/vms/vm/commited)');
+  $totalCommited = $db->getValue("vmMetrics", "SUM(vmMetrics.commited)");
+  $db->join("vms", "vms.id = vmMetrics.vm_id", "INNER");
   $db->where('vms.active', 1);
-  $totalUncommited = $db->getValue("vms", "SUM(vms.uncommited)");
-  // $totalUncommited = (int) $xpathVM->evaluate('sum(/vms/vm/uncommited)');
+  $totalUncommited = $db->getValue("vmMetrics", "SUM(vmMetrics.uncommited)");
   $db->where('vms.active', 1);
   $totalProvisioned = $db->getValue("vms", "SUM(vms.provisionned)");
-  // $totalProvisioned = (int) $xpathVM->evaluate('sum(/vms/vm/provisionned)');
-  // $totalVMs = $xmlVM->count();
-  // $totalVCs = count(array_diff(array_count_values(array_map("strval", $xmlVM->xpath("/vms/vm/vcenter"))), array("1")));
-  // $totalClusters = count(array_diff(array_count_values(array_map("strval", $xmlVM->xpath("/vms/vm/cluster"))), array("1")));
-  // $totalHosts = count($xmlHost);
   $db->where('vms.active', 1);
   $totalVMCPU = $db->getValue("vms", "SUM(vms.numcpu)");
-  // $totalVMCPU = (int) $xpathVM->evaluate('sum(/vms/vm/numcpu)');
   $db->where('vms.active', 1);
   $totalVMMemory = $db->getValue("vms", "SUM(vms.memory)");
-  // $totalVMMemory = (int) $xpathVM->evaluate('sum(/vms/vm/memory)');
   $db->where('datastores.active', 1);
   $db->where('datastores.shared', 1);
   $totalVMFS = $db->getValue("datastores", "COUNT(datastores.id)");
-  // $totalVMFS = (int) $xpathDatastore->evaluate('count(/datastores/datastore/type[text()=\'VMFS\']/../shared[text()=\'true\'])');
   $db->where('datastores.active', 1);
   $db->where('datastores.type', 'NFS');
   $totalNFS = $db->getValue("datastores", "COUNT(datastores.id)");
-  // $totalNFS = (int) $xpathDatastore->evaluate('count(/datastores/datastore/type[text()=\'NFS\'])');
   $totalDatastore = $totalNFS + $totalVMFS;
   $db->where('hosts.active', 1);
   $totalHostsCPU = $db->getValue("hosts", "SUM(hosts.numcpu)");
-  // $totalHostsCPU = (int) $xpathHost->evaluate('sum(/hosts/host/numcpu)');
   $db->where('hosts.active', 1);
   $totalHostsCPUMhz = $db->getValue("hosts", "SUM(hosts.cpumhz)");
-  // $totalHostsCPUMhz = (int) $xpathHost->evaluate('sum(/hosts/host/cpumhz)');
   $db->where('hosts.active', 1);
   $totalHostsMemory = $db->getValue("hosts", "SUM(hosts.memory)");
-  // $totalHostsMemory = (int) $xpathHost->evaluate('sum(/hosts/host/memory)');
   $db->join("datastoreMetrics", "datastores.id = datastoreMetrics.datastore_id", "INNER");
   $db->where('datastores.active', 1);
   $db->orderBy("datastoreMetrics.id","desc");
   $totalDatastoreSize = $db->getValue("datastores", "SUM(datastoreMetrics.size)", 1);
-  // $totalDatastoreSize = (int) $xpathDatastore->evaluate('sum(/datastores/datastore/size)');
+  $db->join("clusters", "clusters.id = clusterMetrics.cluster_id", "INNER");
   $db->where('clusters.active', 1);
-  $totalvMotion = $db->getValue("clusters", "SUM(clusters.vmotion)");
-  // $totalvMotion = (int) $xpathCluster->evaluate('sum(/clusters/cluster/vmotion)');
+  $totalvMotion = $db->getValue("clusterMetrics", "SUM(clusterMetrics.vmotion)");
   $totalBandwidth = 0;
+  $db->join("hosts", "hosts.id = hostMetrics.host_id", "INNER");
   $db->where('hosts.active', 1);
-  $totalTPSSavings = $db->getValue("hosts", "SUM(hosts.sharedmemory)");
+  $totalTPSSavings = $db->getValue("hostMetrics", "SUM(hostMetrics.sharedmemory)");
   $averageVMPervCenter = round($totalVMs / $totalVCs);
   $averageVMPerCluster = round($totalVMs / $totalClusters);
   $averageVMPerHost = round($totalVMs / $totalHosts);
@@ -172,26 +140,18 @@ if ($totalVCs == 0 || $totalClusters == 0 || $totalHosts == 0 || $totalVMs == 0)
   $db->groupBy("guestOS");
   $db->orderBy("total","desc");
   $sortedTabGuestOS = $db->get("vms", 11, "guestOS, COUNT(*) as total");
-  // $sortedTabGuestOS = array_diff(array_count_values(array_map("strval", $xmlVM->xpath("/vms/vm/guestOS"))), array("1"));
-  // arsort($sortedTabGuestOS);
   $db->where('hosts.active', 1);
   $db->groupBy("hosts.model");
   $db->orderBy("total","desc");
   $sortedHostModel = $db->get("hosts", 5, "hosts.model, COUNT(*) as total");
-  // $sortedHostModel = array_diff(array_count_values(array_map("strval", $xmlHost->xpath("/hosts/host/model"))), array("1"));
-  // arsort($sortedHostModel);
   $db->where('hosts.active', 1);
   $db->groupBy("hosts.cputype");
   $db->orderBy("total","desc");
   $sortedHostCPUType = $db->get("hosts", 5, "hosts.cputype, COUNT(*) as total");
-  // $sortedHostCPUType = array_diff(array_count_values(array_map("strval", $xmlHost->xpath("/hosts/host/cputype"))), array("1"));
-  // arsort($sortedHostCPUType);
   $db->where('hosts.active', 1);
   $db->groupBy("hosts.esxbuild");
   $db->orderBy("total","desc");
   $sortedESXBuild = $db->get("hosts", 5, "hosts.esxbuild, COUNT(*) as total");
-  // $sortedESXBuild = array_diff(array_count_values(array_map("strval", $xmlHost->xpath("/hosts/host/esxbuild"))), array("1"));
-  // arsort($sortedESXBuild);
   $averageHostPervCenter = round($totalHosts / $totalVCs, 2);
   $averageClusterPervCenter = round($totalClusters / $totalVCs, 2);
   $averageHostPerCluster = round($totalHosts / $totalClusters,2);
@@ -201,7 +161,9 @@ if ($totalVCs == 0 || $totalClusters == 0 || $totalHosts == 0 || $totalVMs == 0)
   $averageDatastoreSize = round($totalDatastoreSize / $totalDatastore,2);
   $averageVMMemory = human_filesize(1024 * 1024 * $totalVMMemory / $totalVMs,2);
   $averageVMCPU = round($totalVMCPU / $totalVMs,2);
-}
+
+} # END if ($totalVCs == 0 || $totalClusters == 0 || $totalHosts == 0 || $totalVMs == 0)
+
 ?>
 
   <div class='container'>
@@ -278,13 +240,18 @@ if ($totalVCs == 0 || $totalClusters == 0 || $totalHosts == 0 || $totalVMs == 0)
                 <table width='100%'>
 <?php
   $topGuestOS = 1;
-  foreach ($sortedTabGuestOS as $guestOS) {
+  
+  foreach ($sortedTabGuestOS as $guestOS)
+  {
+    
     if ($guestOS["guestOS"] == 'Not Available') { continue; }
-    echo '                  <tr>
-                <td class=\'tdlabel\'>' . $topGuestOS++ . '. '. $guestOS["guestOS"] . '</td>
-                <td class=\'tdvalue\'>' . $guestOS["total"] . '</td>
-              </tr>';
-  }
+    echo '                  <tr>';
+    echo '                <td class=\'tdlabel\'>' . $topGuestOS++ . '. '. $guestOS["guestOS"] . '</td>';
+    echo '                <td class=\'tdvalue\'>' . $guestOS["total"] . '</td>';
+    echo '              </tr>';
+              
+  } # END foreach ($sortedTabGuestOS as $guestOS)
+  
 ?>
                 </table>
                 <div class='more-info2'>Percent of Total VMs</div>
@@ -354,13 +321,18 @@ if ($totalVCs == 0 || $totalClusters == 0 || $totalHosts == 0 || $totalVMs == 0)
                   <table class='top5table' width='100%'>
 <?php
   $topHostCPUType = 1;
-  foreach ($sortedHostCPUType as $cpuType) {
+  
+  foreach ($sortedHostCPUType as $cpuType)
+  {
+    
     if ($cpuType["cputype"] == 'Not Available') { continue; }
-    echo '                  <tr>
-                <td class=\'tdlabel\'>' . $topHostCPUType++ . '. '. $cpuType["cputype"] . '</td>
-                <td class=\'tdvalue\'>' . $cpuType["total"] . ' (' . floor(100 * $cpuType["total"] / $totalHosts) . '%)</td>
-              </tr>';
-  }
+    echo '                  <tr>';
+    echo '                <td class=\'tdlabel\'>' . $topHostCPUType++ . '. '. $cpuType["cputype"] . '</td>';
+    echo '                <td class=\'tdvalue\'>' . $cpuType["total"] . ' (' . floor(100 * $cpuType["total"] / $totalHosts) . '%)</td>';
+    echo '              </tr>';
+              
+  } # END foreach ($sortedHostCPUType as $cpuType)
+  
 ?>
                   </table>
                 </div>
@@ -391,13 +363,18 @@ if ($totalVCs == 0 || $totalClusters == 0 || $totalHosts == 0 || $totalVMs == 0)
                   <table class='top5table' width='100%'>
 <?php
   $topESXBuild = 1;
-  foreach ($sortedESXBuild as $esxBuild) {
+  
+  foreach ($sortedESXBuild as $esxBuild)
+  {
+    
     if ($esxBuild["esxbuild"] == 'Not Available') { continue; }
-    echo '                  <tr>
-                <td class=\'tdlabel\'>' . $topESXBuild++ . '. '. $esxBuild["esxbuild"] . '</td>
-                <td class=\'tdvalue\'>' . $esxBuild["total"] . ' (' . floor(100 * $esxBuild["total"] / $totalHosts) . '%)</td>
-              </tr>';
-  }
+    echo '                  <tr>';
+    echo '                <td class=\'tdlabel\'>' . $topESXBuild++ . '. '. $esxBuild["esxbuild"] . '</td>';
+    echo '                <td class=\'tdvalue\'>' . $esxBuild["total"] . ' (' . floor(100 * $esxBuild["total"] / $totalHosts) . '%)</td>';
+    echo '              </tr>';
+              
+  } # END foreach ($sortedESXBuild as $esxBuild)
+  
 ?>
                   </table>
                 </div>
@@ -412,13 +389,18 @@ if ($totalVCs == 0 || $totalClusters == 0 || $totalHosts == 0 || $totalVMs == 0)
                   <table class='top5table' width='100%'>
 <?php
   $topHostModel = 1;
-  foreach ($sortedHostModel as $hostModel) {
+  
+  foreach ($sortedHostModel as $hostModel)
+  {
+    
     if ($hostModel["model"] == 'Not Available') { continue; }
-    echo '                  <tr>
-                <td class=\'tdlabel\'>' . $topHostModel++ . '. '. $hostModel["model"] . '</td>
-                <td class=\'tdvalue\'>' . $hostModel["total"] . ' (' . floor(100 * $hostModel["total"] / $totalHosts) . '%)</td>
-              </tr>';
-  }
+    echo '                  <tr>';
+    echo '                <td class=\'tdlabel\'>' . $topHostModel++ . '. '. $hostModel["model"] . '</td>';
+    echo '                <td class=\'tdvalue\'>' . $hostModel["total"] . ' (' . floor(100 * $hostModel["total"] / $totalHosts) . '%)</td>';
+    echo '              </tr>';
+              
+  } # END foreach ($sortedHostModel as $hostModel)
+  
 ?>
                   </table>
                 </div>
@@ -544,5 +526,4 @@ if ($totalVCs == 0 || $totalClusters == 0 || $totalHosts == 0 || $totalVMs == 0)
     </div>
   </div>
 
-<?php //endif; ?>
 <?php require("footer.php"); ?>
