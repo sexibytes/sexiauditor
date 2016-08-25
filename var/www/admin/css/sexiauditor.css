@@ -49,7 +49,7 @@ body {
 .php-file-tree LI.pft-file { list-style-image: url(../images/file.png); }
 #wrapper {
   width: 100%;
-  margin-bottom: 50px;
+  padding-bottom: 50px;
 }
 #page-wrapper {
   padding: 0 15px;
