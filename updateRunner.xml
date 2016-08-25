@@ -2,8 +2,9 @@
 <update>
         <version>0.1 "Diamond City"</version>
         <commands>
-                <command>/bin/cp -rf /tmp/sexiauditor-dev/etc/* /etc/</command>
-                <command>/bin/cp -rf /tmp/sexiauditor-dev/opt/* /opt/</command>
-                <command>/bin/cp -rf /tmp/sexiauditor-dev/var/* /var/</command>
+                <command>/bin/cp -rf /tmp/sexiauditor-dev-db/etc/* /etc/</command>
+                <command>/bin/cp -rf /tmp/sexiauditor-dev-db/opt/* /opt/</command>
+                <command>/bin/cp -rf /tmp/sexiauditor-dev-db/root/* /root/</command>
+                <command>/bin/cp -rf /tmp/sexiauditor-dev-db/var/* /var/</command>
         </commands>
 </update>
