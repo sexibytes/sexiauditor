@@ -3,7 +3,7 @@
 -- http://www.phpmyadmin.net
 --
 -- Host: localhost
--- Generation Time: Aug 25, 2016 at 07:40 AM
+-- Generation Time: Aug 25, 2016 at 12:13 PM
 -- Server version: 10.0.26-MariaDB-0+deb8u1
 -- PHP Version: 5.6.24-0+deb8u1
 
@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS `alarms` (
   `firstseen` datetime NOT NULL,
   `lastseen` datetime NOT NULL,
   `active` tinyint(1) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -59,7 +59,7 @@ CREATE TABLE IF NOT EXISTS `certificates` (
   `firstseen` datetime NOT NULL,
   `lastseen` datetime NOT NULL,
   `active` tinyint(1) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -74,7 +74,7 @@ CREATE TABLE IF NOT EXISTS `clusterMetrics` (
   `vmotion` int(11) NOT NULL,
   `firstseen` datetime NOT NULL,
   `lastseen` datetime NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -98,7 +98,7 @@ CREATE TABLE IF NOT EXISTS `clusters` (
   `firstseen` datetime NOT NULL,
   `lastseen` datetime NOT NULL,
   `active` tinyint(1) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -113,7 +113,7 @@ CREATE TABLE IF NOT EXISTS `config` (
   `type` int(11) NOT NULL,
   `label` varchar(255) CHARACTER SET utf8 NOT NULL,
   `value` varchar(50) CHARACTER SET utf8 NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=27 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -125,7 +125,7 @@ DROP TABLE IF EXISTS `configtype`;
 CREATE TABLE IF NOT EXISTS `configtype` (
 `id` int(11) NOT NULL,
   `type` varchar(50) CHARACTER SET utf8 NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -141,7 +141,7 @@ CREATE TABLE IF NOT EXISTS `configurationissues` (
   `firstseen` datetime NOT NULL,
   `lastseen` datetime NOT NULL,
   `active` tinyint(1) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -158,7 +158,7 @@ CREATE TABLE IF NOT EXISTS `datastoreMetrics` (
   `uncommitted` bigint(20) NOT NULL,
   `firstseen` datetime NOT NULL,
   `lastseen` datetime NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -180,7 +180,7 @@ CREATE TABLE IF NOT EXISTS `datastores` (
   `firstseen` datetime NOT NULL,
   `lastseen` datetime NOT NULL,
   `active` tinyint(1) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -200,7 +200,7 @@ CREATE TABLE IF NOT EXISTS `distributedvirtualportgroups` (
   `firstseen` datetime NOT NULL,
   `lastseen` datetime NOT NULL,
   `active` tinyint(1) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -213,7 +213,7 @@ CREATE TABLE IF NOT EXISTS `executiontime` (
 `id` int(11) NOT NULL,
   `date` datetime NOT NULL,
   `seconds` smallint(6) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -231,7 +231,7 @@ CREATE TABLE IF NOT EXISTS `hardwarestatus` (
   `firstseen` datetime NOT NULL,
   `lastseen` datetime NOT NULL,
   `active` tinyint(1) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -246,7 +246,7 @@ CREATE TABLE IF NOT EXISTS `hostMetrics` (
   `sharedmemory` bigint(20) NOT NULL,
   `firstseen` datetime NOT NULL,
   `lastseen` datetime NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -284,7 +284,7 @@ CREATE TABLE IF NOT EXISTS `hosts` (
   `firstseen` datetime NOT NULL,
   `lastseen` datetime NOT NULL,
   `active` tinyint(1) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -305,7 +305,7 @@ CREATE TABLE IF NOT EXISTS `licenses` (
   `firstseen` datetime NOT NULL,
   `lastseen` datetime NOT NULL,
   `active` tinyint(1) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -317,7 +317,7 @@ DROP TABLE IF EXISTS `moduleCategory`;
 CREATE TABLE IF NOT EXISTS `moduleCategory` (
 `id` int(11) NOT NULL,
   `category` varchar(50) CHARACTER SET utf8 NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -335,7 +335,7 @@ CREATE TABLE IF NOT EXISTS `modules` (
   `description` varchar(255) CHARACTER SET utf8 NOT NULL,
   `category_id` int(11) NOT NULL,
   `schedule` varchar(10) COLLATE utf8_unicode_ci NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=63 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -354,7 +354,7 @@ CREATE TABLE IF NOT EXISTS `permissions` (
   `firstseen` datetime NOT NULL,
   `lastseen` datetime NOT NULL,
   `active` tinyint(1) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -366,7 +366,7 @@ DROP TABLE IF EXISTS `roles`;
 CREATE TABLE IF NOT EXISTS `roles` (
 `id` int(11) NOT NULL,
   `role` varchar(10) CHARACTER SET utf8 NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -387,7 +387,7 @@ CREATE TABLE IF NOT EXISTS `sessions` (
   `firstseen` datetime NOT NULL,
   `lastseen` datetime NOT NULL,
   `active` tinyint(1) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -409,7 +409,7 @@ CREATE TABLE IF NOT EXISTS `snapshots` (
   `firstseen` datetime NOT NULL,
   `lastseen` datetime NOT NULL,
   `active` tinyint(1) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -425,7 +425,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `email` varchar(255) CHARACTER SET utf8 NOT NULL,
   `role` int(11) NOT NULL,
   `password` char(128) CHARACTER SET utf8 NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -439,7 +439,7 @@ CREATE TABLE IF NOT EXISTS `vcenters` (
   `vcname` varchar(255) CHARACTER SET utf8 NOT NULL,
   `firstseen` datetime NOT NULL,
   `lastseen` datetime NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -458,7 +458,7 @@ CREATE TABLE IF NOT EXISTS `vmMetrics` (
   `uncommited` int(11) NOT NULL,
   `firstseen` int(11) NOT NULL,
   `lastseen` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -505,7 +505,7 @@ CREATE TABLE IF NOT EXISTS `vms` (
   `firstseen` datetime NOT NULL,
   `lastseen` datetime NOT NULL,
   `active` tinyint(1) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
 -- Indexes for dumped tables
@@ -675,127 +675,127 @@ ALTER TABLE `vms`
 -- AUTO_INCREMENT for table `alarms`
 --
 ALTER TABLE `alarms`
-MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
 --
 -- AUTO_INCREMENT for table `certificates`
 --
 ALTER TABLE `certificates`
-MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
 --
 -- AUTO_INCREMENT for table `clusterMetrics`
 --
 ALTER TABLE `clusterMetrics`
-MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
 --
 -- AUTO_INCREMENT for table `clusters`
 --
 ALTER TABLE `clusters`
-MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
 --
 -- AUTO_INCREMENT for table `config`
 --
 ALTER TABLE `config`
-MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=27;
 --
 -- AUTO_INCREMENT for table `configtype`
 --
 ALTER TABLE `configtype`
-MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=11;
 --
 -- AUTO_INCREMENT for table `configurationissues`
 --
 ALTER TABLE `configurationissues`
-MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
 --
 -- AUTO_INCREMENT for table `datastoreMetrics`
 --
 ALTER TABLE `datastoreMetrics`
-MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
 --
 -- AUTO_INCREMENT for table `datastores`
 --
 ALTER TABLE `datastores`
-MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
 --
 -- AUTO_INCREMENT for table `distributedvirtualportgroups`
 --
 ALTER TABLE `distributedvirtualportgroups`
-MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
 --
 -- AUTO_INCREMENT for table `executiontime`
 --
 ALTER TABLE `executiontime`
-MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
 --
 -- AUTO_INCREMENT for table `hardwarestatus`
 --
 ALTER TABLE `hardwarestatus`
-MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
 --
 -- AUTO_INCREMENT for table `hostMetrics`
 --
 ALTER TABLE `hostMetrics`
-MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
 --
 -- AUTO_INCREMENT for table `hosts`
 --
 ALTER TABLE `hosts`
-MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
 --
 -- AUTO_INCREMENT for table `licenses`
 --
 ALTER TABLE `licenses`
-MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
 --
 -- AUTO_INCREMENT for table `moduleCategory`
 --
 ALTER TABLE `moduleCategory`
-MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=9;
 --
 -- AUTO_INCREMENT for table `modules`
 --
 ALTER TABLE `modules`
-MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=63;
 --
 -- AUTO_INCREMENT for table `permissions`
 --
 ALTER TABLE `permissions`
-MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
 --
 -- AUTO_INCREMENT for table `roles`
 --
 ALTER TABLE `roles`
-MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=3;
 --
 -- AUTO_INCREMENT for table `sessions`
 --
 ALTER TABLE `sessions`
-MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
 --
 -- AUTO_INCREMENT for table `snapshots`
 --
 ALTER TABLE `snapshots`
-MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
 --
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=3;
 --
 -- AUTO_INCREMENT for table `vcenters`
 --
 ALTER TABLE `vcenters`
-MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
 --
 -- AUTO_INCREMENT for table `vmMetrics`
 --
 ALTER TABLE `vmMetrics`
-MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
 --
 -- AUTO_INCREMENT for table `vms`
 --
 ALTER TABLE `vms`
-MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
 --
 -- Constraints for dumped tables
 --
