@@ -23,6 +23,31 @@ require("helper.php");
 try {
   # Main class loading
   $check = new SexiCheck();
+  $sexigrafNode = $check->getConfig('sexigrafNode');
+
+  try
+  {
+    
+    # Testing connectivity to SexiGraf node
+    if (!isHttpAvailable("http://$sexigrafNode:8080"))
+    {
+      
+      throw new Exception('Connection to '. $sexigrafNode . ' seems impossible. Please check URL on <a href="config.php">settings page</a> or check for network/firewall issue.');
+      
+    } # END if (!isHttpAvailable($sexigrafNode))
+    
+  }
+  catch (Exception $e)
+  {
+    
+    # Any exception will be ending the script, we want exception-free run
+    # CSS hack for navbar margin removal
+    echo '  <style>#wrapper { margin-bottom: 0px !important; }</style>'."\n";
+    require("exception.php");
+    exit;
+    
+  } # END try
+  
   # Header generation
   $check->displayHeader($_SERVER['SCRIPT_NAME'], false);
 } catch (Exception $e) {
@@ -33,11 +58,6 @@ try {
   exit;
 }
 ?>
-
-<script>
-document.getElementById("wrapper-container").style.display = "block";
-document.getElementById("purgeLoading").style.display = "none";
-</script>
 
     <style>
     .highcharts-tooltip>span {
@@ -61,7 +81,6 @@ document.getElementById("purgeLoading").style.display = "none";
       </thead>
       <tbody id="tbody-sparkline">
 <?php
-$sexigrafNode = $check->getConfig('sexigrafNode');
 $capacityPlanningDays = (int)$check->getConfig('capacityPlanningDays');
 $showInfinite = $check->getConfig('showInfinite');
 $jsonVC = json_decode(file_get_contents("http://$sexigrafNode:8080/metrics/find?query=vmw.*"), TRUE);
