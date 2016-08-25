@@ -70,7 +70,7 @@ $dir = "/var/www/admin/files/";
         echo '        <td><span class="preview"></span></td>';
         echo '        <td><p class="name">'.$file.'</p></td>';
         echo '        <td><p class="name">Version: ' . (($matches) ? $matches['version'] : 'Unknown') . '</p></td>';
-        echo '        <td><p class="size">'.humanFileSize(filesize($dir.$file),"KB").'</p></td>';
+        echo '        <td><p class="size">'.human_filesize(filesize($dir.$file)).'</p></td>';
         echo '        <td style="width:220px"><form class="form" style="display:inline;" action="'. htmlspecialchars($_SERVER["PHP_SELF"]) . '" method="post">';
         echo '            <input type="hidden" name="input-file" value="' . $file . '">';
         echo '      <button name="submit" class="btn btn-danger delete" style="width:95px" value="delete-file"><i class="glyphicon glyphicon-trash"></i> Delete</button></form>';
