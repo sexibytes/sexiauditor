@@ -614,12 +614,6 @@ ALTER TABLE `modules`
  ADD PRIMARY KEY (`id`);
 
 --
--- Indexes for table `moduleSchedule`
---
-ALTER TABLE `moduleSchedule`
- ADD PRIMARY KEY (`id`), ADD KEY `schedule` (`schedule`);
-
---
 -- Indexes for table `permissions`
 --
 ALTER TABLE `permissions`
