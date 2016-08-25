@@ -25,7 +25,10 @@ try {
   $check->displayHeader($_SERVER['SCRIPT_NAME']);
 } catch (Exception $e) {
   # Any exception will be ending the script, we want exception-free run
-  exit('  <div class="alert alert-danger" role="alert"><span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span><span class="sr-only">Error:</span> ' . $e->getMessage() . '</div>');
+  # CSS hack for navbar margin removal
+  echo '  <style>#wrapper { margin-bottom: 0px !important; }</style>'."\n";
+  require("exception.php");
+  exit;
 }
 
 if($check->getModuleSchedule('hostLUNPathDead') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
