@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="ISO-8859-1" ?>
 <update>
-        <version>0.1 "Diamond City"</version>
+        <version>0.10 "Diamond City"</version>
         <commands>
                 <command>/bin/cp -rf /tmp/sexiauditor-update/sexiauditor-master/etc/* /etc/</command>
                 <command>/bin/cp -rf /tmp/sexiauditor-update/sexiauditor-master/opt/* /opt/</command>
