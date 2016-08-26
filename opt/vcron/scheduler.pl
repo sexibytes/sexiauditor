@@ -986,7 +986,7 @@ sub vminventory
     {
       
       # VM metrics already exists, have not changed, updated lastseen property
-      my $sqlUpdate = $dbh->prepare("UPDATE vmMetrics set lastseen = FROM_UNIXTIME (?) WHERE host_id = '" . $refVM->{'id'} . "' ORDER BY id DESC LIMIT 1");
+      my $sqlUpdate = $dbh->prepare("UPDATE vmMetrics set lastseen = FROM_UNIXTIME (?) WHERE vm_id = '" . $refVM->{'id'} . "' ORDER BY id DESC LIMIT 1");
       $sqlUpdate->execute($start);
       $sqlUpdate->finish();
       
