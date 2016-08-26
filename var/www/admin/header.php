@@ -1,4 +1,13 @@
-<?php if (isset($isAdminPage) && $isAdminPage && (!isset($_SESSION['role']) || $_SESSION['role'] != '1')) { header('Location: logout.php'); } ?>
+<?php
+
+if (isset($isAdminPage) && $isAdminPage && (!isset($_SESSION['role']) || $_SESSION['role'] != '1'))
+{
+  # User tried to access admin page with user-only rights, kicking him out...
+  header('Location: logout.php');
+
+} # END if (isset($isAdminPage) && $isAdminPage && (!isset($_SESSION['role']) || $_SESSION['role'] != '1'))
+
+?>
 <!DOCTYPE HTML>
 <html>
 <head>
@@ -8,16 +17,38 @@
   <link rel="stylesheet" type="text/css" href="css/BootstrapXL.css">
   <link rel="stylesheet" type="text/css" href="css/sexiauditor.css">
 <?php
-if(isset($additionalStylesheet)) {
-  foreach ($additionalStylesheet as $stylesheet ) { echo '  <link rel="stylesheet" type="text/css" href="' . $stylesheet . '">' . "\n"; }
-}
+
+if (isset($additionalStylesheet))
+{
+  
+  # Dynamically adding additionnal CSS files
+  foreach ($additionalStylesheet as $stylesheet )
+  {
+    
+    echo '  <link rel="stylesheet" type="text/css" href="' . $stylesheet . '">' . "\n";
+  
+  } # END foreach ($additionalStylesheet as $stylesheet )
+  
+} # END if (isset($additionalStylesheet))
+
 ?>
   <script type="text/javascript" src="js/jquery.min.js"></script>
   <script type="text/javascript" src="js/bootstrap.min.js"></script>
 <?php
-if(isset($additionalScript)) {
-  foreach ($additionalScript as $script ) { echo '  <script type="text/javascript" src="' . $script . '"></script>' . "\n"; }
-}
+
+if (isset($additionalScript))
+{
+  
+  # Dynamically adding additionnal JS files
+  foreach ($additionalScript as $script )
+  {
+    
+    echo '  <script type="text/javascript" src="' . $script . '"></script>' . "\n";
+  
+  } # END foreach ($additionalScript as $script )
+  
+} # END if (isset($additionalScript))
+
 ?>
 </head>
 <body>
@@ -37,13 +68,23 @@ if(isset($additionalScript)) {
             <i class="glyphicon glyphicon-tasks"></i>  <i class="glyphicon glyphicon-triangle-bottom" style="font-size: 0.8em;"></i>
           </a>
 <?php
-if (isset($_SESSION['role']) && $_SESSION['role'] == '1') {
+
+# CSS hack for displaying admin columns
+if (isset($_SESSION['role']) && $_SESSION['role'] == '1')
+{
+  
   $nbColumn = " columns-3";
   $widthColumn = "col-sm-4";
-} else {
+  
+}
+else
+{
+  
   $nbColumn = " columns-2";
   $widthColumn = "col-sm-6";
-}
+  
+} # END if (isset($_SESSION['role']) && $_SESSION['role'] == '1')
+
 ?>
           <ul class="dropdown-menu multi-column<?php echo $nbColumn; ?>">
             <div class="row">
