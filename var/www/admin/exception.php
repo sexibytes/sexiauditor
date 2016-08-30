@@ -12,7 +12,7 @@
     </div>
   </div>
   <div id="footerSean">
-    <a href="https://en.wikipedia.org/wiki/Zardoz"><img src="../images/zardoz.png" /></a>
+    <a href="https://en.wikipedia.org/wiki/Zardoz"><img src="../images/zardoz2.png" /></a>
   </div>
 </body>
 </html>
