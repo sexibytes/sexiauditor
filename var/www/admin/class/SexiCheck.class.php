@@ -103,6 +103,7 @@ class SexiCheck {
     } elseif ($this->id != ("HOSTCONFIGURATIONISSUES" || "HOSTHARDWARESTATUS" || "VCCERTIFICATESREPORT" || "VCLICENCEREPORT")) {
       $sqlQuery .= " GROUP BY main.moref, v.id";
     }
+    error_log($sqlQuery);
     $sqlData = $this->db->rawQuery($sqlQuery);
     if ($this->db->count > 0) {
       $this->header .= '    <h2 class="text-danger anchor" id="' . $this->id . '"><i class="glyphicon glyphicon-exclamation-sign"></i> ' . $this->langDef[$this->id]["title"] . '</h2>'."\n";
@@ -378,7 +379,7 @@ class SexiCheck {
 
   private function dbGetCheckQuantity($formPage) {
     # hack for handling inventory page
-    if ($formPage == ('/inv.php' OR '/capacityplanning.php')) { return 1; }
+    if ($formPage == '/inv.php' OR $formPage == '/capacityplanning.php') { return 1; }
     # this will return eabled checks for the requested formpage
     $this->db->join("moduleCategory", "modules.category_id = moduleCategory.id", "INNER");
     $this->db->where('modules.schedule', 'off', '<>');
@@ -408,8 +409,6 @@ class SexiCheck {
         $this->db->where('moduleCategory.category', null);
     }
     return $this->db->getValue("modules", "COUNT(modules.id)");
-    // var_dump($this->db->getLastQuery());
-    // return $total;
   }
 }
 ?>
