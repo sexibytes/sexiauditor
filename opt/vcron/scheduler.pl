@@ -2288,26 +2288,33 @@ sub dbGetSchedule {
   return $scheduleValue;
 }
 
-sub dbPurgeOldData {
+sub dbPurgeOldData
+{
+  
   # This subroutine will scavenge old data based on date threshold
   my ($purgeThreshold) = @_;
   $dbh->do("DELETE FROM alarms WHERE lastseen < DATE_SUB(NOW(), INTERVAL $purgeThreshold DAY) AND active = 0");
   $dbh->do("DELETE FROM certificates WHERE lastseen < DATE_SUB(NOW(), INTERVAL $purgeThreshold DAY) AND active = 0");
   $dbh->do("DELETE FROM clusters WHERE lastseen < DATE_SUB(NOW(), INTERVAL $purgeThreshold DAY) AND active = 0");
+  $dbh->do("DELETE FROM clusterMetrics WHERE lastseen < DATE_SUB(NOW(), INTERVAL ".($purgeThreshold+1)." DAY)");
   $dbh->do("DELETE FROM configurationissues WHERE lastseen < DATE_SUB(NOW(), INTERVAL $purgeThreshold DAY) AND active = 0");
   $dbh->do("DELETE FROM datastores WHERE lastseen < DATE_SUB(NOW(), INTERVAL $purgeThreshold DAY) AND active = 0");
+  $dbh->do("DELETE FROM datastoreMetrics WHERE lastseen < DATE_SUB(NOW(), INTERVAL ".($purgeThreshold+1)." DAY)");
   $dbh->do("DELETE FROM distributedvirtualportgroups WHERE lastseen < DATE_SUB(NOW(), INTERVAL $purgeThreshold DAY) AND active = 0");
   $dbh->do("DELETE FROM hardwarestatus WHERE lastseen < DATE_SUB(NOW(), INTERVAL $purgeThreshold DAY) AND active = 0");
   $dbh->do("DELETE FROM hosts WHERE lastseen < DATE_SUB(NOW(), INTERVAL $purgeThreshold DAY) AND active = 0");
+  $dbh->do("DELETE FROM hostMetrics WHERE lastseen < DATE_SUB(NOW(), INTERVAL ".($purgeThreshold+1)." DAY)");
   $dbh->do("DELETE FROM licenses WHERE lastseen < DATE_SUB(NOW(), INTERVAL $purgeThreshold DAY) AND active = 0");
   $dbh->do("DELETE FROM sessions WHERE lastseen < DATE_SUB(NOW(), INTERVAL $purgeThreshold DAY) AND active = 0");
   $dbh->do("DELETE FROM snapshots WHERE lastseen < DATE_SUB(NOW(), INTERVAL $purgeThreshold DAY) AND active = 0");
   $dbh->do("DELETE FROM vcenters WHERE lastseen < DATE_SUB(NOW(), INTERVAL $purgeThreshold DAY)");
   $dbh->do("DELETE FROM vms WHERE lastseen < DATE_SUB(NOW(), INTERVAL $purgeThreshold DAY) AND active = 0");
+  $dbh->do("DELETE FROM vmMetrics WHERE lastseen < DATE_SUB(NOW(), INTERVAL ".($purgeThreshold+1)." DAY)");
   # After purging data, we run some optimisation task on db
   # TODO = switch to InnoDb RECREATE + ANALYZE tasks as OPTIMIZE is supported only on MyISAM
   $dbh->do("OPTIMIZE TABLE alarms, certificates, clusters, configurationissues, datastores, distributedvirtualportgroups, hardwarestatus, hosts, licenses, sessions, snapshots, vcenters, vms");
-}
+
+} # END sub dbPurgeOldData
 
 sub compareAndLog
 {
