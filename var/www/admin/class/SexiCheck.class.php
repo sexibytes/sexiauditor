@@ -291,7 +291,7 @@ class SexiCheck {
   }
 
   public function getModuleSchedule($module) {
-    $this->db->where('id', $module);
+    $this->db->where('module', $module);
     $resultSchedule = $this->db->getOne("modules", "schedule");
     return $resultSchedule['schedule'];
   }
