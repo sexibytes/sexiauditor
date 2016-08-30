@@ -4,9 +4,9 @@
         <strong>Attenshion !</strong><br /><br />
         You've reach this page due to an unexpected exsheption, but shtay calm, I'm here to help.<br />
         Pleashe find below more details about this exsheption:<br /><br />
-        <pre style="white-space: pre-wrap;white-space: -moz-pre-wrap;white-space: -pre-wrap;white-space: -o-pre-wrap;word-wrap: break-word;}">
+        <div class="alert alert-warning" style="font-family: monospace;">
 <?php echo $e->getMessage(); ?>
-        </pre>
+        </div>
         <!-- <button type="button" class="btn btn-success">Please take me back to safety</button> -->
       </div>
     </div>
