@@ -140,7 +140,7 @@ INSERT INTO `modules` (`id`, `module`, `type`, `displayName`, `version`, `descri
 (27, 'hostRebootrequired', 'report', 'Reboot required', '1', 'Reboot required report.', 4, 'off'),
 (28, 'hostFQDNHostnameMismatch', 'report', 'FQDN/hostname mismatch', '1', 'FQDN/hostname mismatch report.', 4, 'off'),
 (29, 'hostMaintenanceMode', 'report', 'Maintenance Mode', '1', 'maintenance mode report.', 4, 'off'),
-(30, 'hostballooningzipswap', 'report', 'ballooning/zip/swap', '0', 'ballooning/zip/swap report.', 4, 'off'),
+(30, 'hostballooningzipswap', 'report', 'ballooning/zip/swap', '1', 'ballooning/zip/swap report.', 4, 'off'),
 (31, 'hostPowerManagementPolicy', 'report', 'PowerManagement Policy', '1', 'PowerManagement Policy report.', 4, 'off'),
 (32, 'hostBundlebackup', 'action', 'Bundle backup', '0', 'Bundle backup report.', 4, 'off'),
 (33, 'datastoreSpacereport', 'report', 'Space report', '1', 'Space report.', 5, 'off'),
