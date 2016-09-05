@@ -41,6 +41,7 @@ $lang['HOSTPOWERMANAGEMENTPOLICY'] = array('title' => 'Host PowerManagement Poli
 # datastore items
 $lang['DATASTORESPACEREPORT'] = array('title' => 'Datastore Space report', 'description' => 'Datastores which run out of space will cause impact on the virtual machines held on these datastores.');
 $lang['DATASTOREOVERALLOCATION'] = array('title' => 'Datastore Overallocation', 'description' => 'The following datastores may be overcommitted (allocation > ' . $this->getConfig('datastoreOverallocation') . '%), it is strongly suggested you check these.');
+$lang['DATASTOREORPHANEDVMFILESREPORT'] = array('title' => 'Orphaned VM Files', 'description' => 'The following files does not belong to your vSphere platform anymore, you should check and delete them if necessary.');
 $lang['DATASTORESIOCDISABLED'] = array('title' => 'Datastore with SIOC disabled', 'description' => 'Datastores with Storage I/O Control Disabled can impact the performance of your virtual machines.');
 $lang['DATASTOREMAINTENANCEMODE'] = array('title' => 'Datastore in Maintenance Mode', 'description' => 'Datastore held in Maintenance mode will not be hosting any virtual machine, check the below Datastore are in an expected state.');
 $lang['DATASTOREACCESSIBLE'] = array('title' => 'Datastore not Accessible', 'description' => 'The following datastores are not in "Accessible" state, which mean there is a connectivity issue and should be investiguated.');
