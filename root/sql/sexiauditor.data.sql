@@ -91,7 +91,8 @@ INSERT INTO `config` (`id`, `configid`, `type`, `label`, `value`) VALUES
 (23, 'sexigrafNode', 2, 'SexiGraf node IP or FQDN (used for Capacity Planning)', 'sexigraf.sexibyt.es'),
 (24, 'capacityPlanningDays', 4, 'Number of days Capacity Planning will used for computationcalculation of ''Days Left'' value', '7'),
 (25, 'showInfinite', 1, 'Does Capacity Planning display clusters with ''Infinite'' days left ?', 'enable'),
-(26, 'showDebug', 1, 'Display debug log in log files (careful, it is really verbose)', 'disable');
+(26, 'showDebug', 1, 'Display debug log in log files (careful, it is really verbose)', 'disable'),
+(27, 'thresholdBundle', 4, 'Number of days before ESX bundle is purged (0 to disabled)', '30');
 
 --
 -- Dumping data for table `moduleCategory`
