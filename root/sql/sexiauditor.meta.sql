@@ -113,7 +113,7 @@ CREATE TABLE IF NOT EXISTS `config` (
   `type` int(11) NOT NULL,
   `label` varchar(255) CHARACTER SET utf8 NOT NULL,
   `value` varchar(50) CHARACTER SET utf8 NOT NULL
-) ENGINE=InnoDB AUTO_INCREMENT=27 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=28 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- --------------------------------------------------------
 
