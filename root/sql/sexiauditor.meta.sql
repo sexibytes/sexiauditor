@@ -340,6 +340,22 @@ CREATE TABLE IF NOT EXISTS `modules` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `orphanFiles`
+--
+
+DROP TABLE IF EXISTS `orphanFiles`;
+CREATE TABLE IF NOT EXISTS `orphanFiles` (
+`id` int(11) NOT NULL,
+  `vcenter` int(11) NOT NULL,
+  `filePath` varchar(255) CHARACTER SET utf8 NOT NULL,
+  `firstseen` datetime NOT NULL,
+  `lastseen` datetime NOT NULL,
+  `active` tinyint(1) NOT NULL
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `permissions`
 --
 
@@ -612,7 +628,13 @@ ALTER TABLE `moduleCategory`
 --
 ALTER TABLE `modules`
  ADD PRIMARY KEY (`id`);
-
+ 
+--
+-- Indexes for table `orphanFiles`
+--
+ALTER TABLE `orphanFiles`
+ ADD PRIMARY KEY (`id`), ADD KEY `vcenter` (`vcenter`);
+ 
 --
 -- Indexes for table `permissions`
 --
@@ -750,6 +772,11 @@ MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=9;
 --
 ALTER TABLE `modules`
 MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=63;
+--
+-- AUTO_INCREMENT for table `orphanFiles`
+--
+ALTER TABLE `orphanFiles`
+MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
 --
 -- AUTO_INCREMENT for table `permissions`
 --
