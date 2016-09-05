@@ -376,7 +376,7 @@ foreach $s_item (@server_list) {
     my $key = $ref->{'module'};
     my $value = $ref->{'schedule'};
     my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
-    if ($force) {
+    if ($force && $value ne "off") {
       # --force switch have been triggered, unleashed the subroutine
       $logger->info("[INFO][SUBROUTINE-FORCE] Start process for $key (normal schedule is $value)");
       $actions{ $key }->();
@@ -629,11 +629,11 @@ sub inventory
 {
   
   # in order to avoid adding empty entries, inventory should be done from top objects to bottom ones (cluster>host>vm)
-  # clusterinventory( );
-  # hostinventory( );
-  # datastoreinventory( );
-  # dvpginventory( );
-  # vminventory( );
+  clusterinventory( );
+  hostinventory( );
+  datastoreinventory( );
+  dvpginventory( );
+  vminventory( );
   
 } # END sub inventory
 
