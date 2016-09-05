@@ -254,7 +254,7 @@ my %actions = ( inventory => \&inventory,
                 networkDVPGAutoExpand => \&dummy,
                 networkDVSprofile => \&dummy,
                 datastoreSpacereport => \&dummy,
-                datastoreOrphanedVMFilesreport => \&dummy,
+                datastoreOrphanedVMFilesreport => \&datastoreOrphanedVMFilesreport,
                 datastoreOverallocation => \&dummy,
                 datastoreSIOCdisabled => \&dummy,
                 datastoremaintenancemode => \&dummy,
@@ -346,22 +346,18 @@ foreach $s_item (@server_list) {
   $view_DistributedVirtualPortgroup = Vim::find_entity_views(view_type => 'DistributedVirtualPortgroup', properties => ['name', 'vm', 'config.numPorts', 'config.autoExpand', 'tag']);
   $logger->info("[INFO][OBJECTS] End retrieving DistributedVirtualPortgroup objects");
   $logger->info("[INFO][OBJECTS] Start retrieving Datastore objects");
-  $view_Datastore = Vim::find_entity_views(view_type => 'Datastore', properties => ['name', 'summary', 'iormConfiguration']);
+  $view_Datastore = Vim::find_entity_views(view_type => 'Datastore', properties => ['name', 'summary', 'iormConfiguration', 'browser']);
   $logger->info("[INFO][OBJECTS] End retrieving Datastore objects");
   $logger->info("[INFO][OBJECTS] Start retrieving Datacenter objects");
   $view_Datacenter = Vim::find_entity_views(view_type => 'Datacenter', properties => ['name','triggeredAlarmState']);
   $logger->info("[INFO][OBJECTS] End retrieving Datacenter objects");
   $logger->info("[INFO][OBJECTS] Start retrieving VirtualMachine objects");
-  $view_VirtualMachine = Vim::find_entity_views(view_type => 'VirtualMachine', properties => ['name','guest','summary.config.vmPathName','config.guestId','runtime','network','summary.config.numCpu','summary.config.memorySizeMB','summary.storage','triggeredAlarmState','config.hardware.device','config.version','resourceConfig','config.cpuHotAddEnabled','config.memoryHotAddEnabled','config.extraConfig','summary.quickStats','snapshot']);
+  $view_VirtualMachine = Vim::find_entity_views(view_type => 'VirtualMachine', properties => ['name','guest','summary.config.vmPathName','layoutEx.file','layout.swapFile','config.guestId','runtime','network','summary.config.numCpu','summary.config.memorySizeMB','summary.storage','triggeredAlarmState','config.hardware.device','config.version','resourceConfig','config.cpuHotAddEnabled','config.memoryHotAddEnabled','config.extraConfig','summary.quickStats','snapshot']);
   $logger->info("[INFO][OBJECTS] End retrieving VirtualMachine objects");
   # hastables creation to speed later queries
   foreach my $cluster_view (@$view_ClusterComputeResource) {
-    # my $cluster_name = lc ($cluster_view->name);
-    # $h_cluster{%$cluster_view{'mo_ref'}->value} = $cluster_name;
     my $cluster_hosts_views = Vim::find_entity_views(view_type => 'HostSystem', begin_entity => $cluster_view , properties => [ 'name' ]);
     foreach my $cluster_host_view (@$cluster_hosts_views) {
-      # my $host_name = lc ($cluster_host_view->{'name'});
-      # $h_host{%$cluster_host_view{'mo_ref'}->value} = $host_name;
       $h_hostcluster{%$cluster_host_view{'mo_ref'}->type . "-" . %$cluster_host_view{'mo_ref'}->value} = %$cluster_view{'mo_ref'}->type . "-" . %$cluster_view{'mo_ref'}->value;
     }
   }
@@ -427,50 +423,6 @@ foreach $s_item (@server_list) {
   $sth->finish();
   $logger->info("[INFO][VCENTER] End processing vCenter $s_item");
 }
-
-###################################
-# File dump generation            #
-# Updating 'latest' symbolic link #
-# >inline update is not possible  #
-# >thus we do it in 2 way         #
-###################################
-# sub xmlDump {
-#   my ($docXML, $obj, $xmlObject, $xmlFile) = @_;
-#   if ($docXML->findvalue("count(//".$obj.")") > 0) {
-#     if ($docXML->toFile($xmlObject, 2)) {
-#       $logger->info("[INFO][XMLDUMP] Saving file $xmlObject");
-#     } else {
-#       $logger->error("[ERROR][XMLDUMP] Unable to save file $xmlObject");
-#     }
-#     unlink($xmlFile);
-#     symlink($xmlObject, $xmlFile);
-#     chmod 0644, $xmlObject;
-#   } else {
-#     $logger->info("[DEBUG][XMLDUMP] No objects for type $obj");
-#   }
-# }
-
-# xmlDump($docVMs, "vm", $xmlVMs, "/opt/vcron/data/latest/vms-global.xml");
-# xmlDump($docHosts, "host", $xmlHosts, "/opt/vcron/data/latest/hosts-global.xml");
-# xmlDump($docClusters, "cluster", $xmlClusters, "/opt/vcron/data/latest/clusters-global.xml");
-# xmlDump($docDatastores, "datastore", $xmlDatastores, "/opt/vcron/data/latest/datastores-global.xml");
-# xmlDump($docAlarms, "alarm", $xmlAlarms, "/opt/vcron/data/latest/alarms-global.xml");
-# xmlDump($docSnapshots, "snapshot", $xmlSnapshots, "/opt/vcron/data/latest/snapshots-global.xml");
-# xmlDump($docDistributedVirtualPortgroups, "distributedvirtualportgroup", $xmlDistributedVirtualPortgroups, "/opt/vcron/data/latest/distributedvirtualportgroups-global.xml");
-# xmlDump($docSessions, "session", $xmlSessions, "/opt/vcron/data/latest/sessions-global.xml");
-# xmlDump($docLicenses, "license", $xmlLicenses, "/opt/vcron/data/latest/licenses-global.xml");
-# xmlDump($docCertificates, "certificate", $xmlCertificates, "/opt/vcron/data/latest/certificates-global.xml");
-# xmlDump($docHardwareStatus, "hardwarestate", $xmlHardwareStatus, "/opt/vcron/data/latest/hardwarestatus-global.xml");
-# xmlDump($docConfigurationIssues, "configurationissue", $xmlConfigurationIssues, "/opt/vcron/data/latest/configurationissues-global.xml");
-
-# my $ttbParser = XML::LibXML->new();
-# $ttbParser->keep_blanks(0);
-# my $docTTB = $ttbParser->load_xml(location => $schedulerTTBFile);
-# my $executionEntry = $docTTB->ownerDocument->createElement('executiontime');
-# $executionEntry->setAttribute("date", $execDateTTB);
-# $executionEntry->setAttribute("seconds", time - $start);
-# $docTTB->documentElement()->appendChild($executionEntry);
-# $docTTB->toFile($schedulerTTBFile,2);
 
 my $sqlInsert = $dbh->prepare("INSERT INTO executiontime (date, seconds) VALUES (FROM_UNIXTIME (?), ?)");
 $sqlInsert->execute($start, time - $start);
@@ -673,14 +625,17 @@ sub certificatesReport {
   }
 }
 
-sub inventory {
+sub inventory
+{
+  
   # in order to avoid adding empty entries, inventory should be done from top objects to bottom ones (cluster>host>vm)
-  clusterinventory( );
-  hostinventory( );
-  datastoreinventory( );
-  dvpginventory( );
-  vminventory( );
-}
+  # clusterinventory( );
+  # hostinventory( );
+  # datastoreinventory( );
+  # dvpginventory( );
+  # vminventory( );
+  
+} # END sub inventory
 
 sub vminventory
 {
@@ -1804,8 +1759,6 @@ sub snapshotInventory
     $sqlInsert->finish();
     
   } # END if ($refSnapshot != 0) + check
-  
-  # $sth->finish();
 
   # recurse through the tree of snaps
   if ($snapshotTree->childSnapshotList)
@@ -1955,6 +1908,135 @@ sub dvpginventory {
   }
 }
 
+sub datastoreOrphanedVMFilesreport
+{
+  
+  my %h_layoutFiles = ();
+  foreach my $vm_view (@$view_VirtualMachine)
+  {
+    
+    if ($vm_view->runtime->connectionState ne "invalid" || $vm_view->runtime->connectionState ne "orphaned")
+    {
+      
+      my $layoutFiles = eval {$vm_view->{'layoutEx.file'}} || [];
+      my $swapFile = eval {$vm_view->{'layout.swapFile'}} || [];
+      foreach my $layoutFile (@$layoutFiles)
+      {
+        
+        if ($layoutFile->type ne "log")
+        {
+        
+          $h_layoutFiles{ $layoutFile->name } = '1';
+          
+        } # END if ($layoutFile->type ne "log")
+      
+      } # END foreach my $layoutFile (@$layoutFiles)
+      
+      if ($swapFile)
+      {
+        
+        $h_layoutFiles{ $swapFile } = '1';
+        
+      } # END if ($swapFile)
+      
+    } # END if ($vm_view->runtime->connectionState ne "invalid" || $vm_view->runtime->connectionState ne "orphaned")
+    
+  } # END foreach my $vm_view (@$view_VirtualMachine)
+  
+  foreach my $datastore_view (@$view_Datastore)
+  {
+    
+    if ($datastore_view->summary->accessible)
+    {
+      
+      my $vcentersdk = new URI::URL $datastore_view->{'vim'}->{'service_url'};
+      my $vcenterID = dbGetVC($vcentersdk->host);
+    	my $dsbrowser = Vim::get_view(mo_ref => $datastore_view->browser);
+			my $ds_path = "[" . $datastore_view->name . "]";
+      print $ds_path."\n";
+			my $file_query = FileQueryFlags->new(fileOwner => 0, fileSize => 1, fileType => 0, modification => 1);
+      my $search_res;
+      eval
+      {
+        
+        my $searchSpec = HostDatastoreBrowserSearchSpec->new(details => $file_query, matchPattern => ["*zdump*", "*.xml", "*.vmsn", "*.vmsd", "*.vswp*",  "*.vmx", "*.vmdk", "*.vmss", "*.nvram", "*.vmxf"]);
+			  $search_res = $dsbrowser->SearchDatastoreSubFolders(datastorePath => $ds_path, searchSpec => $searchSpec);
+        
+      };
+      
+      if ($@)
+      {
+        
+        $logger->info("[DEBUG][ORPHANFILE-INVENTORY] Error during searching on $ds_path it usually is due to directory too large to search");
+        next;
+        
+      }
+      
+			if ($search_res)
+      {
+        
+				foreach my $result (@$search_res)
+        {
+          
+          my $files = $result->file;
+          
+					if ($files && !($result->folderPath =~ /.zfs/ || $result->folderPath =~ /.snapshot/ || $result->folderPath =~ /var\/tmp\/cache/ || $result->folderPath =~ /.lck/ || $result->folderPath =~ /\/hostCache\//))
+          {
+            
+						foreach my $file (@$files)
+            {
+              
+              my $fullFilePath = $result->folderPath . $file->path;
+              if (!($file->path =~ /-ctk.vmdk$/ || $file->path =~ /esxconsole-flat.vmdk$/ || $file->path =~ /esxconsole.vmdk$/ || $h_layoutFiles{ $fullFilePath }))
+              {
+                
+                my $refOrphanFile = dbGetOrphanFile($fullFilePath,$vcenterID);
+                
+                if ($refOrphanFile != 0)
+                {
+                  
+                  # Orphan file already exists, have not changed, updated lastseen property
+                  $logger->info("[DEBUG][ORPHANFILE-INVENTORY] Orphan file $fullFilePath already exists and have not changed since last check, updating lastseen property");
+                  my $sqlUpdate = $dbh->prepare("UPDATE orphanFiles set lastseen = FROM_UNIXTIME (?) WHERE id = '" . $refOrphanFile->{'id'} . "'");
+                  $sqlUpdate->execute($start);
+                  $sqlUpdate->finish();
+                  
+                }
+                else
+                {
+                  
+                  $logger->info("[DEBUG][ORPHANFILE-INVENTORY] Adding data for orphan file $fullFilePath");
+                  my $sqlInsert = $dbh->prepare("INSERT INTO orphanFiles (vcenter, filePath, fileSize, fileModification, firstseen, lastseen, active) VALUES (?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?), ?)");
+                  $sqlInsert->execute(
+                    $vcenterID,
+                    $fullFilePath,
+                    $file->fileSize,
+                    $file->modification,
+                    $start,
+                    $start,
+                    1
+                  );
+                  $sqlInsert->finish();
+                  
+                } # END if ($refOrphanFile != 0)
+                
+              } # END if (!($file->path =~ /-ctk.vmdk$/ || $file->path =~ /esxconsole-flat.vmdk$/ || $file->path =~ /esxconsole.vmdk$/ || $h_layoutFiles{ $fullFilePath }))
+              
+            } # END foreach my $file (@$files)
+            
+          } # END if($files)
+          
+        } # END foreach my $result (@$search_res)
+        
+      } # END if ($search_res)
+
+    } # END if ($datastore_view->summary->accessible)
+    
+  } # END foreach my $datastore_view (@$view_Datastore)
+  
+} # END sub datastoreOrphanedVMFilesreport
+
+
 sub dbGetVC {
   # This subroutine will return vcenter ID if it exists
   # or create a new vcenter ID if not
@@ -2013,6 +2095,36 @@ sub dbGetSnapshot
   return $ref;
   
 } # END sub dbGetSnapshot
+
+sub dbGetOrphanFile
+{
+  
+  # This subroutine will return orphan file object if it exists or 0 if not
+  my ($orphanFilePath,$vcenterID) = @_;
+  my $query = "SELECT * FROM orphanFiles WHERE filePath = '" . $orphanFilePath . "' AND vcenter = '" . $vcenterID . "' AND active = 1 LIMIT 1";
+  my $sth = $dbh->prepare($query);
+  $sth->execute();
+  my $rows = $sth->rows;
+  my $ref = 0;
+  
+  if ($rows eq 0)
+  {
+    
+    $logger->info("[DEBUG][GETORPHANFILE] Orphan file $orphanFilePath on vCenter $vcenterID doesn't exist");
+    
+  }
+  else
+  {
+    
+    $ref = $sth->fetchrow_hashref();
+    $logger->info("[DEBUG][GETORPHANFILE] Orphan file ID for orphan file $orphanFilePath on vCenter $vcenterID is ".$ref->{'id'});
+    
+  } # END if ($rows eq 0)
+  
+  $sth->finish();
+  return $ref;
+  
+} # END sub dbGetOrphanFile
 
 sub dbGetCluster
 {
