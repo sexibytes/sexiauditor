@@ -156,7 +156,34 @@ if (isset($_GET['c']))
       
       $extraCondition = $timeCondition . " AND ROUND(100*(dm.freespace/dm.size)) < " . $check->getConfig('datastoreFreeSpaceThreshold');
       
-    break; # END case 'DATASTORESPACEREPORT':
+    break; # END case 'DATASTORESPACEREPORT':  
+    
+    case 'DATASTOREORPHANEDVMFILESREPORT':
+
+      $table = 'orphanFiles';
+      $primaryKey = 'id';
+      $columns = array(
+        array( 'db' => 'v.vcname', 'dt' => 0, 'field' => 'vcname' ),
+        array( 'db' => 'o.filePath', 'dt' => 1, 'field' => 'filePath' ),
+        array( 'db' => 'o.fileSize', 'dt' => 2, 'field' => 'fileSize', 'formatter' => function( $d, $row ) { return human_filesize($d,0); } ),
+        array( 'db' => 'o.fileModification', 'dt' => 3, 'field' => 'fileModification' )
+      );
+      $joinQuery = "FROM {$table} o INNER JOIN vcenters AS v ON (o.vcenter = v.id)";
+
+      if ($latest)
+      {
+
+        $extraCondition = "o.active = 1";
+        
+      }
+      else
+      {
+        
+        $extraCondition = "o.firstseen < '" . $dateStart . "' AND o.lastseen > '" . $dateEnd . "'";
+        
+      } # END if ($latest)
+      
+    break; # END case 'DATASTOREORPHANEDVMFILESREPORT':
     
     case 'DATASTOREOVERALLOCATION':
     
