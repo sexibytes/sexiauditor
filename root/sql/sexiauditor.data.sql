@@ -144,7 +144,7 @@ INSERT INTO `modules` (`id`, `module`, `type`, `displayName`, `version`, `descri
 (31, 'hostPowerManagementPolicy', 'report', 'PowerManagement Policy', '1', 'PowerManagement Policy report.', 4, 'off'),
 (32, 'hostBundlebackup', 'action', 'Bundle backup', '0', 'Bundle backup report.', 4, 'off'),
 (33, 'datastoreSpacereport', 'report', 'Space report', '1', 'Space report.', 5, 'off'),
-(34, 'datastoreOrphanedVMFilesreport', 'report', 'Orphaned VM Files report', '0', 'Orphaned VM Files report report.', 5, 'off'),
+(34, 'datastoreOrphanedVMFilesreport', 'report', 'Orphaned VM Files report', '0', 'Will display all files that does not belong to your vSphere platforms. Beware that this module can take a while as it will scan all datastores files.', 5, 'off'),
 (35, 'datastoreOverallocation', 'report', 'Overallocation', '1', 'Overallocation report.', 5, 'off'),
 (36, 'datastoreSIOCdisabled', 'report', 'SIOC disabled', '1', 'SIOC disabled report.', 5, 'off'),
 (37, 'datastoremaintenancemode', 'report', 'maintenance mode', '1', 'maintenance mode report.', 5, 'off'),
