@@ -348,6 +348,8 @@ CREATE TABLE IF NOT EXISTS `orphanFiles` (
 `id` int(11) NOT NULL,
   `vcenter` int(11) NOT NULL,
   `filePath` varchar(255) CHARACTER SET utf8 NOT NULL,
+  `fileSize` bigint(20) NOT NULL,
+  `fileModification` datetime NOT NULL,
   `firstseen` datetime NOT NULL,
   `lastseen` datetime NOT NULL,
   `active` tinyint(1) NOT NULL
