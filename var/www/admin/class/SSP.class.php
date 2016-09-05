@@ -252,7 +252,7 @@ class SSP {
 			 $limit";
         }
         $data = SSP::sql_exec( $db, $bindings,$query);
-
+error_log($query);
         // Data set length after filtering
         $resFilterLength = SSP::sql_exec( $db,
             "SELECT FOUND_ROWS()"
