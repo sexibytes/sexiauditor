@@ -474,8 +474,8 @@ CREATE TABLE IF NOT EXISTS `vmMetrics` (
   `commited` int(11) NOT NULL,
   `balloonedMemory` int(11) NOT NULL,
   `uncommited` int(11) NOT NULL,
-  `firstseen` int(11) NOT NULL,
-  `lastseen` int(11) NOT NULL
+  `firstseen` datetime NOT NULL,
+  `lastseen` datetime NOT NULL
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- --------------------------------------------------------
