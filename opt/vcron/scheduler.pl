@@ -7,13 +7,12 @@ use DBD::mysql;
 use Data::Dumper;
 use Date::Format qw(time2str);
 use Date::Parse;
-# use DateTime qw( );
-use File::Path qw( make_path );
+use File::Fetch;
+use File::Find;
+use File::Path qw( make_path remove_tree );
 use Getopt::Long;
-# use InfluxDB::LineProtocol qw(data2line line2data);
 use JSON;
 use Log::Log4perl qw(:easy);
-# use LWP::Curl;
 use MIME::Lite::TT::HTML;
 use Number::Bytes::Human qw(format_bytes);
 use POSIX qw(strftime);
@@ -23,7 +22,7 @@ use Time::Piece;
 use URI::URL;
 use VMware::VIRuntime;
 use VMware::VICredStore;
-# use XML::LibXML;
+
 # loading VSAN module for perl
 use FindBin;
 use lib "$FindBin::Bin/VSAN/";
@@ -51,12 +50,7 @@ my $u_item;
 my @user_list;
 my $password;
 my $url;
-# my $href = ();
 my $activeVC;
-# my $xmlModuleFile = '/var/www/admin-db/conf/modules.xml';
-# my $xmlModuleScheduleFile = '/var/www/admin-db/conf/moduleschedules.xml';
-# my $xmlConfigsFile = '/var/www/admin-db/conf/configs.xml';
-# my $schedulerTTBFile = '/opt/vcron/scheduler-ttb.xml';
 my %boolHash = (true => "1", false => "0");
 my $perfMgr;
 my %perfCntr;
@@ -64,7 +58,7 @@ my %perfCntr;
 # Using --force switch will bypass scheduler and run every subroutine
 my $force;
 GetOptions("force" => \$force);
-if ($force) { $logger->info ("[DEBUG] Force Mode enable, all checks will be run whatever their schedule!"); }
+$logger->info("[BYPASS-MODE] Force Mode enable, all checks will be run whatever their schedule!") if $force;
 
 # Connect to the database.
 my $dbh = DBI->connect("DBI:mysql:database=sexiauditor;host=localhost", "sexiauditor", 'Sex!@ud1t0r', {'RaiseError' => 1});
@@ -78,121 +72,48 @@ my %h_cluster = ("domain-c000" => "N/A");
 my %h_host = ();
 my %h_hostcluster = ();
 
-# requiring both file to be readable
-# (-r $xmlModuleFile) or $logger->logdie ("[ERROR] File $xmlModuleFile not available and/or readable, abort");
-# (-r $xmlModuleScheduleFile) or $logger->logdie ("[ERROR] File $xmlModuleScheduleFile not available and/or readable, abort");
-# (-r $xmlConfigsFile) or $logger->logdie ("[ERROR] File $xmlConfigsFile not available and/or readable, abort");
-# (-w $schedulerTTBFile) or $logger->logdie ("[ERROR] File $schedulerTTBFile not available and/or writeable, abort");
-
-# modules and settings xml file initialize
-# my $docModule = XML::LibXML->new->parse_file($xmlModuleFile);
-# my $docModuleSchedules = XML::LibXML->new->parse_file($xmlModuleScheduleFile);
-# my $docConfigs = XML::LibXML->new->parse_file($xmlConfigsFile);
+# debug Mode
+my $showDebug = (dbGetConfig("showDebug", 'disable') eq 'disable') ? 0 : 1;
 
 # Data purge threshold
-# my $purgeThreshold = $docConfigs->findvalue("//config[id='thresholdHistory']/value") || 0;
 my $purgeThreshold = dbGetConfig("thresholdHistory", 0);
 
-# date schedule
-# my $dailySchedule = ($docConfigs->exists("/configs/config[id='dailySchedule']/value") ? $docConfigs->findvalue("/configs/config[id='dailySchedule']/value") : 0);
+# Date schedule
 my $dailySchedule = dbGetConfig("dailySchedule", 0);
-# my $weeklySchedule = ($docConfigs->exists("/configs/config[id='weeklySchedule']/value") ? $docConfigs->findvalue("/configs/config[id='weeklySchedule']/value") : 0);
 my $weeklySchedule = dbGetConfig("weeklySchedule", 0);
-# my $monthlySchedule = ($docConfigs->exists("/configs/config[id='monthlySchedule']/value") ? $docConfigs->findvalue("/configs/config[id='monthlySchedule']/value") : 1);
 my $monthlySchedule = dbGetConfig("monthlySchedule", 1);
 
 # browsing modules and fetching schedule
 $logger->info("[INFO] Start processing modules list");
-
 my $query = "SELECT module, schedule FROM modules ORDER BY id";
 my $sth = $dbh->prepare($query);
 $sth->execute();
 my $nbActiveModule = 0;
-while (my $ref = $sth->fetchrow_hashref()) {
-  if ($ref->{'schedule'} ne 'off') {
-    # $href->{ $ref->{'module'} } = $ref->{'schedule'};
+
+while (my $ref = $sth->fetchrow_hashref())
+{
+  
+  if ($ref->{'schedule'} ne 'off')
+  {
+    
     $nbActiveModule++;
     $logger->info("[INFO] Found module " . $ref->{'module'} . " with schedule " . $ref->{'schedule'});
-  } else {
-    $logger->info("[INFO] Found module " . $ref->{'module'} . " with schedule off, skipping...");
+    
   }
-}
+  else
+  {
+    
+    $logger->info("[INFO] Found module " . $ref->{'module'} . " with schedule off, skipping...");
+    
+  } # END if ($ref->{'schedule'} ne 'off')
+
+} # END while (my $ref = $sth->fetchrow_hashref())
+
 $sth->finish();
-# print(Dumper($href));
-# exit;
-# fetching active modules
-# my $nbActiveModule = $sth->rows;
 $logger->info("[INFO] End processing modules list, found $nbActiveModule active modules");
 
 # exiting if no active module
 ($nbActiveModule gt 0) or $logger->logdie ("[ERROR] No active module found, abort");
-
-# datetime used for folder history management
-# my $execDateTTB = time2str("%Y%m%d%H%M", time);
-# my $execDate = time2str("%Y%m%d", time);
-
-
-######################
-###                ###
-###  EDITING ZONE  ###
-###                ###
-######################
-
-############################################
-# XML files definition (1 module = 1 file) #
-############################################
-
-# my $xmlPath = "/opt/vcron/data/$execDate";
-# if ( !-d $xmlPath ) { make_path $xmlPath or $logger->logdie("[ERROR] Failed to create path: $xmlPath"); }
-### VirtualMachine
-# my $xmlVMs = "$xmlPath/vms-global.xml";
-# my $docVMs = XML::LibXML::Document->new('1.0', 'utf-8');
-# my $rootVMs = $docVMs->createElement("vms");
-### HostSystem
-# my $xmlHosts = "$xmlPath/hosts-global.xml";
-# my $docHosts = XML::LibXML::Document->new('1.0', 'utf-8');
-# my $rootHosts = $docHosts->createElement("hosts");
-### ClusterComputeResource
-# my $xmlClusters = "$xmlPath/clusters-global.xml";
-# my $docClusters = XML::LibXML::Document->new('1.0', 'utf-8');
-# my $rootClusters = $docClusters->createElement("clusters");
-### Datastore
-# my $xmlDatastores = "$xmlPath/datastores-global.xml";
-# my $docDatastores = XML::LibXML::Document->new('1.0', 'utf-8');
-# my $rootDatastores = $docDatastores->createElement("datastores");
-### Alarms
-# my $xmlAlarms = "$xmlPath/alarms-global.xml";
-# my $docAlarms = XML::LibXML::Document->new('1.0', 'utf-8');
-# my $rootAlarms = $docAlarms->createElement("alarms");
-### Snapshots
-# my $xmlSnapshots = "$xmlPath/snapshots-global.xml";
-# my $docSnapshots = XML::LibXML::Document->new('1.0', 'utf-8');
-# my $rootSnapshots = $docSnapshots->createElement("snapshots");
-### DistributedVirtualPortgroups
-# my $xmlDistributedVirtualPortgroups = "$xmlPath/distributedvirtualportgroups-global.xml";
-# my $docDistributedVirtualPortgroups = XML::LibXML::Document->new('1.0', 'utf-8');
-# my $rootDistributedVirtualPortgroups = $docDistributedVirtualPortgroups->createElement("distributedvirtualportgroups");
-### vCenter Sessions
-# my $xmlSessions = "$xmlPath/sessions-global.xml";
-# my $docSessions = XML::LibXML::Document->new('1.0', 'utf-8');
-# my $rootSessions = $docSessions->createElement("sessions");
-### vCenter Licenses
-# my $xmlLicenses = "$xmlPath/licenses-global.xml";
-# my $docLicenses = XML::LibXML::Document->new('1.0', 'utf-8');
-# my $rootLicenses = $docLicenses->createElement("licenses");
-### vCenter Certificates
-# my $xmlCertificates = "$xmlPath/certificates-global.xml";
-# my $docCertificates = XML::LibXML::Document->new('1.0', 'utf-8');
-# my $rootCertificates = $docCertificates->createElement("certificates");
-### Hardware Status error
-# my $xmlHardwareStatus = "$xmlPath/hardwarestatus-global.xml";
-# my $docHardwareStatus = XML::LibXML::Document->new('1.0', 'utf-8');
-# my $rootHardwareStatus = $docHardwareStatus->createElement("hardwarestatus");
-### Hardware Status error
-# my $xmlConfigurationIssues = "$xmlPath/configurationissues-global.xml";
-# my $docConfigurationIssues = XML::LibXML::Document->new('1.0', 'utf-8');
-# my $rootConfigurationIssues = $docConfigurationIssues->createElement("configurationissues");
-
 
 ###########################################################
 # dispatch table for subroutine (1 module = 1 subroutine) #
@@ -229,7 +150,7 @@ my %actions = ( inventory => \&inventory,
                 hostNTPCheck => \&dummy,
                 hostSshShell => \&dummy,
                 hostLUNPathDead => \&dummy,
-                hostBundlebackup => \&dummy,
+                hostBundlebackup => \&bundleBackup,
                 vmSnapshotsage => \&dummy,
                 vmphantomsnapshot => \&dummy,
                 vmballoonzipswap => \&dummy,
@@ -261,23 +182,16 @@ my %actions = ( inventory => \&inventory,
                 datastoreAccessible => \&dummy
               );
 
-##########################
-###                    ###
-###  END EDITING ZONE  ###
-###                    ###
-##########################
-
-
 # Data purge
 # no purge done if 0
-if ($purgeThreshold ne 0) {
+if ($purgeThreshold ne 0)
+{
+  
   $logger->info("[INFO][PURGE] Start purge process");
-  # my $command = `find /opt/vcron/data/ -type d -ctime +$purgeThreshold -exec rm -rf {} \\;`;
-  # purge sql if date>threshold + active=0
   dbPurgeOldData($purgeThreshold);
-  # $logger->info("[INFO][PURGE] Purge return: $command");
   $logger->info("[INFO][PURGE] End purge process");
-}
+  
+} # END if ($purgeThreshold ne 0)
 
 # TODO = plan to kill some previous execution if it's hang
 VMware::VICredStore::init (filename => $filename) or $logger->logdie ("[ERROR] Unable to initialize Credential Store.");
@@ -340,7 +254,7 @@ foreach $s_item (@server_list) {
   $view_ClusterComputeResource = Vim::find_entity_views(view_type => 'ClusterComputeResource', properties => ['name', 'host', 'summary', 'configIssue', 'configuration.dasConfig.admissionControlPolicy', 'configuration.dasConfig.admissionControlEnabled']);
   $logger->info("[INFO][OBJECTS] End retrieving ClusterComputeResource objects");
   $logger->info("[INFO][OBJECTS] Start retrieving HostSystem objects");
-  $view_HostSystem = Vim::find_entity_views(view_type => 'HostSystem', properties => ['name', 'config.dateTimeInfo.ntpConfig.server', 'config.network.dnsConfig', 'config.powerSystemInfo.currentPolicy.shortName', 'configIssue', 'configManager.advancedOption', 'configManager.healthStatusSystem', 'configManager.storageSystem', 'configManager.serviceSystem', 'runtime.inMaintenanceMode', 'summary.config.product.fullName', 'summary.hardware.cpuMhz', 'summary.hardware.cpuModel', 'summary.hardware.memorySize', 'summary.hardware.model', 'summary.hardware.numCpuCores', 'summary.hardware.numCpuPkgs', 'summary.rebootRequired', 'datastore']);
+  $view_HostSystem = Vim::find_entity_views(view_type => 'HostSystem', properties => ['name', 'config.dateTimeInfo.ntpConfig.server', 'config.network.dnsConfig', 'config.powerSystemInfo.currentPolicy.shortName', 'configIssue', 'configManager.advancedOption', 'configManager.firmwareSystem', 'configManager.healthStatusSystem', 'configManager.storageSystem', 'configManager.serviceSystem', 'datastore', 'runtime.inMaintenanceMode', 'summary.config.product.fullName', 'summary.hardware.cpuMhz', 'summary.hardware.cpuModel', 'summary.hardware.memorySize', 'summary.hardware.model', 'summary.hardware.numCpuCores', 'summary.hardware.numCpuPkgs', 'summary.rebootRequired', 'summary.runtime.connectionState']);
   $logger->info("[INFO][OBJECTS] End retrieving HostSystem objects");
   $logger->info("[INFO][OBJECTS] Start retrieving DistributedVirtualPortgroup objects");
   $view_DistributedVirtualPortgroup = Vim::find_entity_views(view_type => 'DistributedVirtualPortgroup', properties => ['name', 'vm', 'config.numPorts', 'config.autoExpand', 'tag']);
@@ -412,7 +326,7 @@ foreach $s_item (@server_list) {
             $actions{ $key }->();
             $logger->info("[INFO][SUBROUTINE] End monthly process for $key");
           } else {
-            $logger->info("[DEBUG][SUBROUTINE] Skipping monthly process for $key as it's not yet monthly schedule $monthlySchedule");
+            $logger->info("[DEBUG][SUBROUTINE] Skipping monthly process for $key as it's not yet monthly schedule $monthlySchedule") if $showDebug;
           }
         }
         case "off" { $logger->info("[INFO][SUBROUTINE] Ignoring process for $key as it's off"); }
@@ -813,7 +727,7 @@ sub vminventory
     {
 
       # VM already exists, have not changed, updated lastseen property
-      $logger->info("[DEBUG][VM-INVENTORY] VM $moRef on host " . $host->{'id'} . " already exists and have not changed since last check, updating lastseen property");
+      $logger->info("[DEBUG][VM-INVENTORY] VM $moRef on host " . $host->{'id'} . " already exists and have not changed since last check, updating lastseen property") if $showDebug;
       my $sqlUpdate = $dbh->prepare("UPDATE vms set lastseen = FROM_UNIXTIME (?) WHERE id = '" . $refVM->{'id'} . "'");
       $sqlUpdate->execute($start);
       $sqlUpdate->finish();
@@ -857,14 +771,14 @@ sub vminventory
         compareAndLog($refVM->{'guestId'}, $vm_guestId);
         compareAndLog($refVM->{'configGuestId'}, $vm_configGuestId);
         compareAndLog($refVM->{'vmpath'}, $vmPath);
-        $logger->info("[DEBUG][VM-INVENTORY] VM $moRef on host " . $host->{'id'} . " have changed since last check, sending old entry " . $refVM->{'id'} . " it into oblivion");
+        $logger->info("[DEBUG][VM-INVENTORY] VM $moRef on host " . $host->{'id'} . " have changed since last check, sending old entry " . $refVM->{'id'} . " it into oblivion") if $showDebug;
         my $sqlUpdate = $dbh->prepare("UPDATE vms set active = 0 WHERE id = '" . $refVM->{'id'} . "'");
         $sqlUpdate->execute();
         $sqlUpdate->finish();
         
       } # END if ($refVM != 0)
       
-      $logger->info("[DEBUG][VM-INVENTORY] Adding data for VM $moRef on host $host->{'id'}");
+      $logger->info("[DEBUG][VM-INVENTORY] Adding data for VM $moRef on host $host->{'id'}") if $showDebug;
       my $sqlInsert = $dbh->prepare("INSERT INTO vms (vcenter, host, moref, memReservation, guestFamily, ip, cpuLimit, consolidationNeeded, fqdn, numcpu, cpuReservation, sharedBus, portgroup, memory, phantomSnapshot, hwversion, provisionned, mac, multiwriter, memHotAddEnabled, guestOS, removable, datastore, vmtools, name, memLimit, vmxpath, connectionState, cpuHotAddEnabled, powerState, guestId, configGuestId, vmpath, firstseen, lastseen, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?), ?)");
       my @h_tmp = (
         $vcenterID,
@@ -1031,10 +945,10 @@ sub hostinventory
     my $vcentersdk = new URI::URL $host_view->{'vim'}->{'service_url'};
     my $moRef = $host_view->{'mo_ref'}->{'type'}."-".$host_view->{'mo_ref'}->{'value'};
     my $vcenterID = dbGetVC($vcentersdk->host);
-    $logger->info("[DEBUG][HOST-INVENTORY] Retrieved vCenterID = $vcenterID for host $moRef");
+    $logger->info("[DEBUG][HOST-INVENTORY] Retrieved vCenterID = $vcenterID for host $moRef") if $showDebug;
     my $cluster = (defined($h_hostcluster{$host_view->{'mo_ref'}->{'type'}."-".$host_view->{'mo_ref'}->{'value'}}) ? dbGetCluster($h_hostcluster{$host_view->{'mo_ref'}->{'type'}."-".$host_view->{'mo_ref'}->{'value'}}, $vcenterID) : 0);
     my $clusterID = ($cluster != 0) ? $cluster->{'id'} : 1;
-    $logger->info("[DEBUG][HOST-INVENTORY] Retrieved clusterID = $clusterID for host $moRef");
+    $logger->info("[DEBUG][HOST-INVENTORY] Retrieved clusterID = $clusterID for host $moRef") if $showDebug;
     # TODO > generate error and skip if multiple + manage deletion (execute query on lastseen != $start)
     my $refHost = dbGetHost($moRef,$vcenterID);
     my $insertHost = 0;
@@ -1065,7 +979,7 @@ sub hostinventory
     {
 
       # Host already exists, have not changed, updated lastseen property
-      $logger->info("[DEBUG][HOST-INVENTORY] Host $moRef already exists and have not changed since last check, updating lastseen property");
+      $logger->info("[DEBUG][HOST-INVENTORY] Host $moRef already exists and have not changed since last check, updating lastseen property") if $showDebug;
       my $sqlUpdate = $dbh->prepare("UPDATE hosts set lastseen = FROM_UNIXTIME (?) WHERE id = '" . $refHost->{'id'} . "'");
       $sqlUpdate->execute($start);
       $sqlUpdate->finish();
@@ -1100,14 +1014,14 @@ sub hostinventory
         compareAndLog($refHost->{'esxbuild'}, $host_view->{'summary.config.product.fullName'});
         compareAndLog($refHost->{'ssh_policy'}, $service_ssh);
         compareAndLog($refHost->{'shell_policy'}, $service_shell);
-        $logger->info("[DEBUG][HOST-INVENTORY] Host $moRef have changed since last check, sending old entry it into oblivion");
+        $logger->info("[DEBUG][HOST-INVENTORY] Host $moRef have changed since last check, sending old entry it into oblivion") if $showDebug;
         my $sqlUpdate = $dbh->prepare("UPDATE hosts set active = 0 WHERE id = '" . $refHost->{'id'} . "'");
         $sqlUpdate->execute();
         $sqlUpdate->finish();
         
       } # END if ($refHost != 0)
       
-      $logger->info("[DEBUG][HOST-INVENTORY] Adding data for host $moRef");
+      $logger->info("[DEBUG][HOST-INVENTORY] Adding data for host $moRef") if $showDebug;
       my $sqlInsert = $dbh->prepare("INSERT INTO hosts (vcenter, cluster, moref, hostname, host_name, ntpservers, deadlunpathcount, numcpucore, syslog_target, rebootrequired, powerpolicy, bandwidthcapacity, memory, dnsservers, cputype, numcpu, inmaintenancemode, lunpathcount, datastorecount, model, cpumhz, esxbuild, ssh_policy, shell_policy, firstseen, lastseen, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?), ?)");
       $sqlInsert->execute(
         $vcenterID,
@@ -1268,7 +1182,7 @@ sub clusterinventory
     {
       
       # Cluster already exists, have not changed, updated lastseen property
-      $logger->info("[DEBUG][CLUSTER-INVENTORY] Cluster $moRef already exists and have not changed since last check, updating lastseen property");
+      $logger->info("[DEBUG][CLUSTER-INVENTORY] Cluster $moRef already exists and have not changed since last check, updating lastseen property") if $showDebug;
       my $sqlUpdate = $dbh->prepare("UPDATE clusters set lastseen = FROM_UNIXTIME ($start) WHERE id = '" . $refCluster->{'id'} . "'");
       $sqlUpdate->execute();
       $sqlUpdate->finish();
@@ -1289,14 +1203,14 @@ sub clusterinventory
         compareAndLog($refCluster->{'admissionThreshold'}, $admissionThreshold);
         compareAndLog($refCluster->{'admissionValue'}, $admissionValue);
         compareAndLog($refCluster->{'lastconfigissue'}, $lastconfigissue);
-        $logger->info("[DEBUG][CLUSTER-INVENTORY] Cluster $moRef have changed since last check, sending old entry it into oblivion");
+        $logger->info("[DEBUG][CLUSTER-INVENTORY] Cluster $moRef have changed since last check, sending old entry it into oblivion") if $showDebug;
         my $sqlUpdate = $dbh->prepare("UPDATE clusters set active = 0 WHERE id = '" . $refCluster->{'id'} . "'");
         $sqlUpdate->execute();
         $sqlUpdate->finish();
         
       } # END if ($refCluster != 0)
       
-      $logger->info("[DEBUG][CLUSTER-INVENTORY] Adding data for cluster $moRef");
+      $logger->info("[DEBUG][CLUSTER-INVENTORY] Adding data for cluster $moRef") if $showDebug;
       my $sqlInsert = $dbh->prepare("INSERT INTO clusters (vcenter, moref, cluster_name, dasenabled, isAdmissionEnable, admissionModel, admissionThreshold, admissionValue, lastconfigissuetime, lastconfigissue, firstseen, lastseen, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?), ?)");
       $sqlInsert->execute(
         $vcenterID,
@@ -1388,7 +1302,7 @@ sub datastoreinventory
     {
       
       # Datastore already exists, have not changed, updated lastseen property
-      $logger->info("[DEBUG][DATASTORE-INVENTORY] Datastore " . $refDatastore->{'id'} . " already exists and have not changed since last check, updating lastseen property");
+      $logger->info("[DEBUG][DATASTORE-INVENTORY] Datastore " . $refDatastore->{'id'} . " already exists and have not changed since last check, updating lastseen property") if $showDebug;
       my $sqlUpdate = $dbh->prepare("UPDATE datastores set lastseen = FROM_UNIXTIME (?) WHERE id = '$moRef'");
       $sqlUpdate->execute($start);
       $sqlUpdate->finish();
@@ -1407,7 +1321,7 @@ sub datastoreinventory
         compareAndLog($refDatastore->{'isAccessible'}, $datastore_view->summary->accessible);
         compareAndLog($refDatastore->{'shared'}, $datastore_view->summary->multipleHostAccess);
         compareAndLog($refDatastore->{'iormConfiguration'}, $datastore_view->iormConfiguration->enabled);
-        $logger->info("[DEBUG][DATASTORE-INVENTORY] Datastore " . $refDatastore->{'id'} . " have changed since last check, sending old entry it into oblivion");
+        $logger->info("[DEBUG][DATASTORE-INVENTORY] Datastore " . $refDatastore->{'id'} . " have changed since last check, sending old entry it into oblivion") if $showDebug;
         my $sqlUpdate = $dbh->prepare("UPDATE datastores set active = 0 WHERE id = '" . $refDatastore->{'id'} . "'");
         $sqlUpdate->execute();
         $sqlUpdate->finish();
@@ -1415,7 +1329,7 @@ sub datastoreinventory
       } # END if ($refDatastore != 0)
       
       $logger->info("[DEBUG][DATASTORE-INVENTORY] Adding data for datastore $moRef");
-      my $sqlInsert = $dbh->prepare("INSERT INTO datastores (vcenter, moref, datastore_name, type, isAccessible, maintenanceMode, shared, iormConfiguration, firstseen, lastseen, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?), ?)");
+      my $sqlInsert = $dbh->prepare("INSERT INTO datastores (vcenter, moref, datastore_name, type, isAccessible, maintenanceMode, shared, iormConfiguration, firstseen, lastseen, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?), ?)") if $showDebug;
       $sqlInsert->execute(
         $vcenterID,
         $datastore_view->{'mo_ref'}->{'type'}."-".$datastore_view->{'mo_ref'}->{'value'},
@@ -1698,6 +1612,7 @@ sub snapshotInventory
   
   my ($snapshotTree,$vmID) = @_;
   my $description = (defined($snapshotTree->description) ? $snapshotTree->description : 'Not Available');
+  utf8::downgrade($description);
   my $moRef = $snapshotTree->{'snapshot'}->{'type'}."-".$snapshotTree->{'snapshot'}->{'value'};
   my $createTime = "0000-00-00 00:00:00";
   $createTime = substr($snapshotTree->createTime, 0, 19);
@@ -1715,7 +1630,7 @@ sub snapshotInventory
   {
     
     # Snapshot already exists, have not changed, updated lastseen property
-    $logger->info("[DEBUG][SNAPSHOT-INVENTORY] Snapshot $moRef already exists and have not changed since last check, updating lastseen property");
+    $logger->info("[DEBUG][SNAPSHOT-INVENTORY] Snapshot $moRef already exists and have not changed since last check, updating lastseen property") if $showDebug;
     my $sqlUpdate = $dbh->prepare("UPDATE snapshots set lastseen = FROM_UNIXTIME (?) WHERE id = '" . $refSnapshot->{'id'} . "'");
     $sqlUpdate->execute($start);
     $sqlUpdate->finish();
@@ -1726,7 +1641,7 @@ sub snapshotInventory
     
     if ($refSnapshot != 0)
     {
-
+      
       # Snapshot have changed, we must decom old one before create a new one
       compareAndLog($refSnapshot->{'name'}, $snapshotTree->name);
       compareAndLog($refSnapshot->{'createTime'}, $createTime);
@@ -1734,14 +1649,14 @@ sub snapshotInventory
       compareAndLog($refSnapshot->{'description'}, $description);
       compareAndLog($refSnapshot->{'quiesced'}, $snapshotTree->quiesced);
       compareAndLog($refSnapshot->{'state'}, $snapshotTree->state->val);
-      $logger->info("[DEBUG][SNAPSHOT-INVENTORY] Snapshot $moRef have changed since last check, sending old entry it into oblivion");
+      $logger->info("[DEBUG][SNAPSHOT-INVENTORY] Snapshot $moRef have changed since last check, sending old entry it into oblivion") if $showDebug;
       my $sqlUpdate = $dbh->prepare("UPDATE snapshots set active = 0 WHERE id = '" . $refSnapshot->{'id'} . "'");
       $sqlUpdate->execute();
       $sqlUpdate->finish();
       
     } # END if ($refSnapshot != 0)
     
-    $logger->info("[DEBUG][SNAPSHOT-INVENTORY] Adding data for snapshot $moRef");
+    $logger->info("[DEBUG][SNAPSHOT-INVENTORY] Adding data for snapshot $moRef") if $showDebug;
     my $sqlInsert = $dbh->prepare("INSERT INTO snapshots (vm, moref, name, createTime, snapid, description, quiesced, state, firstseen, lastseen, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?), ?)");
     $sqlInsert->execute(
       $vmID,
@@ -1792,12 +1707,12 @@ sub getConfigurationIssue {
         my $ref = $sth->fetchrow_hashref();
         if ($rows gt 0) {
           # ConfigIssue already exists, have not changed, updated lastseen property
-          $logger->info("[DEBUG][CONFIGISSUE-INVENTORY] ConfigIssue for host $hostID already exists and have not changed since last check, updating lastseen property");
+          $logger->info("[DEBUG][CONFIGISSUE-INVENTORY] ConfigIssue for host $hostID already exists and have not changed since last check, updating lastseen property") if $showDebug;
           my $sqlUpdate = $dbh->prepare("UPDATE configurationissues set lastseen = FROM_UNIXTIME (?) WHERE id = '" . $ref->{'id'} . "'");
           $sqlUpdate->execute($start);
           $sqlUpdate->finish();
         } else {
-          $logger->info("[DEBUG][CONFIGISSUE-INVENTORY] Adding ConfigIssue data for host $hostID");
+          $logger->info("[DEBUG][CONFIGISSUE-INVENTORY] Adding ConfigIssue data for host $hostID") if $showDebug;
           my $sqlInsert = $dbh->prepare("INSERT INTO configurationissues (host, configissue, firstseen, lastseen, active) VALUES (?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?), ?)");
           $sqlInsert->execute(
             $hostID,
@@ -1833,12 +1748,12 @@ sub getPermissions {
     my $ref = $sth->fetchrow_hashref();
     if ($rows gt 0) {
       # Permission already exists, have not changed, updated lastseen property
-      $logger->info("[DEBUG][PERMISSION-INVENTORY] Permission for role '" . $h_role{$perm->roleId} . " on user '" . $principal . "' already exists and have not changed since last check, updating lastseen property");
+      $logger->info("[DEBUG][PERMISSION-INVENTORY] Permission for role '" . $h_role{$perm->roleId} . " on user '" . $principal . "' already exists and have not changed since last check, updating lastseen property") if $showDebug;
       my $sqlUpdate = $dbh->prepare("UPDATE permissions set lastseen = FROM_UNIXTIME (?) WHERE id = '" . $ref->{'id'} . "'");
       $sqlUpdate->execute($start);
       $sqlUpdate->finish();
     } else {
-      $logger->info("[DEBUG][PERMISSION-INVENTORY] Adding Permission data for role '" . $h_role{$perm->roleId} . " on user '" . $principal . "'");
+      $logger->info("[DEBUG][PERMISSION-INVENTORY] Adding Permission data for role '" . $h_role{$perm->roleId} . " on user '" . $principal . "'") if $showDebug;
       my $sqlInsert = $dbh->prepare("INSERT INTO permissions (vcenter, principal, role_name, isGroup, inventory_path, firstseen, lastseen, active) VALUES (?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?), ?)");
       my $inventory_path = '/' . Util::get_inventory_path(Vim::get_view(mo_ref => $perm->entity, properties => ['name']), Vim::get_vim());
       $sqlInsert->execute(
@@ -1967,7 +1882,7 @@ sub datastoreOrphanedVMFilesreport
       if ($@)
       {
         
-        $logger->info("[DEBUG][ORPHANFILE-INVENTORY] Error during searching on $ds_path it usually is due to directory too large to search");
+        $logger->info("[DEBUG][ORPHANFILE-INVENTORY] Error during searching on $ds_path it usually is due to directory too large to search") if $showDebug;
         next;
         
       }
@@ -1996,7 +1911,7 @@ sub datastoreOrphanedVMFilesreport
                 {
                   
                   # Orphan file already exists, have not changed, updated lastseen property
-                  $logger->info("[DEBUG][ORPHANFILE-INVENTORY] Orphan file $fullFilePath already exists and have not changed since last check, updating lastseen property");
+                  $logger->info("[DEBUG][ORPHANFILE-INVENTORY] Orphan file $fullFilePath already exists and have not changed since last check, updating lastseen property") if $showDebug;
                   my $sqlUpdate = $dbh->prepare("UPDATE orphanFiles set lastseen = FROM_UNIXTIME (?) WHERE id = '" . $refOrphanFile->{'id'} . "'");
                   $sqlUpdate->execute($start);
                   $sqlUpdate->finish();
@@ -2005,7 +1920,7 @@ sub datastoreOrphanedVMFilesreport
                 else
                 {
                   
-                  $logger->info("[DEBUG][ORPHANFILE-INVENTORY] Adding data for orphan file $fullFilePath");
+                  $logger->info("[DEBUG][ORPHANFILE-INVENTORY] Adding data for orphan file $fullFilePath") if $showDebug;
                   my $sqlInsert = $dbh->prepare("INSERT INTO orphanFiles (vcenter, filePath, fileSize, fileModification, firstseen, lastseen, active) VALUES (?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?), ?)");
                   $sqlInsert->execute(
                     $vcenterID,
@@ -2035,7 +1950,6 @@ sub datastoreOrphanedVMFilesreport
   } # END foreach my $datastore_view (@$view_Datastore)
   
 } # END sub datastoreOrphanedVMFilesreport
-
 
 sub dbGetVC {
   # This subroutine will return vcenter ID if it exists
@@ -2080,14 +1994,14 @@ sub dbGetSnapshot
   if ($rows eq 0)
   {
     
-    $logger->info("[DEBUG][GETSNAPSHOT] Snapshot $snapshotMoref on VM $vmID doesn't exist");
+    $logger->info("[DEBUG][GETSNAPSHOT] Snapshot $snapshotMoref on VM $vmID doesn't exist") if $showDebug;
     
   }
   else
   {
     
     $ref = $sth->fetchrow_hashref();
-    $logger->info("[DEBUG][GETSNAPSHOT] SnapshotID for snapshot $snapshotMoref on VM $vmID is ".$ref->{'id'});
+    $logger->info("[DEBUG][GETSNAPSHOT] SnapshotID for snapshot $snapshotMoref on VM $vmID is ".$ref->{'id'}) if $showDebug;
     
   } # END if ($rows eq 0)
   
@@ -2110,14 +2024,14 @@ sub dbGetOrphanFile
   if ($rows eq 0)
   {
     
-    $logger->info("[DEBUG][GETORPHANFILE] Orphan file $orphanFilePath on vCenter $vcenterID doesn't exist");
+    $logger->info("[DEBUG][GETORPHANFILE] Orphan file $orphanFilePath on vCenter $vcenterID doesn't exist") if $showDebug;
     
   }
   else
   {
     
     $ref = $sth->fetchrow_hashref();
-    $logger->info("[DEBUG][GETORPHANFILE] Orphan file ID for orphan file $orphanFilePath on vCenter $vcenterID is ".$ref->{'id'});
+    $logger->info("[DEBUG][GETORPHANFILE] Orphan file ID for orphan file $orphanFilePath on vCenter $vcenterID is ".$ref->{'id'}) if $showDebug;
     
   } # END if ($rows eq 0)
   
@@ -2140,14 +2054,14 @@ sub dbGetCluster
   if ($rows eq 0)
   {
     
-    $logger->info("[DEBUG][GETCLUSTER] Cluster $clusterMoref on vCenter $vcenterID doesn't exist");
+    $logger->info("[DEBUG][GETCLUSTER] Cluster $clusterMoref on vCenter $vcenterID doesn't exist") if $showDebug;
     
   }
   else
   {
     
     $ref = $sth->fetchrow_hashref();
-    $logger->info("[DEBUG][GETCLUSTER] ClusterID for cluster $clusterMoref on vCenter $vcenterID is ".$ref->{'id'});
+    $logger->info("[DEBUG][GETCLUSTER] ClusterID for cluster $clusterMoref on vCenter $vcenterID is ".$ref->{'id'}) if $showDebug;
     
   } # END if ($rows eq 0)
   
@@ -2170,14 +2084,14 @@ sub dbGetClusterMetrics
   if ($rows eq 0)
   {
     
-    $logger->info("[DEBUG][GETCLUSTER] Cluster $clusterID Metrics doesn't exist");
+    $logger->info("[DEBUG][GETCLUSTER] Cluster $clusterID Metrics doesn't exist") if $showDebug;
     
   }
   else
   {
     
     $ref = $sth->fetchrow_hashref();
-    $logger->info("[DEBUG][GETCLUSTER] Cluster vmotion for cluster $clusterID is " . encode_json $ref);
+    $logger->info("[DEBUG][GETCLUSTER] Cluster vmotion for cluster $clusterID is " . encode_json $ref) if $showDebug;
     
   } # END if ($rows eq 0)
   
@@ -2200,14 +2114,14 @@ sub dbGetHost
   if ($rows eq 0)
   {
     
-    $logger->info("[DEBUG][GETHOST] Host $hostMoref on vCenter $vcenterID doesn't exist");
+    $logger->info("[DEBUG][GETHOST] Host $hostMoref on vCenter $vcenterID doesn't exist") if $showDebug;
     
   }
   else
   {
     
     $ref = $sth->fetchrow_hashref();
-    $logger->info("[DEBUG][GETHOST] HostID for host $hostMoref on vCenter $vcenterID is ".$ref->{'id'});
+    $logger->info("[DEBUG][GETHOST] HostID for host $hostMoref on vCenter $vcenterID is ".$ref->{'id'}) if $showDebug;
     
   } # END if ($rows eq 0)
   
@@ -2230,14 +2144,14 @@ sub dbGetHostMetrics
   if ($rows eq 0)
   {
     
-    $logger->info("[DEBUG][GETHOST] Host $hostID Metrics doesn't exist");
+    $logger->info("[DEBUG][GETHOST] Host $hostID Metrics doesn't exist") if $showDebug;
     
   }
   else
   {
     
     $ref = $sth->fetchrow_hashref();
-    $logger->info("[DEBUG][GETHOST] Host sharedmemory for cluster $hostID is " . encode_json $ref);
+    $logger->info("[DEBUG][GETHOST] Host sharedmemory for cluster $hostID is " . encode_json $ref) if $showDebug;
     
   } # END if ($rows eq 0)
   
@@ -2260,14 +2174,14 @@ sub dbGetDatastore
   if ($rows eq 0)
   {
     
-    $logger->info("[DEBUG][GETDATASTORE] Datastore $datastoreName on vCenter $vcenterID doesn't exist");
+    $logger->info("[DEBUG][GETDATASTORE] Datastore $datastoreName on vCenter $vcenterID doesn't exist") if $showDebug;
     
   }
   else
   {
     
     $ref = $sth->fetchrow_hashref();
-    $logger->info("[DEBUG][GETDATASTORE] DatastoreID for datastore $datastoreName on vCenter $vcenterID is ".$ref->{'id'});
+    $logger->info("[DEBUG][GETDATASTORE] DatastoreID for datastore $datastoreName on vCenter $vcenterID is ".$ref->{'id'}) if $showDebug;
     
   } # END if ($rows eq 0)
   
@@ -2290,14 +2204,14 @@ sub dbGetDatastoreMetrics
   if ($rows eq 0)
   {
     
-    $logger->info("[DEBUG][GETDATASTORE] Datastore $datastoreID Metrics doesn't exist");
+    $logger->info("[DEBUG][GETDATASTORE] Datastore $datastoreID Metrics doesn't exist") if $showDebug;
     
   }
   else
   {
     
     $ref = $sth->fetchrow_hashref();
-    $logger->info("[DEBUG][GETDATASTORE] Datastore size, freespace, uncommitted for datastore $datastoreID is " . encode_json $ref);
+    $logger->info("[DEBUG][GETDATASTORE] Datastore size, freespace, uncommitted for datastore $datastoreID is " . encode_json $ref) if $showDebug;
     
   } # END if ($rows eq 0)
   
@@ -2320,14 +2234,14 @@ sub dbGetVM
   if ($rows eq 0)
   {
     
-    $logger->info("[DEBUG][GETVM] VM $vmMoref on vCenter $vcenterID doesn't exist");
+    $logger->info("[DEBUG][GETVM] VM $vmMoref on vCenter $vcenterID doesn't exist") if $showDebug;
     
   }
   else
   {
     
     $ref = $sth->fetchrow_hashref();
-    $logger->info("[DEBUG][GETVM] VMID for VM $vmMoref on vCenter $vcenterID is ".$ref->{'id'});
+    $logger->info("[DEBUG][GETVM] VMID for VM $vmMoref on vCenter $vcenterID is ".$ref->{'id'}) if $showDebug;
     
   } # END if ($rows eq 0)
   
@@ -2350,14 +2264,14 @@ sub dbGetVMMetrics
   if ($rows eq 0)
   {
     
-    $logger->info("[DEBUG][GETVM] VM $vmID Metrics doesn't exist");
+    $logger->info("[DEBUG][GETVM] VM $vmID Metrics doesn't exist") if $showDebug;
     
   }
   else
   {
     
     $ref = $sth->fetchrow_hashref();
-    $logger->info("[DEBUG][GETVM] VM swappedMemory, compressedMemory, commited, balloonedMemory, uncommited for VM $vmID is " . encode_json $ref);
+    $logger->info("[DEBUG][GETVM] VM swappedMemory, compressedMemory, commited, balloonedMemory, uncommited for VM $vmID is " . encode_json $ref) if $showDebug;
     
   } # END if ($rows eq 0)
   
@@ -2366,7 +2280,9 @@ sub dbGetVMMetrics
   
 } # END sub dbGetVMMetrics
 
-sub dbGetConfig {
+sub dbGetConfig
+{
+  
   # This subroutine will return config value
   my ($configID,$defaultValue) = @_;
   my $query = "SELECT value FROM config WHERE configid = '" . $configID . "'";
@@ -2374,15 +2290,25 @@ sub dbGetConfig {
   $sth->execute();
   my $rows = $sth->rows;
   my $configValue = 0;
-  if ($rows eq 0) {
+  
+  if ($rows eq 0)
+  {
+    
     $configValue = $defaultValue;
-  } else {
+    
+  }
+  else
+  {
+    
     my $ref = $sth->fetchrow_hashref();
     $configValue = $ref->{'value'};
-  }
-  $logger->info("[DEBUG][GETCONFIG] ConfigID $configID have value $configValue");
+    
+  } # END if ($rows eq 0)
+  
+  $logger->info("[DEBUG][GETCONFIG] ConfigID $configID have value $configValue") if $showDebug;
   return $configValue;
-}
+  
+} # END sub dbGetConfig
 
 sub dbGetSchedule {
   # This subroutine will return config value
@@ -2396,7 +2322,7 @@ sub dbGetSchedule {
     my $ref = $sth->fetchrow_hashref();
     $scheduleValue = $ref->{'schedule'};
   }
-  $logger->info("[DEBUG][GETSCHEDULE] ModuleID $moduleID have schedule $scheduleValue");
+  $logger->info("[DEBUG][GETSCHEDULE] ModuleID $moduleID have schedule $scheduleValue") if $showDebug;
   return $scheduleValue;
 }
 
@@ -2436,7 +2362,7 @@ sub compareAndLog
   if ($source ne $destination)
   {
     
-    $logger->info("[COMPAREANDLOG] old=$source | new=$destination");
+    $logger->info("[DEBUG][COMPAREANDLOG] old=$source | new=$destination") if $showDebug;
     
   } # END if ($source ne $destination)
   
@@ -2492,6 +2418,84 @@ sub terminateSession
   } # END if ($killedSession > 0)
   
 } # END sub terminateSession
+
+sub bundleBackup
+{
+  
+  my $bundleThreshold = dbGetConfig("thresholdBundle", 0);
+  $logger->info("[INFO][PURGE] Start ESX bundle purge process");
+  my $command = `find /var/www/admin/esxbundle/ -type d -ctime +$bundleThreshold -exec rm -rf {} \\;`;
+  $logger->info("[INFO][PURGE] ESX bundle purge return: $command");
+  $logger->info("[INFO][PURGE] End ESX bundle purge process");
+  my $esxBundlePath = '/var/www/admin/esxbundle/' . time2str("%Y%m%d%H%M", $start);
+  $File::Fetch::TIMEOUT = 3;
+  $File::Fetch::WARN = 0;
+  
+  if (!-d $esxBundlePath)
+  {
+    
+    make_path $esxBundlePath;
+    
+  } # END if (!-d $esxBundlePath)
+  
+  foreach my $host_view (@$view_HostSystem)
+  {
+    
+    # We want to backup only connected ESX to avoid error
+    if ($host_view->{'summary.runtime.connectionState'} ne 'connected') { next; }
+    my $firmwareSys = Vim::get_view(mo_ref => $host_view->{'configManager.firmwareSystem'});
+    my $downloadUrl;
+    
+    eval
+    {
+      
+      $downloadUrl = $firmwareSys->BackupFirmwareConfiguration();
+    
+    }; # END eval
+    
+    if ($@)
+    {
+      
+      $logger->info("[DEBUG][BUNDLEBACKUP] Generating bundle failed for host " . $host_view->name . " " . $@) if $showDebug;
+      next;
+      
+    } # END if ($@)
+    
+    if ($downloadUrl =~ m@http.*//\*//?(.*)@)
+    {
+    
+      my $esxName = $host_view->name;
+      $downloadUrl =~ s/\/\*\//\/$esxName\//g;
+      my $ff = File::Fetch->new(uri => $downloadUrl);
+      
+      eval
+      {
+      
+        my $where = $ff->fetch( to => $esxBundlePath );
+        $command = `chown -R www-data:www-data /var/www/admin/esxbundle/`;
+        
+      }; # END eval
+      
+      if ($@)
+      {
+      
+        $logger->info("[DEBUG][BUNDLEBACKUP] Downloading bundle failed for host " . $host_view->name . " " . $@) if $showDebug;
+        next;
+        
+      } # END if ($@)
+    
+    }
+    else
+    {
+    
+      $logger->info("[DEBUG][BUNDLEBACKUP] Unexpected download URL format: $downloadUrl") if $showDebug;
+      next;
+      
+    } # END if ($downloadUrl =~ m@http.*//\*//?(.*)@)
+    
+  } # END foreach my $host_view (@$view_HostSystem)
+  
+} # END sub bundleBackup
 
 sub QuickQueryPerf
 {
