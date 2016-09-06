@@ -143,7 +143,7 @@ INSERT INTO `modules` (`id`, `module`, `type`, `displayName`, `version`, `descri
 (29, 'hostMaintenanceMode', 'report', 'Maintenance Mode', '1', 'maintenance mode report.', 4, 'off'),
 (30, 'hostballooningzipswap', 'report', 'ballooning/zip/swap', '1', 'ballooning/zip/swap report.', 4, 'off'),
 (31, 'hostPowerManagementPolicy', 'report', 'PowerManagement Policy', '1', 'PowerManagement Policy report.', 4, 'off'),
-(32, 'hostBundlebackup', 'action', 'Bundle backup', '0', 'Bundle backup report.', 4, 'off'),
+(32, 'hostBundlebackup', 'action', 'Bundle backup', '1', 'Bundle backup report.', 4, 'off'),
 (33, 'datastoreSpacereport', 'report', 'Space report', '1', 'Space report.', 5, 'off'),
 (34, 'datastoreOrphanedVMFilesreport', 'report', 'Orphaned VM Files report', '1', 'Will display all files that does not belong to your vSphere platforms. Beware that this module can take a while as it will scan all datastores files.', 5, 'off'),
 (35, 'datastoreOverallocation', 'report', 'Overallocation', '1', 'Overallocation report.', 5, 'off'),
