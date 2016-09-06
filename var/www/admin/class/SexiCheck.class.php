@@ -379,7 +379,7 @@ class SexiCheck {
 
   private function dbGetCheckQuantity($formPage) {
     # hack for handling inventory page
-    if ($formPage == '/inv.php' OR $formPage == '/capacityplanning.php') { return 1; }
+    if ($formPage == '/inv.php' OR $formPage == '/bundle.php' OR $formPage == '/capacityplanning.php') { return 1; }
     # this will return eabled checks for the requested formpage
     $this->db->join("moduleCategory", "modules.category_id = moduleCategory.id", "INNER");
     $this->db->where('modules.schedule', 'off', '<>');
