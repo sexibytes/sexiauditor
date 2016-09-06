@@ -113,6 +113,7 @@ else
                   <li><a href="moduleselector.php"><i class="glyphicon glyphicon-check glyphicon-custom"></i> Module Selector</a></li>
                   <li><a href="showlog.php"><i class="glyphicon glyphicon-search glyphicon-custom"></i> Log Viewer</a></li>
                   <li><a href="timetobuild.php"><i class="glyphicon glyphicon-time glyphicon-custom"></i> Time To Build</a></li>
+                  <li><a href="bundle.php"><i class="glyphicon glyphicon-floppy-disk glyphicon-custom"></i> ESX Bundle</a></li>
                 </ul>
               </div>
 <?php endif; ?>
