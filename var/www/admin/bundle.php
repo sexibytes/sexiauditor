@@ -49,7 +49,7 @@ if ($handle = opendir($dir))
       
     if ($file != "." && $file != ".." && $file != ".gitignore") {
       echo '        <tr>'."\n";
-      echo '          <td class="text-left"><i class="glyphicon glyphicon-file"></i> <a href="/esxbundle/' . split("/", $dir)[5] . "/" . $file . '">' . $file . '</a></td>'."\n";
+      echo '          <td class="text-left"><i class="glyphicon glyphicon-download-alt"></i> <a href="/esxbundle/' . split("/", $dir)[5] . "/" . $file . '">' . $file . '</a></td>'."\n";
       echo '          <td class="text-right">' . human_filesize(filesize($dir.$file)) . '</td>'."\n";
       echo '        </tr>'."\n";
     }
