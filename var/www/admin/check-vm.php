@@ -1,5 +1,5 @@
-<?php require("session.php"); ?>
 <?php
+require("session.php");
 $title = "VM Checks";
 $additionalStylesheet = array(  'css/jquery.dataTables.min.css',
                                 'css/bootstrap-datetimepicker.css');
@@ -20,26 +20,35 @@ require("header.php");
 require("helper.php");
 
 # Main class loading
-try {
+try
+{
+  
   $check = new SexiCheck();
   # Header generation
   $check->displayHeader($_SERVER['SCRIPT_NAME']);
-  // $check->setSSPCategory('vm');
-} catch (Exception $e) {
+  
+}
+catch (Exception $e)
+{
+  
   # Any exception will be ending the script, we want exception-free run
   # CSS hack for navbar margin removal
   echo '  <style>#wrapper { margin-bottom: 0px !important; }</style>'."\n";
   require("exception.php");
   exit;
-}
+  
+} # END try
 
-if($check->getModuleSchedule('vmSnapshotsage') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
-  $check->displayCheck([  'sqlQuery' => "SELECT main.name as vm, main.quiesced, main.state, main.name, main.description, DATEDIFF('" . $check->getSelectedDate() . "', main.createTime) as age, v.vcname as vcenter FROM snapshots main INNER JOIN vms ON main.vm = main.id INNER JOIN hosts h ON vms.host = h.id INNER JOIN vcenters v ON h.vcenter = v.id WHERE DATEDIFF('" . $check->getSelectedDate() . "', main.createTime) > " . $check->getConfig('vmSnapshotAge'),
+if ($check->getModuleSchedule('vmSnapshotsage') != 'off' && $check->getModuleSchedule('inventory') != 'off')
+{
+  
+  $check->displayCheck([  'sqlQuery' => "SELECT main.id FROM snapshots main INNER JOIN vms ON main.vm = vms.id INNER JOIN hosts h ON vms.host = h.id INNER JOIN vcenters v ON h.vcenter = v.id WHERE DATEDIFF('" . $check->getSelectedDate() . "', main.createTime) > " . $check->getConfig('vmSnapshotAge'),
                           "id" => "VMSNAPSHOTSAGE",
+                          "typeCheck" => 'ssp',
                           'thead' => array('VM Name', 'Quiesced/State', 'Snapshot', 'Description', 'Age(day)', 'vCenter'),
-                          'tbody' => array('"<td>".$entry["vm"]."</td>"', '"<td>".(($entry["quiesced"] == 0) ? \'<i class="glyphicon glyphicon-remove-sign alarm-red"></i>\' : \'<i class="glyphicon glyphicon-ok-sign alarm-green"></i>\') . (($entry["state"] == "poweredOff") ? \'<i class="glyphicon glyphicon-stop"></i>\' : \'<i class="glyphicon glyphicon-play"></i>\')."</td>"', '"<td>".$entry["name"]."</td>"', '"<td>".$entry["description"]."</td>"', '"<td>".$entry["age"]."</td>"', '"<td>".$entry["vcenter"]."</td>"'),
                           'columnDefs' => '{ "orderable": false, className: "dt-body-center", "targets": [ 1 ] }']);
-}
+
+} # END if ($check->getModuleSchedule('vmSnapshotsage') != 'off' && $check->getModuleSchedule('inventory') != 'off')
 
 if($check->getModuleSchedule('vmphantomsnapshot') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
   $check->displayCheck([  'sqlQuery' => "SELECT main.id FROM vms AS main INNER JOIN hosts h ON main.host = h.id INNER JOIN vcenters v ON h.vcenter = v.id WHERE main.phantomSnapshot > 0",
