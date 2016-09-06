@@ -10,6 +10,7 @@ TRUNCATE hardwarestatus;
 TRUNCATE hostMetrics;
 TRUNCATE hosts;
 TRUNCATE licenses;
+TRUNCATE orphanFiles;
 TRUNCATE permissions;
 TRUNCATE sessions;
 TRUNCATE snapshots;
