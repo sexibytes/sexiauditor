@@ -216,6 +216,39 @@ if (isset($_GET['c']))
       
     break; # END case 'DATASTOREOVERALLOCATION':
     
+    case 'VMSNAPSHOTSAGE':
+    
+      $table = 'snapshots';
+      $primaryKey = 'id';
+      $columns = array(
+        array( 'db' => 'vms.name', 'dt' => 0, 'field' => 'name' ),
+        array( 'db' => 's.id', 'dt' => 1, 'field' => 'id', 'formatter' => function( $d, $row ) { return ( ($row[7] == 0) ? "<i class=\"glyphicon glyphicon-remove-sign alarm-red\"></i>" : "<i class=\"glyphicon glyphicon-ok-sign alarm-green\"></i>" ) . ( ($row[6] == "poweredOff") ? '<i class="glyphicon glyphicon-stop"></i>' : '<i class="glyphicon glyphicon-play"></i>' ); } ),
+        array( 'db' => 's.name as snapshot_name', 'dt' => 2, 'field' => 'snapshot_name' ),
+        array( 'db' => 's.description', 'dt' => 3, 'field' => 'description' ),
+        array( 'db' => 'DATEDIFF(\'' . $dateToSearch . '\', s.createTime) as age', 'dt' => 4, 'field' => 'age' ),
+        array( 'db' => 'v.vcname', 'dt' => 5, 'field' => 'vcname' ),
+        array( 'db' => 's.state', 'dt' => 6, 'field' => 'state' ),
+        array( 'db' => 's.quiesced', 'dt' => 7, 'field' => 'quiesced' )
+      );
+      $joinQuery = "FROM {$table} s INNER JOIN vms ON (s.vm = vms.id) INNER JOIN hosts h ON (vms.host = h.id) INNER JOIN vcenters v ON (h.vcenter = v.id)";
+      
+      if ($latest)
+      {
+        
+        $timeCondition = "s.active = 1";
+        
+      }
+      else
+      {
+        
+        $timeCondition = "s.firstseen < '" . $dateStart . "' AND s.lastseen > '" . $dateEnd . "'";
+        
+      } # END if ($latest)
+      
+      $extraCondition = $timeCondition . " AND DATEDIFF('" . $dateToSearch . "', s.createTime) > " . $check->getConfig('vmSnapshotAge');
+      
+    break; # END case 'VMSNAPSHOTSAGE':
+    
     case 'VMCPURAMHDDRESERVATION':
     
       $table = 'vms';
