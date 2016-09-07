@@ -103,6 +103,26 @@ CREATE TABLE IF NOT EXISTS `clusters` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `clustersVSAN`
+--
+
+DROP TABLE IF EXISTS `clustersVSAN`;
+CREATE TABLE IF NOT EXISTS `clustersVSAN` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `cluster_id` int(11) NOT NULL,
+  `autohclupdate` varchar(10) COLLATE utf8_unicode_ci NOT NULL,
+  `hcldbuptodate` varchar(10) COLLATE utf8_unicode_ci NOT NULL,
+  `controlleronhcl` varchar(10) COLLATE utf8_unicode_ci NOT NULL,
+  `controllerreleasesupport` varchar(10) COLLATE utf8_unicode_ci NOT NULL,
+  `controllerdriver` varchar(10) COLLATE utf8_unicode_ci NOT NULL,
+  `firstseen` datetime NOT NULL,
+  `lastseen` datetime NOT NULL,
+  `active` tinyint(1) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `config`
 --
 
@@ -554,6 +574,12 @@ ALTER TABLE `clusters`
  ADD PRIMARY KEY (`id`), ADD KEY `vcenter` (`vcenter`), ADD KEY `id` (`id`);
 
 --
+-- Indexes for table `clustersVSAN`
+--
+ALTER TABLE `clustersVSAN`
+ ADD PRIMARY KEY (`id`), ADD KEY `cluster_id` (`cluster_id`);
+ 
+--
 -- Indexes for table `config`
 --
 ALTER TABLE `config`
@@ -709,6 +735,11 @@ MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
 --
 ALTER TABLE `clusters`
 MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=2;
+--
+-- AUTO_INCREMENT for table `clustersVSAN`
+--
+ALTER TABLE `clustersVSAN`
+MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=1;
 --
 -- AUTO_INCREMENT for table `config`
 --
