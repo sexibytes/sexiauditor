@@ -42,8 +42,8 @@ catch (Exception $e)
 if ($check->getModuleSchedule('VSANHealthCheck') != 'off' && $check->getModuleSchedule('inventory') != 'off')
 {
   
-  $check->displayCheck([  'sqlQuery' => "SELECT main.id FROM clustersVSAN AS main INNER JOIN clusters AS c ON (main.cluster_id = c._id) WHERE true",
-                          "id" => "VSANHEALTHCHECK",
+  $check->displayCheck([  'sqlQuery' => "SELECT main.id FROM clustersVSAN AS main INNER JOIN clusters AS c ON (main.cluster_id = c.id) WHERE true",
+                          "id" => "VSANHARDWARECOMPATIBILITY",
                           "typeCheck" => 'ssp',
                           'thead' => array('Cluster Name', 'hcldbuptodate', 'autohclupdate', 'controlleronhcl', 'controllerreleasesupport', 'controllerdriver')]);
 
@@ -51,12 +51,7 @@ if ($check->getModuleSchedule('VSANHealthCheck') != 'off' && $check->getModuleSc
 
 
 ?>
-    <h1>Hardware compatibility</h1>
-    <h2>Virtual SAN HCL DB up-to-date</h2>
-    <h2>Virtual SAN HCL DB Auto Update</h2>
-    <h2>SCSI Controller on Virtual SAN HCL</h2>
-    <h2>Controller Release Support</h2>
-    <h2>Controller Driver</h2>
+
     <h1>Performance service</h1>
     <h2>Stats DB object</h2>
     <h1>Network</h1>
