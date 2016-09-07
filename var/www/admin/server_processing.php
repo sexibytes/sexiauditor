@@ -40,6 +40,35 @@ if (isset($_GET['c']))
   switch($_GET['c'])
   {
     
+    case 'VSANHARDWARECOMPATIBILITY':
+    
+      $table = 'clustersVSAN';
+      $primaryKey = 'id';
+      $columns = array(
+        array( 'db' => 'c.cluster_name', 'dt' => 0, 'field' => 'cluster_name' ),
+        array( 'db' => 'cv.hcldbuptodate', 'dt' => 1, 'field' => 'hcldbuptodate' ),
+        array( 'db' => 'cv.autohclupdate', 'dt' => 2, 'field' => 'autohclupdate' ),
+        array( 'db' => 'cv.controlleronhcl', 'dt' => 3, 'field' => 'controlleronhcl' ),
+        array( 'db' => 'cv.controllerreleasesupport', 'dt' => 4, 'field' => 'controllerreleasesupport' ),
+        array( 'db' => 'cv.controllerdriver', 'dt' => 5, 'field' => 'controllerdriver' )
+      );
+      $joinQuery = "FROM {$table} cv INNER JOIN clusters AS c ON (cv.cluster_id = c.id)";
+      
+      if ($latest)
+      {
+        
+        $extraCondition = "cv.active = 1";
+        
+      }
+      else
+      {
+        
+        $extraCondition = "cv.firstseen < '" . $dateStart . "' AND cv.lastseen > '" . $dateEnd . "'";
+        
+      } # END if ($latest)
+      
+    break; # END case 'VSANHEALTHCHECK':
+    
     case 'VCPERMISSIONREPORT':
     
       $table = 'permissions';
