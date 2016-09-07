@@ -1,5 +1,5 @@
-<?php require("session.php"); ?>
 <?php
+require("session.php");
 $title = "VSAN Checks";
 $additionalStylesheet = array(  'css/jquery.dataTables.min.css',
                                 'css/bootstrap-datetimepicker.css');
@@ -18,18 +18,37 @@ $additionalScript = array(  'js/jquery.dataTables.min.js',
 require("header.php");
 require("helper.php");
 
-try {
+
+try
+{
+  
   # Main class loading
   $check = new SexiCheck();
   # Header generation
   $check->displayHeader($_SERVER['SCRIPT_NAME']);
-} catch (Exception $e) {
+  
+}
+catch (Exception $e)
+{
+  
   # Any exception will be ending the script, we want exception-free run
   # CSS hack for navbar margin removal
   echo '  <style>#wrapper { margin-bottom: 0px !important; }</style>'."\n";
   require("exception.php");
   exit;
-}
+  
+} # END try
+
+if ($check->getModuleSchedule('VSANHealthCheck') != 'off' && $check->getModuleSchedule('inventory') != 'off')
+{
+  
+  $check->displayCheck([  'sqlQuery' => "SELECT main.id FROM clustersVSAN AS main INNER JOIN clusters AS c ON (main.cluster_id = c._id) WHERE true",
+                          "id" => "VSANHEALTHCHECK",
+                          "typeCheck" => 'ssp',
+                          'thead' => array('Cluster Name', 'hcldbuptodate', 'autohclupdate', 'controlleronhcl', 'controllerreleasesupport', 'controllerdriver')]);
+
+} # END if ($check->getModuleSchedule('VSANHealthCheck') != 'off' && $check->getModuleSchedule('inventory') != 'off')
+
 
 ?>
     <h1>Hardware compatibility</h1>
