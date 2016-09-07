@@ -119,7 +119,7 @@ $logger->info("[INFO] End processing modules list, found $nbActiveModule active 
 # dispatch table for subroutine (1 module = 1 subroutine) #
 ###########################################################
 my %actions = ( inventory => \&inventory,
-                VSANHealthCheck => \&sessionage,
+                VSANHealthCheck => \&VSANHealthCheck,
                 vcSessionAge => \&sessionage,
                 vcLicenceReport => \&licenseReport,
                 vcPermissionReport => \&getPermissions,
@@ -251,7 +251,7 @@ foreach $s_item (@server_list) {
   # vCenter connection should be OK at this point
   # generating meta objects
   $logger->info("[INFO][OBJECTS] Start retrieving ClusterComputeResource objects");
-  $view_ClusterComputeResource = Vim::find_entity_views(view_type => 'ClusterComputeResource', properties => ['name', 'host', 'summary', 'configIssue', 'configuration.dasConfig.admissionControlPolicy', 'configuration.dasConfig.admissionControlEnabled']);
+  $view_ClusterComputeResource = Vim::find_entity_views(view_type => 'ClusterComputeResource', properties => ['name', 'host', 'summary', 'configIssue', 'configuration.dasConfig.admissionControlPolicy', 'configuration.dasConfig.admissionControlEnabled', 'configurationEx']);
   $logger->info("[INFO][OBJECTS] End retrieving ClusterComputeResource objects");
   $logger->info("[INFO][OBJECTS] Start retrieving HostSystem objects");
   $view_HostSystem = Vim::find_entity_views(view_type => 'HostSystem', properties => ['name', 'config.dateTimeInfo.ntpConfig.server', 'config.network.dnsConfig', 'config.powerSystemInfo.currentPolicy.shortName', 'configIssue', 'configManager.advancedOption', 'configManager.firmwareSystem', 'configManager.healthStatusSystem', 'configManager.storageSystem', 'configManager.serviceSystem', 'datastore', 'runtime.inMaintenanceMode', 'summary.config.product.fullName', 'summary.hardware.cpuMhz', 'summary.hardware.cpuModel', 'summary.hardware.memorySize', 'summary.hardware.model', 'summary.hardware.numCpuCores', 'summary.hardware.numCpuPkgs', 'summary.rebootRequired', 'summary.runtime.connectionState']);
@@ -1328,8 +1328,8 @@ sub datastoreinventory
         
       } # END if ($refDatastore != 0)
       
-      $logger->info("[DEBUG][DATASTORE-INVENTORY] Adding data for datastore $moRef");
-      my $sqlInsert = $dbh->prepare("INSERT INTO datastores (vcenter, moref, datastore_name, type, isAccessible, maintenanceMode, shared, iormConfiguration, firstseen, lastseen, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?), ?)") if $showDebug;
+      $logger->info("[DEBUG][DATASTORE-INVENTORY] Adding data for datastore $moRef") if $showDebug;
+      my $sqlInsert = $dbh->prepare("INSERT INTO datastores (vcenter, moref, datastore_name, type, isAccessible, maintenanceMode, shared, iormConfiguration, firstseen, lastseen, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?), ?)");
       $sqlInsert->execute(
         $vcenterID,
         $datastore_view->{'mo_ref'}->{'type'}."-".$datastore_view->{'mo_ref'}->{'value'},
@@ -1396,37 +1396,204 @@ sub datastoreinventory
   
 } # END sub datastoreinventory
 
-sub getHardwareStatus {
-  foreach my $host_view (@$view_HostSystem) {
+sub VSANHealthCheck
+{
+  
+  if ($activeVC ne "vcsavsan.fr.world.socgen") { next; }
+  my $service_content = Vim::get_service_content();
+  my $apiType = $service_content->about->apiType;
+  my $fullApiVersion = $service_content->about->apiVersion;
+  my $majorApiVersion = (split /\./, $fullApiVersion)[0];
+  # TODO: check if min6.2
+  my %vc_mos = get_vsan_vc_mos();
+  my $VsanVcClusterHealthSystem = $vc_mos{"vsan-cluster-health-system"};
+    
+  foreach my $cluster_view (@$view_ClusterComputeResource)
+  {
+    
+		if (defined($cluster_view->configurationEx->vsanConfigInfo))
+    {
+      
+      my $moRef = $cluster_view->{'mo_ref'}->{'type'}."-".$cluster_view->{'mo_ref'}->{'value'};
+      my $vcentersdk = new URI::URL $cluster_view->{'vim'}->{'service_url'};
+      my $vcenterID = dbGetVC($vcentersdk->host);
+      my $refCluster = dbGetCluster($moRef,$vcenterID);
+      my $refClusterVSAN = dbGetClusterVSAN($refCluster->{'id'});
+      my $VsanQueryVcClusterHealthSummary = $VsanVcClusterHealthSystem->VsanQueryVcClusterHealthSummary(cluster => $cluster_view);
+      my $VSANgroups = $VsanQueryVcClusterHealthSummary->groups;
+      
+      foreach my $VSANgroup (@$VSANgroups)
+      {
+        
+        next if $VSANgroup->{'groupId'} ne "com.vmware.vsan.health.test.hcl";
+        my $VSANgroupTests = $VSANgroup->{'groupTests'};
+        my $hcldbuptodate = "n/a";
+        my $autohclupdate = "n/a";
+        my $controlleronhcl = "n/a";
+        my $controllerreleasesupport = "n/a";
+        my $controllerdriver = "n/a";
+        
+        foreach my $VSANgroupTest (@$VSANgroupTests)
+        {
+          
+          switch ($VSANgroupTest->{'testId'})
+          {
+            
+            case "com.vmware.vsan.health.test.hcldbuptodate"
+            {
+              
+              $hcldbuptodate = $VSANgroupTest->{'testHealth'};
+              
+            } # END case "com.vmware.vsan.health.test.hcldbuptodate"
+            
+            case "com.vmware.vsan.health.test.autohclupdate"
+            {
+              
+              $autohclupdate = $VSANgroupTest->{'testHealth'};
+              
+            } # END case "com.vmware.vsan.health.test.autohclupdate"
+            
+            case "com.vmware.vsan.health.test.controlleronhcl"
+            {
+              
+              $controlleronhcl = $VSANgroupTest->{'testHealth'};
+              
+            } # END case "com.vmware.vsan.health.test.controlleronhcl"
+            
+            case "com.vmware.vsan.health.test.controllerreleasesupport"
+            {
+              
+              $controllerreleasesupport = $VSANgroupTest->{'testHealth'};
+              
+            } # END case "com.vmware.vsan.health.test.controllerreleasesupport"
+            
+            case "com.vmware.vsan.health.test.controllerdriver"
+            {
+              
+              $controllerdriver = $VSANgroupTest->{'testHealth'};
+              
+            } # END case "com.vmware.vsan.health.test.controllerdriver"
+            
+          } # END switch ($VSANgroupTest->{'testId'})
+          
+        } # END foreach my $VSANgroupTest (@$VSANgroupTests)
+        
+        if ( ($refClusterVSAN != 0)
+          && ($refClusterVSAN->{'hcldbuptodate'} eq $hcldbuptodate)
+          && ($refClusterVSAN->{'autohclupdate'} eq $autohclupdate)
+          && ($refClusterVSAN->{'controlleronhcl'} eq $controlleronhcl)
+          && ($refClusterVSAN->{'controllerreleasesupport'} eq $controllerreleasesupport)
+          && ($refClusterVSAN->{'controllerdriver'} eq $controllerdriver))
+        {
+          
+          # Cluster VSAN already exists, have not changed, updated lastseen property
+          $logger->info("[DEBUG][CLUSTERVSAN-INVENTORY] Cluster VSAN $moRef already exists and have not changed since last check, updating lastseen property") if $showDebug;
+          my $sqlUpdate = $dbh->prepare("UPDATE clustersVSAN set lastseen = FROM_UNIXTIME ($start) WHERE id = '" . $refClusterVSAN->{'id'} . "'");
+          $sqlUpdate->execute();
+          $sqlUpdate->finish();
+          
+        }
+        else
+        {
+          
+          if ($refClusterVSAN != 0)
+          {
+
+            # Cluster have changed, we must decom old one before create a new one
+            compareAndLog($refClusterVSAN->{'hcldbuptodate'}, $hcldbuptodate);
+            compareAndLog($refClusterVSAN->{'autohclupdate'}, $autohclupdate);
+            compareAndLog($refClusterVSAN->{'controlleronhcl'}, $controlleronhcl);
+            compareAndLog($refClusterVSAN->{'controllerreleasesupport'}, $controllerreleasesupport);
+            compareAndLog($refClusterVSAN->{'controllerdriver'}, $controllerdriver);
+            $logger->info("[DEBUG][CLUSTERVSAN-INVENTORY] Cluster VSAN $moRef have changed since last check, sending old entry it into oblivion") if $showDebug;
+            my $sqlUpdate = $dbh->prepare("UPDATE clustersVSAN set active = 0 WHERE id = '" . $refClusterVSAN->{'id'} . "'");
+            $sqlUpdate->execute();
+            $sqlUpdate->finish();
+            
+          } # END if ($refClusterVSAN != 0)
+          
+          $logger->info("[DEBUG][CLUSTERVSAN-INVENTORY] Adding data for cluster VSAN $moRef") if $showDebug;
+          my $sqlInsert = $dbh->prepare("INSERT INTO clustersVSAN (cluster_id, autohclupdate, hcldbuptodate, controlleronhcl, controllerreleasesupport, controllerdriver, firstseen, lastseen, active) VALUES (?, ?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?), ?)");
+          $sqlInsert->execute(
+            $refCluster->{'id'},
+            $autohclupdate,
+            $hcldbuptodate,
+            $controlleronhcl,
+            $controllerreleasesupport,
+            $controllerdriver,
+            $start,
+            $start,
+            1
+          );
+          $sqlInsert->finish();
+          
+        } # END if ($refCluster != 0) + check
+
+      } # END foreach my $VSANgroup (@$VSANgroups)
+      
+    } # END if (defined($cluster_view->configurationEx->vsanConfigInfo))
+    
+  } # END foreach my $cluster_view (@$view_ClusterComputeResource)
+    
+} # END sub VSANHealthCheck
+
+sub getHardwareStatus
+{
+  
+  foreach my $host_view (@$view_HostSystem)
+  {
+    
     my $healthStatusSystem = Vim::get_view(mo_ref => $host_view->{'configManager.healthStatusSystem'});
     my $vcentersdk = new URI::URL $host_view->{'vim'}->{'service_url'};
     my @h_hwissues = ();
     my %h_hwissue;
-    if ($healthStatusSystem->runtime) {
+    
+    if ($healthStatusSystem->runtime)
+    {
+      
       my $vcenterID = dbGetVC($vcentersdk->host);
       my $hostID = dbGetHost($host_view->{"mo_ref"}->{"type"}."-".$host_view->{"mo_ref"}->{"value"}, $vcenterID);
-      if ($healthStatusSystem->runtime->hardwareStatusInfo) {
+      
+      if ($healthStatusSystem->runtime->hardwareStatusInfo)
+      {
+        
         my $cpuStatus = $healthStatusSystem->runtime->hardwareStatusInfo->cpuStatusInfo;
-        foreach(@$cpuStatus) {
-          if(lc($_->status->key) ne 'green' && lc($_->status->key) ne 'unknown') {
+        
+        foreach (@$cpuStatus)
+        {
+          
+          if (lc($_->status->key) ne 'green' && lc($_->status->key) ne 'unknown')
+          {
+            
             my $query = "SELECT * FROM hardwarestatus WHERE host = '" . $hostID . "' AND issuename = '" . $_->name . "' AND active = 1";
             my $sth = $dbh->prepare($query);
             $sth->execute();
             my $rows = $sth->rows;
             # TODO > generate error and skip if multiple + manage deletion (execute query on lastseen != $start)
             my $ref = $sth->fetchrow_hashref();
-            if (($rows gt 0) && ($ref->{'issuestate'} eq lc($_->status->key))) {
+            
+            if (($rows gt 0) && ($ref->{'issuestate'} eq lc($_->status->key)))
+            {
+              
               # HWStatus already exists, have not changed, updated lastseen property
               my $sqlUpdate = $dbh->prepare("UPDATE hardwarestatus set lastseen = FROM_UNIXTIME (?) WHERE id = '" . $ref->{'id'} . "'");
               $sqlUpdate->execute($start);
               $sqlUpdate->finish();
-            } else {
-              if ($rows gt 0) {
+              
+            }
+            else
+            {
+              
+              if ($rows gt 0)
+              {
+                
                 # HWStatus have changed, we must decom old one before create a new one
                 my $sqlUpdate = $dbh->prepare("UPDATE hardwarestatus set active = 0 WHERE id = '" . $ref->{'id'} . "'");
                 $sqlUpdate->execute();
                 $sqlUpdate->finish();
-              }
+                
+              } # END if ($rows gt 0)
+              
               my $sqlInsert = $dbh->prepare("INSERT INTO hardwarestatus (host, issuename, issuestate, issuetype, firstseen, lastseen, active) VALUES (?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?), ?)");
               $sqlInsert->execute(
                 $hostID,
@@ -1438,30 +1605,50 @@ sub getHardwareStatus {
                 1
               );
               $sqlInsert->finish();
-            }
-          }
-        }
+              
+            } # END if (($rows gt 0) && ($ref->{'issuestate'} eq lc($_->status->key)))
+            
+          } # END if (lc($_->status->key) ne 'green' && lc($_->status->key) ne 'unknown')
+          
+        } # END foreach (@$cpuStatus)
+        
         my $memStatus = $healthStatusSystem->runtime->hardwareStatusInfo->memoryStatusInfo;
-        foreach(@$memStatus) {
-          if(lc($_->status->key) ne 'green' && lc($_->status->key) ne 'unknown') {
+        
+        foreach (@$memStatus)
+        {
+          
+          if (lc($_->status->key) ne 'green' && lc($_->status->key) ne 'unknown')
+          {
+            
             my $query = "SELECT * FROM hardwarestatus WHERE host = '" . $hostID . "' AND issuename = '" . $_->name . "' AND active = 1";
             my $sth = $dbh->prepare($query);
             $sth->execute();
             my $rows = $sth->rows;
             # TODO > generate error and skip if multiple + manage deletion (execute query on lastseen != $start)
             my $ref = $sth->fetchrow_hashref();
-            if (($rows gt 0) && ($ref->{'issuestate'} eq lc($_->status->key))) {
+            
+            if (($rows gt 0) && ($ref->{'issuestate'} eq lc($_->status->key)))
+            {
+              
               # HWStatus already exists, have not changed, updated lastseen property
               my $sqlUpdate = $dbh->prepare("UPDATE hardwarestatus set lastseen = FROM_UNIXTIME (?) WHERE id = '" . $ref->{'id'} . "'");
               $sqlUpdate->execute($start);
               $sqlUpdate->finish();
-            } else {
-              if ($rows gt 0) {
+              
+            }
+            else
+            {
+              
+              if ($rows gt 0)
+              {
+                
                 # HWStatus have changed, we must decom old one before create a new one
                 my $sqlUpdate = $dbh->prepare("UPDATE hardwarestatus set active = 0 WHERE id = '" . $ref->{'id'} . "'");
                 $sqlUpdate->execute();
                 $sqlUpdate->finish();
-              }
+                
+              } # END if ($rows gt 0)
+              
               my $sqlInsert = $dbh->prepare("INSERT INTO hardwarestatus (host, issuename, issuestate, issuetype, firstseen, lastseen, active) VALUES (?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?), ?)");
               $sqlInsert->execute(
                 $hostID,
@@ -1473,30 +1660,50 @@ sub getHardwareStatus {
                 1
               );
               $sqlInsert->finish();
-            }
-          }
-        }
+              
+            } # END if (($rows gt 0) && ($ref->{'issuestate'} eq lc($_->status->key)))
+            
+          } # END if (lc($_->status->key) ne 'green' && lc($_->status->key) ne 'unknown')
+          
+        } # END foreach (@$memStatus)
+        
         my $storageStatus = $healthStatusSystem->runtime->hardwareStatusInfo->storageStatusInfo;
-        foreach(@$storageStatus) {
-          if(lc($_->status->key) ne 'green' && lc($_->status->key) ne 'unknown') {
+        
+        foreach (@$storageStatus)
+        {
+          
+          if (lc($_->status->key) ne 'green' && lc($_->status->key) ne 'unknown')
+          {
+            
             my $query = "SELECT * FROM hardwarestatus WHERE host = '" . $hostID . "' AND issuename = '" . $_->name . "' AND active = 1";
             my $sth = $dbh->prepare($query);
             $sth->execute();
             my $rows = $sth->rows;
             # TODO > generate error and skip if multiple + manage deletion (execute query on lastseen != $start)
             my $ref = $sth->fetchrow_hashref();
-            if (($rows gt 0) && ($ref->{'issuestate'} eq lc($_->status->key))) {
+            
+            if (($rows gt 0) && ($ref->{'issuestate'} eq lc($_->status->key)))
+            {
+              
               # HWStatus already exists, have not changed, updated lastseen property
               my $sqlUpdate = $dbh->prepare("UPDATE hardwarestatus set lastseen = FROM_UNIXTIME (?) WHERE id = '" . $ref->{'id'} . "'");
               $sqlUpdate->execute($start);
               $sqlUpdate->finish();
-            } else {
-              if ($rows gt 0) {
+              
+            }
+            else
+            {
+              
+              if ($rows gt 0)
+              {
+                
                 # HWStatus have changed, we must decom old one before create a new one
                 my $sqlUpdate = $dbh->prepare("UPDATE hardwarestatus set active = 0 WHERE id = '" . $ref->{'id'} . "'");
                 $sqlUpdate->execute();
                 $sqlUpdate->finish();
-              }
+                
+              } # END if ($rows gt 0)
+              
               my $sqlInsert = $dbh->prepare("INSERT INTO hardwarestatus (host, issuename, issuestate, issuetype, firstseen, lastseen, active) VALUES (?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?), ?)");
               $sqlInsert->execute(
                 $hostID,
@@ -1508,32 +1715,55 @@ sub getHardwareStatus {
                 1
               );
               $sqlInsert->finish();
-            }
-          }
-        }
-      }
-      if($healthStatusSystem->runtime->systemHealthInfo) {
+              
+            } # END if (($rows gt 0) && ($ref->{'issuestate'} eq lc($_->status->key)))
+            
+          } # END if (lc($_->status->key) ne 'green' && lc($_->status->key) ne 'unknown')
+          
+        } # END foreach (@$storageStatus)
+        
+      } # END if ($healthStatusSystem->runtime->hardwareStatusInfo)
+      
+      if ($healthStatusSystem->runtime->systemHealthInfo)
+      {
+        
         my $sensorInfo = $healthStatusSystem->runtime->systemHealthInfo->numericSensorInfo;
-        foreach(@$sensorInfo) {
-          if($_->healthState && lc($_->healthState->key) ne 'green' && lc($_->healthState->key) ne 'unknown') {
+        
+        foreach (@$sensorInfo)
+        {
+          
+          if ($_->healthState && lc($_->healthState->key) ne 'green' && lc($_->healthState->key) ne 'unknown')
+          {
+            
             my $query = "SELECT * FROM hardwarestatus WHERE host = '" . $hostID . "' AND issuename = '" . $_->name . "' AND active = 1";
             my $sth = $dbh->prepare($query);
             $sth->execute();
             my $rows = $sth->rows;
             # TODO > generate error and skip if multiple + manage deletion (execute query on lastseen != $start)
             my $ref = $sth->fetchrow_hashref();
-            if (($rows gt 0) && ($ref->{'issuestate'} eq lc($_->healthState->key))) {
+            
+            if (($rows gt 0) && ($ref->{'issuestate'} eq lc($_->healthState->key)))
+            {
+              
               # HWStatus already exists, have not changed, updated lastseen property
               my $sqlUpdate = $dbh->prepare("UPDATE hardwarestatus set lastseen = FROM_UNIXTIME (?) WHERE id = '" . $ref->{'id'} . "'");
               $sqlUpdate->execute($start);
               $sqlUpdate->finish();
-            } else {
-              if ($rows gt 0) {
+              
+            }
+            else
+            {
+              
+              if ($rows gt 0)
+              {
+                
                 # HWStatus have changed, we must decom old one before create a new one
                 my $sqlUpdate = $dbh->prepare("UPDATE hardwarestatus set active = 0 WHERE id = '" . $ref->{'id'} . "'");
                 $sqlUpdate->execute();
                 $sqlUpdate->finish();
-              }
+                
+              } # END if ($rows gt 0)
+              
               my $sqlInsert = $dbh->prepare("INSERT INTO hardwarestatus (host, issuename, issuestate, issuetype, firstseen, lastseen, active) VALUES (?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?), ?)");
               $sqlInsert->execute(
                 $hostID,
@@ -1545,18 +1775,32 @@ sub getHardwareStatus {
                 1
               );
               $sqlInsert->finish();
-            }
-          }
-        }
-      }
-    }
-  }
-}
+              
+            } # END if (($rows gt 0) && ($ref->{'issuestate'} eq lc($_->healthState->key)))
+            
+          } # END if ($_->healthState && lc($_->healthState->key) ne 'green' && lc($_->healthState->key) ne 'unknown')
+          
+        } # END foreach (@$sensorInfo)
+        
+      } # END if ($healthStatusSystem->runtime->systemHealthInfo)
+      
+    } # END if ($healthStatusSystem->runtime)
+    
+  } # END foreach my $host_view (@$view_HostSystem)
+  
+} # END sub getHardwareStatus
 
-sub getAlarms {
-  foreach my $datacenter_view (@$view_Datacenter) {
+sub getAlarms
+{
+  
+  foreach my $datacenter_view (@$view_Datacenter)
+  {
+    
     next if(!defined($datacenter_view->triggeredAlarmState));
-    foreach my $triggeredAlarm (@{$datacenter_view->triggeredAlarmState}) {
+    
+    foreach my $triggeredAlarm (@{$datacenter_view->triggeredAlarmState})
+    {
+      
       my $entity = Vim::get_view(mo_ref => $triggeredAlarm->entity, properties => [ 'name' ]);
       my $alarm = Vim::get_view(mo_ref => $triggeredAlarm->alarm, properties => [ 'info.name' ]);
       my $vcentersdk = new URI::URL $datacenter_view->{'vim'}->{'service_url'};
@@ -1572,22 +1816,33 @@ sub getAlarms {
       my $rows = $sth->rows;
       # TODO > generate error and skip if multiple + manage deletion (execute query on lastseen != $start)
       my $ref = $sth->fetchrow_hashref();
+      
       if (($rows gt 0)
         && ($ref->{'entityMoRef'} eq $entityMoRef)
         && ($ref->{'alarm_name'} eq $alarm->{'info.name'})
         && ($ref->{'time'} eq $createTime)
-        && ($ref->{'status'} eq $triggeredAlarm->overallStatus->val)) {
+        && ($ref->{'status'} eq $triggeredAlarm->overallStatus->val))
+      {
+        
         # Alarm already exists, have not changed, updated lastseen property
         my $sqlUpdate = $dbh->prepare("UPDATE alarms set lastseen = FROM_UNIXTIME (?) WHERE id = '" . $ref->{'id'} . "'");
         $sqlUpdate->execute($start);
         $sqlUpdate->finish();
-      } else {
-        if ($rows gt 0) {
+        
+      }
+      else
+      {
+        
+        if ($rows gt 0)
+        {
+          
           # Alarm have changed, we must decom old one before create a new one
           my $sqlUpdate = $dbh->prepare("UPDATE alarms set active = 0 WHERE id = '" . $ref->{'id'} . "'");
           $sqlUpdate->execute();
           $sqlUpdate->finish();
-        }
+          
+        } # END if ($rows gt 0)
+        
         my $sqlInsert = $dbh->prepare("INSERT INTO alarms (vcenter, moref, entityMoRef, alarm_name, time, status, firstseen, lastseen, active) VALUES (?, ?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?), ?)");
         $sqlInsert->execute(
           $vcenterID,
@@ -1601,11 +1856,16 @@ sub getAlarms {
           1
         );
         $sqlInsert->finish();
-      }
+        
+      } # END if (($rows gt 0)
+      
       $sth->finish();
-    }
-  }
-}
+      
+    } # END foreach my $triggeredAlarm (@{$datacenter_view->triggeredAlarmState})
+    
+  } # END foreach my $datacenter_view (@$view_Datacenter)
+  
+} # END sub getAlarms
 
 sub snapshotInventory
 {
@@ -1691,27 +1951,43 @@ sub snapshotInventory
   
 } # END sub snapshotInventory
 
-sub getConfigurationIssue {
-  foreach my $host_view (@$view_HostSystem) {
+sub getConfigurationIssue
+{
+  
+  foreach my $host_view (@$view_HostSystem)
+  {
+    
     my $vcentersdk = new URI::URL $host_view->{'vim'}->{'service_url'};
     # get vcenter id from database
     my $vcenterID = dbGetVC($vcentersdk->host);
     my $hostID = dbGetHost($host_view->{'mo_ref'}->{'type'}."-".$host_view->{'mo_ref'}->{'value'}, $vcenterID);
-    foreach ($host_view->configIssue) {
-      if (defined(@$_[0])) {
+    
+    foreach ($host_view->configIssue)
+    {
+      
+      if (defined(@$_[0]))
+      {
+        
         my $query = "SELECT * FROM configurationissues WHERE host = '" . $hostID . "' AND configissue = '" . @$_[0]->fullFormattedMessage . "' AND active = 1";
         my $sth = $dbh->prepare($query);
         $sth->execute();
         my $rows = $sth->rows;
         # TODO > generate error and skip if multiple + manage deletion (execute query on lastseen != $start)
         my $ref = $sth->fetchrow_hashref();
-        if ($rows gt 0) {
+        
+        if ($rows gt 0)
+        {
+          
           # ConfigIssue already exists, have not changed, updated lastseen property
           $logger->info("[DEBUG][CONFIGISSUE-INVENTORY] ConfigIssue for host $hostID already exists and have not changed since last check, updating lastseen property") if $showDebug;
           my $sqlUpdate = $dbh->prepare("UPDATE configurationissues set lastseen = FROM_UNIXTIME (?) WHERE id = '" . $ref->{'id'} . "'");
           $sqlUpdate->execute($start);
           $sqlUpdate->finish();
-        } else {
+          
+        }
+        else
+        {
+          
           $logger->info("[DEBUG][CONFIGISSUE-INVENTORY] Adding ConfigIssue data for host $hostID") if $showDebug;
           my $sqlInsert = $dbh->prepare("INSERT INTO configurationissues (host, configissue, firstseen, lastseen, active) VALUES (?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?), ?)");
           $sqlInsert->execute(
@@ -1722,14 +1998,22 @@ sub getConfigurationIssue {
             1
           );
           $sqlInsert->finish();
-        }
+          
+        } # END if ($rows gt 0)
+        
         $sth->finish();
-      }
-    }
-  }
-}
+        
+      } # END if (defined(@$_[0]))
+      
+    } # END foreach ($host_view->configIssue)
+    
+  } # END foreach my $host_view (@$view_HostSystem)
+  
+} # END sub getConfigurationIssue
 
-sub getPermissions {
+sub getPermissions
+{
+  
   my $authorizationMgr = Vim::get_view(mo_ref => Vim::get_service_content()->authorizationManager);
   my $roleList = $authorizationMgr->roleList;
   my %h_role = ();
@@ -1737,7 +2021,10 @@ sub getPermissions {
   my $perms = $authorizationMgr->RetrieveAllPermissions;
   # get vcenter id from database
   my $vcenterID = dbGetVC($activeVC);
-  for my $perm (@$perms) {
+  
+  foreach my $perm (@$perms)
+  {
+    
     my $principal = $perm->principal;
     $principal =~ s/\\/\\\\/g;
     my $query = "SELECT * FROM permissions WHERE principal LIKE '" . $principal . "' ESCAPE '|' AND vcenter = '" . $vcenterID . "' AND role_name = '" . $h_role{$perm->roleId} . "' AND active = 1";
@@ -1746,13 +2033,20 @@ sub getPermissions {
     my $rows = $sth->rows;
     # TODO > generate error and skip if multiple + manage deletion (execute query on lastseen != $start)
     my $ref = $sth->fetchrow_hashref();
-    if ($rows gt 0) {
+    
+    if ($rows gt 0)
+    {
+      
       # Permission already exists, have not changed, updated lastseen property
       $logger->info("[DEBUG][PERMISSION-INVENTORY] Permission for role '" . $h_role{$perm->roleId} . " on user '" . $principal . "' already exists and have not changed since last check, updating lastseen property") if $showDebug;
       my $sqlUpdate = $dbh->prepare("UPDATE permissions set lastseen = FROM_UNIXTIME (?) WHERE id = '" . $ref->{'id'} . "'");
       $sqlUpdate->execute($start);
       $sqlUpdate->finish();
-    } else {
+      
+    }
+    else
+    {
+      
       $logger->info("[DEBUG][PERMISSION-INVENTORY] Adding Permission data for role '" . $h_role{$perm->roleId} . " on user '" . $principal . "'") if $showDebug;
       my $sqlInsert = $dbh->prepare("INSERT INTO permissions (vcenter, principal, role_name, isGroup, inventory_path, firstseen, lastseen, active) VALUES (?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?), ?)");
       my $inventory_path = '/' . Util::get_inventory_path(Vim::get_view(mo_ref => $perm->entity, properties => ['name']), Vim::get_vim());
@@ -1767,15 +2061,25 @@ sub getPermissions {
         1
       );
       $sqlInsert->finish();
-    }
+      
+    } # END if ($rows gt 0)
+    
     $sth->finish();
-  }
-}
+    
+  } # END foreach my $perm (@$perms)
+  
+} # END sub getPermissions
 
-sub dvpginventory {
-  foreach my $distributedVirtualPortgroup_view (@$view_DistributedVirtualPortgroup) {
+sub dvpginventory
+{
+  
+  foreach my $distributedVirtualPortgroup_view (@$view_DistributedVirtualPortgroup)
+  {
+    
     # Exclude DV uplinks portgroup
-    if (!defined($distributedVirtualPortgroup_view->tag) || @{$distributedVirtualPortgroup_view->tag}[0]->key ne 'SYSTEM/DVS.UPLINKPG') {
+    if (!defined($distributedVirtualPortgroup_view->tag) || @{$distributedVirtualPortgroup_view->tag}[0]->key ne 'SYSTEM/DVS.UPLINKPG')
+    {
+      
       my $vcentersdk = new URI::URL $distributedVirtualPortgroup_view->{'vim'}->{'service_url'};
       my $openPorts = $distributedVirtualPortgroup_view->{'config.numPorts'} - (defined($distributedVirtualPortgroup_view->vm) ? 0+@{$distributedVirtualPortgroup_view->vm} : 0);
       # get vcenter id from database
@@ -1787,23 +2091,34 @@ sub dvpginventory {
       my $rows = $sth->rows;
       # TODO > generate error and skip if multiple + manage deletion (execute query on lastseen != $start)
       my $ref = $sth->fetchrow_hashref();
+      
       if (($rows gt 0)
         && ($ref->{'vcenter'} eq $vcenterID)
-                && ($ref->{'name'} eq $distributedVirtualPortgroup_view->name)
+        && ($ref->{'name'} eq $distributedVirtualPortgroup_view->name)
         && ($ref->{'numports'} eq $distributedVirtualPortgroup_view->{'config.numPorts'})
         && ($ref->{'openports'} eq $openPorts)
-        && ($ref->{'autoexpand'} eq $boolHash{$distributedVirtualPortgroup_view->{'config.autoExpand'}})) {
+        && ($ref->{'autoexpand'} eq $boolHash{$distributedVirtualPortgroup_view->{'config.autoExpand'}}))
+      {
+        
         # DVPortgroup already exists, have not changed, updated lastseen property
         my $sqlUpdate = $dbh->prepare("UPDATE distributedvirtualportgroups set lastseen = FROM_UNIXTIME (?) WHERE id = '" . $ref->{'id'} . "'");
         $sqlUpdate->execute($start);
         $sqlUpdate->finish();
-      } else {
-        if ($rows gt 0) {
+        
+      }
+      else
+      {
+        
+        if ($rows gt 0)
+        {
+          
           # DVPortgroup have changed, we must decom old one before create a new one
           my $sqlUpdate = $dbh->prepare("UPDATE distributedvirtualportgroups set active = 0 WHERE id = '" . $ref->{'id'} . "'");
           $sqlUpdate->execute();
           $sqlUpdate->finish();
-        }
+          
+        } # END if ($rows gt 0)
+        
         my $sqlInsert = $dbh->prepare("INSERT INTO distributedvirtualportgroups (vcenter, moref, name, numports, openports, autoexpand, firstseen, lastseen, active) VALUES (?, ?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?), ?)");
         $sqlInsert->execute(
           $vcenterID,
@@ -1817,11 +2132,16 @@ sub dvpginventory {
           1
         );
         $sqlInsert->finish();
-      }
+        
+      } # END if (($rows gt 0) + check
+      
       $sth->finish();
-    }
-  }
-}
+      
+    } # END if (!defined($distributedVirtualPortgroup_view->tag) || @{$distributedVirtualPortgroup_view->tag}[0]->key ne 'SYSTEM/DVS.UPLINKPG')
+    
+  } # END foreach my $distributedVirtualPortgroup_view (@$view_DistributedVirtualPortgroup)
+
+} # END sub dvpginventory
 
 sub datastoreOrphanedVMFilesreport
 {
@@ -1866,16 +2186,16 @@ sub datastoreOrphanedVMFilesreport
       
       my $vcentersdk = new URI::URL $datastore_view->{'vim'}->{'service_url'};
       my $vcenterID = dbGetVC($vcentersdk->host);
-    	my $dsbrowser = Vim::get_view(mo_ref => $datastore_view->browser);
-			my $ds_path = "[" . $datastore_view->name . "]";
+      my $dsbrowser = Vim::get_view(mo_ref => $datastore_view->browser);
+      my $ds_path = "[" . $datastore_view->name . "]";
       print $ds_path."\n";
-			my $file_query = FileQueryFlags->new(fileOwner => 0, fileSize => 1, fileType => 0, modification => 1);
+      my $file_query = FileQueryFlags->new(fileOwner => 0, fileSize => 1, fileType => 0, modification => 1);
       my $search_res;
       eval
       {
         
         my $searchSpec = HostDatastoreBrowserSearchSpec->new(details => $file_query, matchPattern => ["*zdump*", "*.xml", "*.vmsn", "*.vmsd", "*.vswp*",  "*.vmx", "*.vmdk", "*.vmss", "*.nvram", "*.vmxf"]);
-			  $search_res = $dsbrowser->SearchDatastoreSubFolders(datastorePath => $ds_path, searchSpec => $searchSpec);
+        $search_res = $dsbrowser->SearchDatastoreSubFolders(datastorePath => $ds_path, searchSpec => $searchSpec);
         
       };
       
@@ -1887,18 +2207,18 @@ sub datastoreOrphanedVMFilesreport
         
       }
       
-			if ($search_res)
+      if ($search_res)
       {
         
-				foreach my $result (@$search_res)
+        foreach my $result (@$search_res)
         {
           
           my $files = $result->file;
           
-					if ($files && !($result->folderPath =~ /.zfs/ || $result->folderPath =~ /.snapshot/ || $result->folderPath =~ /var\/tmp\/cache/ || $result->folderPath =~ /.lck/ || $result->folderPath =~ /\/hostCache\//))
+          if ($files && !($result->folderPath =~ /.zfs/ || $result->folderPath =~ /.snapshot/ || $result->folderPath =~ /var\/tmp\/cache/ || $result->folderPath =~ /.lck/ || $result->folderPath =~ /\/hostCache\//))
           {
             
-						foreach my $file (@$files)
+            foreach my $file (@$files)
             {
               
               my $fullFilePath = $result->folderPath . $file->path;
@@ -1951,7 +2271,9 @@ sub datastoreOrphanedVMFilesreport
   
 } # END sub datastoreOrphanedVMFilesreport
 
-sub dbGetVC {
+sub dbGetVC
+{
+
   # This subroutine will return vcenter ID if it exists
   # or create a new vcenter ID if not
   my ($vcenterName) = @_;
@@ -1960,7 +2282,10 @@ sub dbGetVC {
   $sth->execute();
   my $rows = $sth->rows;
   my $vcenterID = 0;
-  if ($rows eq 0) {
+
+  if ($rows eq 0)
+  {
+    
     # vcenter ID does not exist so we create it and return it
     my $sqlInsert = $dbh->prepare("INSERT INTO vcenters (vcname, firstseen, lastseen) VALUES (?, FROM_UNIXTIME (?), FROM_UNIXTIME (?))");
     $sqlInsert->execute($vcenterName, $start, $start);
@@ -1970,15 +2295,22 @@ sub dbGetVC {
     $sth->execute();
     my $ref = $sth->fetchrow_hashref();
     $vcenterID = $ref->{'id'};
-  } else {
+    
+  }
+  else
+  {
+    
     # vcenter is still alive, updating lastseen property
     my $ref = $sth->fetchrow_hashref();
     $vcenterID = $ref->{'id'};
     $dbh->do("UPDATE vcenters set lastseen = FROM_UNIXTIME ($start) WHERE id = '" . $vcenterID . "'");
-  }
+  
+  } # END if ($rows eq 0)
+  
   $sth->finish();
   return $vcenterID;
-}
+
+} # END sub dbGetVC
 
 sub dbGetSnapshot
 {
@@ -2069,6 +2401,36 @@ sub dbGetCluster
   return $ref;
   
 } # END sub dbGetCluster
+
+sub dbGetClusterVSAN
+{
+  
+  # This subroutine will return cluster VSAN object if it exists or 0 if not
+  my ($clusterID) = @_;
+  my $query = "SELECT * FROM clustersVSAN WHERE cluster_id = '" . $clusterID . "' AND active = 1 LIMIT 1";
+  my $sth = $dbh->prepare($query);
+  $sth->execute();
+  my $rows = $sth->rows;
+  my $ref = 0;
+  
+  if ($rows eq 0)
+  {
+    
+    $logger->info("[DEBUG][GETCLUSTERVSAN] Cluster VSAN $clusterID doesn't exist") if $showDebug;
+    
+  }
+  else
+  {
+    
+    $ref = $sth->fetchrow_hashref();
+    $logger->info("[DEBUG][GETCLUSTERVSAN] ClusterID for cluster VSAN $clusterID is ".$ref->{'id'}) if $showDebug;
+    
+  } # END if ($rows eq 0)
+  
+  $sth->finish();
+  return $ref;
+  
+} # END sub dbGetClusterVSAN
 
 sub dbGetClusterMetrics
 {
@@ -2310,7 +2672,9 @@ sub dbGetConfig
   
 } # END sub dbGetConfig
 
-sub dbGetSchedule {
+sub dbGetSchedule
+{
+  
   # This subroutine will return config value
   my ($moduleID) = @_;
   my $query = "SELECT schedule FROM moduleSchedule WHERE id = '" . $moduleID . "'";
@@ -2318,13 +2682,19 @@ sub dbGetSchedule {
   $sth->execute();
   my $rows = $sth->rows;
   my $scheduleValue = "off";
-  if ($rows gt 0) {
+  
+  if ($rows gt 0)
+  {
+    
     my $ref = $sth->fetchrow_hashref();
     $scheduleValue = $ref->{'schedule'};
-  }
+  
+  } # END if ($rows gt 0)
+  
   $logger->info("[DEBUG][GETSCHEDULE] ModuleID $moduleID have schedule $scheduleValue") if $showDebug;
   return $scheduleValue;
-}
+  
+} # END sub dbGetSchedule
 
 sub dbPurgeOldData
 {
