@@ -7,6 +7,9 @@ Language: English
 
 $lang = array();
 
+# VSAN items
+$lang['VSANHARDWARECOMPATIBILITY'] = array("title" => "Hardware Compatibility", "description" => 'xxx');
+
 # vcenter items
 $lang['VCSESSIONAGE'] = array("title" => "Session Age", "description" => 'The following displays vCenter sessions that exceed the maximum session age days).');
 $lang['VCLICENCEREPORT'] = array("title" => "License Report", "description" => 'The following displays vCenter licenses.');
