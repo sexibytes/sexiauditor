@@ -1392,7 +1392,6 @@ sub datastoreinventory
 sub VSANHealthCheck
 {
   
-  # if ($activeVC ne "vcsavsan.fr.world.socgen") { next; }
   my $service_content = Vim::get_service_content();
   my $apiType = $service_content->about->apiType;
   my $fullApiVersion = $service_content->about->apiVersion;
