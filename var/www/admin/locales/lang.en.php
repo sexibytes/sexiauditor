@@ -8,7 +8,10 @@ Language: English
 $lang = array();
 
 # VSAN items
-$lang['VSANHARDWARECOMPATIBILITY'] = array("title" => "Hardware Compatibility", "description" => 'xxx');
+$lang['VSANHARDWARECOMPATIBILITY'] = array("title" => "Hardware Compatibility", "description" => 'This module will display hardware compatibility checks for VSAN. Further information can be found <a href=\"https://kb.vmware.com/kb/2114803\">here</a>');
+$lang['VSANNETWORK'] = array("title" => "Network", "description" => 'This module will display network checks for VSAN. Further information can be found <a href=\"https://kb.vmware.com/kb/2114803\">here</a>');
+$lang['VSANPHYSICALDISK'] = array("title" => "Physical disk", "description" => 'This module will display physical disk checks for VSAN. Further information can be found <a href=\"https://kb.vmware.com/kb/2114803\">here</a>');
+$lang['VSANCLUSTER'] = array("title" => "Cluster", "description" => 'This module will display cluster checks for VSAN. Further information can be found <a href=\"https://kb.vmware.com/kb/2114803\">here</a>');
 
 # vcenter items
 $lang['VCSESSIONAGE'] = array("title" => "Session Age", "description" => 'The following displays vCenter sessions that exceed the maximum session age days).');
