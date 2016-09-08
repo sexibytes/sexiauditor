@@ -2,6 +2,7 @@ TRUNCATE alarms;
 TRUNCATE certificates;
 TRUNCATE clusterMetrics;
 TRUNCATE clusters;
+TRUNCATE clustersVSAN;
 TRUNCATE configurationissues;
 TRUNCATE datastores;
 TRUNCATE datastoreMetrics;
