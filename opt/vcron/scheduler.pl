@@ -368,7 +368,7 @@ sub sessionage {
     my $sessionKey = $session->key;
     my $userAgent = (defined($session->userAgent) ? $session->userAgent : 'N/A');
     my $ipAddress = (defined($session->ipAddress) ? $session->ipAddress : 'N/A');
-    my $query = "SELECT * FROM sessions WHERE vcenter = '" . $vcenterID . "' AND sessionKey = '" . $sessionKey . "' AND active = 1";
+    my $query = "SELECT * FROM sessions WHERE vcenter = '" . $vcenterID . "' AND sessionKey = '" . $sessionKey . "' ORDER BY lastseen DESC LIMIT 1";
     my $sth = $dbh->prepare($query);
     $sth->execute();
     my $rows = $sth->rows;
@@ -385,14 +385,14 @@ sub sessionage {
       $sqlUpdate->execute($start);
       $sqlUpdate->finish();
     } else {
-      if ($rows gt 0) {
-        # Sessions have changed, we must decom old one before create a new one
-        my $sqlUpdate = $dbh->prepare("UPDATE sessions set active = 0 WHERE id = '" . $ref->{'id'} . "'");
-        $sqlUpdate->execute();
-        $sqlUpdate->finish();
-      }
+      # if ($rows gt 0) {
+      #   # Sessions have changed, we must decom old one before create a new one
+      #   my $sqlUpdate = $dbh->prepare("UPDATE sessions set active = 0 WHERE id = '" . $ref->{'id'} . "'");
+      #   $sqlUpdate->execute();
+      #   $sqlUpdate->finish();
+      # }
 
-      my $sqlInsert = $dbh->prepare("INSERT INTO sessions (vcenter, sessionKey, loginTime, userAgent, ipAddress, lastActiveTime, userName, firstseen, lastseen, active) VALUES (?, ?, ?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?), ?)");
+      my $sqlInsert = $dbh->prepare("INSERT INTO sessions (vcenter, sessionKey, loginTime, userAgent, ipAddress, lastActiveTime, userName, firstseen, lastseen) VALUES (?, ?, ?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?))");
       $sqlInsert->execute(
         $vcenterID,
         $sessionKey,
@@ -402,8 +402,7 @@ sub sessionage {
         $lastActiveTime,
         $session->userName,
         $start,
-        $start,
-        1
+        $start
       );
       $sqlInsert->finish();
     }
@@ -420,7 +419,7 @@ sub licenseReport {
     if ($license->editionKey ne 'eval') {
       # get vcenter id from database
       my $vcenterID = dbGetVC($vcentersdk->host);
-      my $query = "SELECT * FROM licenses WHERE vcenter = '" . $vcenterID . "' AND licenseKey = '" . $license->licenseKey . "' AND active = 1";
+      my $query = "SELECT * FROM licenses WHERE vcenter = '" . $vcenterID . "' AND licenseKey = '" . $license->licenseKey . "' ORDER BY lastseen DESC LIMIT 1";
       my $sth = $dbh->prepare($query);
       $sth->execute();
       my $rows = $sth->rows;
@@ -439,14 +438,14 @@ sub licenseReport {
         $sqlUpdate->execute($start);
         $sqlUpdate->finish();
       } else {
-        if ($rows gt 0) {
-          # License have changed, we must decom old one before create a new one
-          my $sqlUpdate = $dbh->prepare("UPDATE licenses set active = 0 WHERE id = '" . $ref->{'id'} . "'");
-          $sqlUpdate->execute();
-          $sqlUpdate->finish();
-        }
+        # if ($rows gt 0) {
+        #   # License have changed, we must decom old one before create a new one
+        #   my $sqlUpdate = $dbh->prepare("UPDATE licenses set active = 0 WHERE id = '" . $ref->{'id'} . "'");
+        #   $sqlUpdate->execute();
+        #   $sqlUpdate->finish();
+        # }
 
-        my $sqlInsert = $dbh->prepare("INSERT INTO licenses (vcenter, licenseKey, total, used, name, editionKey, costUnit, firstseen, lastseen, active) VALUES (?, ?, ?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?), ?)");
+        my $sqlInsert = $dbh->prepare("INSERT INTO licenses (vcenter, licenseKey, total, used, name, editionKey, costUnit, firstseen, lastseen) VALUES (?, ?, ?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?))");
         $sqlInsert->execute(
           $vcenterID,
           $license->licenseKey,
@@ -456,8 +455,7 @@ sub licenseReport {
           $license->editionKey,
           $license->costUnit,
           $start,
-          $start,
-          1
+          $start
         );
         $sqlInsert->finish();
       }
@@ -498,7 +496,7 @@ sub certificatesReport {
       # get vcenter id from database
       my $vcenterID = dbGetVC($vcentersdk->host);
       my $certificateUrl = $vpxSetting->value;
-      my $query = "SELECT * FROM certificates WHERE vcenter = '" . $vcenterID . "' AND url = '" . $certificateUrl . "' AND active = 1";
+      my $query = "SELECT * FROM certificates WHERE vcenter = '" . $vcenterID . "' AND url = '" . $certificateUrl . "' ORDER BY lastseen DESC LIMIT 1";
       my $sth = $dbh->prepare($query);
       $sth->execute();
       my $rows = $sth->rows;
@@ -515,14 +513,14 @@ sub certificatesReport {
         $sqlUpdate->execute($start);
         $sqlUpdate->finish();
       } else {
-        if ($rows gt 0) {
-          # certificate have changed, we must decom old one before create a new one
-          my $sqlUpdate = $dbh->prepare("UPDATE certificates set active = 0 WHERE id = '" . $ref->{'id'} . "'");
-          $sqlUpdate->execute();
-          $sqlUpdate->finish();
-        }
+        # if ($rows gt 0) {
+        #   # certificate have changed, we must decom old one before create a new one
+        #   my $sqlUpdate = $dbh->prepare("UPDATE certificates set active = 0 WHERE id = '" . $ref->{'id'} . "'");
+        #   $sqlUpdate->execute();
+        #   $sqlUpdate->finish();
+        # }
 
-        my $sqlInsert = $dbh->prepare("INSERT INTO certificates (vcenter, url, type, start, end, firstseen, lastseen, active) VALUES (?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?), ?)");
+        my $sqlInsert = $dbh->prepare("INSERT INTO certificates (vcenter, url, type, start, end, firstseen, lastseen) VALUES (?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?))");
         $sqlInsert->execute(
           $vcenterID,
           $vpxSetting->value,
@@ -530,8 +528,7 @@ sub certificatesReport {
           $startDate,
           $endDate,
           $start,
-          $start,
-          1
+          $start
         );
         $sqlInsert->finish();
       }
@@ -772,14 +769,14 @@ sub vminventory
         compareAndLog($refVM->{'configGuestId'}, $vm_configGuestId);
         compareAndLog($refVM->{'vmpath'}, $vmPath);
         $logger->info("[DEBUG][VM-INVENTORY] VM $moRef on host " . $host->{'id'} . " have changed since last check, sending old entry " . $refVM->{'id'} . " it into oblivion") if $showDebug;
-        my $sqlUpdate = $dbh->prepare("UPDATE vms set active = 0 WHERE id = '" . $refVM->{'id'} . "'");
-        $sqlUpdate->execute();
-        $sqlUpdate->finish();
+        # my $sqlUpdate = $dbh->prepare("UPDATE vms set active = 0 WHERE id = '" . $refVM->{'id'} . "'");
+        # $sqlUpdate->execute();
+        # $sqlUpdate->finish();
         
       } # END if ($refVM != 0)
       
       $logger->info("[DEBUG][VM-INVENTORY] Adding data for VM $moRef on host $host->{'id'}") if $showDebug;
-      my $sqlInsert = $dbh->prepare("INSERT INTO vms (vcenter, host, moref, memReservation, guestFamily, ip, cpuLimit, consolidationNeeded, fqdn, numcpu, cpuReservation, sharedBus, portgroup, memory, phantomSnapshot, hwversion, provisionned, mac, multiwriter, memHotAddEnabled, guestOS, removable, datastore, vmtools, name, memLimit, vmxpath, connectionState, cpuHotAddEnabled, powerState, guestId, configGuestId, vmpath, firstseen, lastseen, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?), ?)");
+      my $sqlInsert = $dbh->prepare("INSERT INTO vms (vcenter, host, moref, memReservation, guestFamily, ip, cpuLimit, consolidationNeeded, fqdn, numcpu, cpuReservation, sharedBus, portgroup, memory, phantomSnapshot, hwversion, provisionned, mac, multiwriter, memHotAddEnabled, guestOS, removable, datastore, vmtools, name, memLimit, vmxpath, connectionState, cpuHotAddEnabled, powerState, guestId, configGuestId, vmpath, firstseen, lastseen) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?))");
       my @h_tmp = (
         $vcenterID,
         $host->{'id'},
@@ -815,8 +812,7 @@ sub vminventory
         $vm_configGuestId,
         $vmPath,
         $start,
-        $start,
-        1
+        $start
       );
       $sqlInsert->execute(@h_tmp);
       $sqlInsert->finish();
@@ -1015,14 +1011,14 @@ sub hostinventory
         compareAndLog($refHost->{'ssh_policy'}, $service_ssh);
         compareAndLog($refHost->{'shell_policy'}, $service_shell);
         $logger->info("[DEBUG][HOST-INVENTORY] Host $moRef have changed since last check, sending old entry it into oblivion") if $showDebug;
-        my $sqlUpdate = $dbh->prepare("UPDATE hosts set active = 0 WHERE id = '" . $refHost->{'id'} . "'");
-        $sqlUpdate->execute();
-        $sqlUpdate->finish();
+        # my $sqlUpdate = $dbh->prepare("UPDATE hosts set active = 0 WHERE id = '" . $refHost->{'id'} . "'");
+        # $sqlUpdate->execute();
+        # $sqlUpdate->finish();
         
       } # END if ($refHost != 0)
       
       $logger->info("[DEBUG][HOST-INVENTORY] Adding data for host $moRef") if $showDebug;
-      my $sqlInsert = $dbh->prepare("INSERT INTO hosts (vcenter, cluster, moref, hostname, host_name, ntpservers, deadlunpathcount, numcpucore, syslog_target, rebootrequired, powerpolicy, bandwidthcapacity, memory, dnsservers, cputype, numcpu, inmaintenancemode, lunpathcount, datastorecount, model, cpumhz, esxbuild, ssh_policy, shell_policy, firstseen, lastseen, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?), ?)");
+      my $sqlInsert = $dbh->prepare("INSERT INTO hosts (vcenter, cluster, moref, hostname, host_name, ntpservers, deadlunpathcount, numcpucore, syslog_target, rebootrequired, powerpolicy, bandwidthcapacity, memory, dnsservers, cputype, numcpu, inmaintenancemode, lunpathcount, datastorecount, model, cpumhz, esxbuild, ssh_policy, shell_policy, firstseen, lastseen) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?))");
       $sqlInsert->execute(
         $vcenterID,
         $clusterID,
@@ -1049,8 +1045,7 @@ sub hostinventory
         $service_ssh,
         $service_shell,
         $start,
-        $start,
-        1
+        $start
       );
       $sqlInsert->finish();
       $insertHost = 1;
@@ -1060,7 +1055,7 @@ sub hostinventory
 
         # We must update vms if needed
         my $newHost = dbGetHost($moRef,$vcenterID);
-        my $sqlUpdate = $dbh->prepare("UPDATE vms SET host =  '" . $newHost->{'id'} . "' WHERE host = '" . $refHost->{'id'} . "' and active = 1");
+        my $sqlUpdate = $dbh->prepare("UPDATE vms SET host =  '" . $newHost->{'id'} . "' WHERE host = '" . $refHost->{'id'} . "'");
         $sqlUpdate->execute();
         $sqlUpdate->finish();
         
@@ -1204,14 +1199,14 @@ sub clusterinventory
         compareAndLog($refCluster->{'admissionValue'}, $admissionValue);
         compareAndLog($refCluster->{'lastconfigissue'}, $lastconfigissue);
         $logger->info("[DEBUG][CLUSTER-INVENTORY] Cluster $moRef have changed since last check, sending old entry it into oblivion") if $showDebug;
-        my $sqlUpdate = $dbh->prepare("UPDATE clusters set active = 0 WHERE id = '" . $refCluster->{'id'} . "'");
-        $sqlUpdate->execute();
-        $sqlUpdate->finish();
+        # my $sqlUpdate = $dbh->prepare("UPDATE clusters set active = 0 WHERE id = '" . $refCluster->{'id'} . "'");
+        # $sqlUpdate->execute();
+        # $sqlUpdate->finish();
         
       } # END if ($refCluster != 0)
       
       $logger->info("[DEBUG][CLUSTER-INVENTORY] Adding data for cluster $moRef") if $showDebug;
-      my $sqlInsert = $dbh->prepare("INSERT INTO clusters (vcenter, moref, cluster_name, dasenabled, isAdmissionEnable, admissionModel, admissionThreshold, admissionValue, lastconfigissuetime, lastconfigissue, firstseen, lastseen, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?), ?)");
+      my $sqlInsert = $dbh->prepare("INSERT INTO clusters (vcenter, moref, cluster_name, dasenabled, isAdmissionEnable, admissionModel, admissionThreshold, admissionValue, lastconfigissuetime, lastconfigissue, firstseen, lastseen) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?))");
       $sqlInsert->execute(
         $vcenterID,
         $moRef,
@@ -1224,8 +1219,7 @@ sub clusterinventory
         $lastconfigissuetime,
         $lastconfigissue,
         $start,
-        $start,
-        1
+        $start
       );
       $sqlInsert->finish();
       $insertCluster = 1;
@@ -1235,7 +1229,7 @@ sub clusterinventory
 
         # We must update host if needed
         my $newCluster = dbGetCluster($moRef,$vcenterID);
-        my $sqlUpdate = $dbh->prepare("UPDATE hosts SET cluster =  '" . $newCluster->{'id'} . "' WHERE cluster = '" . $refCluster->{'id'} . "' and active = 1");
+        my $sqlUpdate = $dbh->prepare("UPDATE hosts SET cluster =  '" . $newCluster->{'id'} . "' WHERE cluster = '" . $refCluster->{'id'} . "'");
         $sqlUpdate->execute();
         $sqlUpdate->finish();
         
@@ -1322,14 +1316,14 @@ sub datastoreinventory
         compareAndLog($refDatastore->{'shared'}, $datastore_view->summary->multipleHostAccess);
         compareAndLog($refDatastore->{'iormConfiguration'}, $datastore_view->iormConfiguration->enabled);
         $logger->info("[DEBUG][DATASTORE-INVENTORY] Datastore " . $refDatastore->{'id'} . " have changed since last check, sending old entry it into oblivion") if $showDebug;
-        my $sqlUpdate = $dbh->prepare("UPDATE datastores set active = 0 WHERE id = '" . $refDatastore->{'id'} . "'");
-        $sqlUpdate->execute();
-        $sqlUpdate->finish();
+        # my $sqlUpdate = $dbh->prepare("UPDATE datastores set active = 0 WHERE id = '" . $refDatastore->{'id'} . "'");
+        # $sqlUpdate->execute();
+        # $sqlUpdate->finish();
         
       } # END if ($refDatastore != 0)
       
       $logger->info("[DEBUG][DATASTORE-INVENTORY] Adding data for datastore $moRef") if $showDebug;
-      my $sqlInsert = $dbh->prepare("INSERT INTO datastores (vcenter, moref, datastore_name, type, isAccessible, maintenanceMode, shared, iormConfiguration, firstseen, lastseen, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?), ?)");
+      my $sqlInsert = $dbh->prepare("INSERT INTO datastores (vcenter, moref, datastore_name, type, isAccessible, maintenanceMode, shared, iormConfiguration, firstseen, lastseen) VALUES (?, ?, ?, ?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?))");
       $sqlInsert->execute(
         $vcenterID,
         $datastore_view->{'mo_ref'}->{'type'}."-".$datastore_view->{'mo_ref'}->{'value'},
@@ -1340,8 +1334,7 @@ sub datastoreinventory
         $datastore_view->summary->multipleHostAccess,
         $datastore_view->iormConfiguration->enabled,
         $start,
-        $start,
-        1
+        $start
       );
       $sqlInsert->finish();
       $insertDatastore = 1;
@@ -1351,7 +1344,7 @@ sub datastoreinventory
         
         # We must update vms if needed
         my $newDatastore = dbGetDatastore($datastore_view->name,$vcenterID);
-        my $sqlUpdate = $dbh->prepare("UPDATE vms SET datastore =  '" . $newDatastore->{'id'} . "' WHERE datastore = '" . $refDatastore->{'id'} . "' and active = 1");
+        my $sqlUpdate = $dbh->prepare("UPDATE vms SET datastore =  '" . $newDatastore->{'id'} . "' WHERE datastore = '" . $refDatastore->{'id'} . "'");
         $sqlUpdate->execute();
         $sqlUpdate->finish();
         
@@ -1399,7 +1392,7 @@ sub datastoreinventory
 sub VSANHealthCheck
 {
   
-  if ($activeVC ne "vcsavsan.fr.world.socgen") { next; }
+  # if ($activeVC ne "vcsavsan.fr.world.socgen") { next; }
   my $service_content = Vim::get_service_content();
   my $apiType = $service_content->about->apiType;
   my $fullApiVersion = $service_content->about->apiVersion;
@@ -1407,11 +1400,10 @@ sub VSANHealthCheck
   # TODO: check if min6.2
   my %vc_mos = get_vsan_vc_mos();
   my $VsanVcClusterHealthSystem = $vc_mos{"vsan-cluster-health-system"};
-    
   foreach my $cluster_view (@$view_ClusterComputeResource)
   {
     
-		if (defined($cluster_view->configurationEx->vsanConfigInfo))
+		if (defined($cluster_view->configurationEx->vsanConfigInfo) && $cluster_view->configurationEx->vsanConfigInfo->enabled)
     {
       
       my $moRef = $cluster_view->{'mo_ref'}->{'type'}."-".$cluster_view->{'mo_ref'}->{'value'};
@@ -1419,117 +1411,326 @@ sub VSANHealthCheck
       my $vcenterID = dbGetVC($vcentersdk->host);
       my $refCluster = dbGetCluster($moRef,$vcenterID);
       my $refClusterVSAN = dbGetClusterVSAN($refCluster->{'id'});
-      my $VsanQueryVcClusterHealthSummary = $VsanVcClusterHealthSystem->VsanQueryVcClusterHealthSummary(cluster => $cluster_view);
+      my $VsanQueryVcClusterHealthSummary = eval { $VsanVcClusterHealthSystem->VsanQueryVcClusterHealthSummary(cluster => $cluster_view) } || 0;
+      next if ($VsanQueryVcClusterHealthSummary == 0);
       my $VSANgroups = $VsanQueryVcClusterHealthSummary->groups;
       
+      my $hcldbuptodate = "unknown";
+      my $autohclupdate = "unknown";
+      my $controlleronhcl = "unknown";
+      my $controllerreleasesupport = "unknown";
+      my $controllerdriver = "unknown";
+      my $clusterpartition = "unknown";
+      my $vmknicconfigured = "unknown";
+      my $matchingsubnets = "unknown";
+      my $matchingmulticast = "unknown";
+      my $physdiskoverall = "unknown";
+      my $physdiskmetadata = "unknown";
+      my $physdisksoftware = "unknown";
+      my $physdiskcongestion = "unknown";
+      my $healthversion = "unknown";
+      my $advcfgsync = "unknown";
+      my $clomdliveness = "unknown";
+      my $diskbalance = "unknown";
+      my $upgradesoftware = "unknown";
+      my $upgradelowerhosts = "unknown";
+
       foreach my $VSANgroup (@$VSANgroups)
       {
         
-        next if $VSANgroup->{'groupId'} ne "com.vmware.vsan.health.test.hcl";
         my $VSANgroupTests = $VSANgroup->{'groupTests'};
-        my $hcldbuptodate = "n/a";
-        my $autohclupdate = "n/a";
-        my $controlleronhcl = "n/a";
-        my $controllerreleasesupport = "n/a";
-        my $controllerdriver = "n/a";
         
-        foreach my $VSANgroupTest (@$VSANgroupTests)
+        switch ($VSANgroup->{'groupId'})
         {
           
-          switch ($VSANgroupTest->{'testId'})
+          case "com.vmware.vsan.health.test.hcl"
           {
-            
-            case "com.vmware.vsan.health.test.hcldbuptodate"
-            {
-              
-              $hcldbuptodate = $VSANgroupTest->{'testHealth'};
-              
-            } # END case "com.vmware.vsan.health.test.hcldbuptodate"
-            
-            case "com.vmware.vsan.health.test.autohclupdate"
-            {
-              
-              $autohclupdate = $VSANgroupTest->{'testHealth'};
-              
-            } # END case "com.vmware.vsan.health.test.autohclupdate"
-            
-            case "com.vmware.vsan.health.test.controlleronhcl"
-            {
-              
-              $controlleronhcl = $VSANgroupTest->{'testHealth'};
-              
-            } # END case "com.vmware.vsan.health.test.controlleronhcl"
-            
-            case "com.vmware.vsan.health.test.controllerreleasesupport"
-            {
-              
-              $controllerreleasesupport = $VSANgroupTest->{'testHealth'};
-              
-            } # END case "com.vmware.vsan.health.test.controllerreleasesupport"
-            
-            case "com.vmware.vsan.health.test.controllerdriver"
-            {
-              
-              $controllerdriver = $VSANgroupTest->{'testHealth'};
-              
-            } # END case "com.vmware.vsan.health.test.controllerdriver"
-            
-          } # END switch ($VSANgroupTest->{'testId'})
-          
-        } # END foreach my $VSANgroupTest (@$VSANgroupTests)
         
-        if ( ($refClusterVSAN != 0)
-          && ($refClusterVSAN->{'hcldbuptodate'} eq $hcldbuptodate)
-          && ($refClusterVSAN->{'autohclupdate'} eq $autohclupdate)
-          && ($refClusterVSAN->{'controlleronhcl'} eq $controlleronhcl)
-          && ($refClusterVSAN->{'controllerreleasesupport'} eq $controllerreleasesupport)
-          && ($refClusterVSAN->{'controllerdriver'} eq $controllerdriver))
-        {
-          
-          # Cluster VSAN already exists, have not changed, updated lastseen property
-          $logger->info("[DEBUG][CLUSTERVSAN-INVENTORY] Cluster VSAN $moRef already exists and have not changed since last check, updating lastseen property") if $showDebug;
-          my $sqlUpdate = $dbh->prepare("UPDATE clustersVSAN set lastseen = FROM_UNIXTIME ($start) WHERE id = '" . $refClusterVSAN->{'id'} . "'");
-          $sqlUpdate->execute();
-          $sqlUpdate->finish();
-          
-        }
-        else
-        {
-          
-          if ($refClusterVSAN != 0)
-          {
-
-            # Cluster have changed, we must decom old one before create a new one
-            compareAndLog($refClusterVSAN->{'hcldbuptodate'}, $hcldbuptodate);
-            compareAndLog($refClusterVSAN->{'autohclupdate'}, $autohclupdate);
-            compareAndLog($refClusterVSAN->{'controlleronhcl'}, $controlleronhcl);
-            compareAndLog($refClusterVSAN->{'controllerreleasesupport'}, $controllerreleasesupport);
-            compareAndLog($refClusterVSAN->{'controllerdriver'}, $controllerdriver);
-            $logger->info("[DEBUG][CLUSTERVSAN-INVENTORY] Cluster VSAN $moRef have changed since last check, sending old entry it into oblivion") if $showDebug;
-            my $sqlUpdate = $dbh->prepare("UPDATE clustersVSAN set active = 0 WHERE id = '" . $refClusterVSAN->{'id'} . "'");
-            $sqlUpdate->execute();
-            $sqlUpdate->finish();
+            foreach my $VSANgroupTest (@$VSANgroupTests)
+            {
+              
+              switch ($VSANgroupTest->{'testId'})
+              {
+                
+                case "com.vmware.vsan.health.test.hcldbuptodate"
+                {
+                  
+                  $hcldbuptodate = $VSANgroupTest->{'testHealth'};
+                  
+                } # END case "com.vmware.vsan.health.test.hcldbuptodate"
+                
+                case "com.vmware.vsan.health.test.autohclupdate"
+                {
+                  
+                  $autohclupdate = $VSANgroupTest->{'testHealth'};
+                  
+                } # END case "com.vmware.vsan.health.test.autohclupdate"
+                
+                case "com.vmware.vsan.health.test.controlleronhcl"
+                {
+                  
+                  $controlleronhcl = $VSANgroupTest->{'testHealth'};
+                  
+                } # END case "com.vmware.vsan.health.test.controlleronhcl"
+                
+                case "com.vmware.vsan.health.test.controllerreleasesupport"
+                {
+                  
+                  $controllerreleasesupport = $VSANgroupTest->{'testHealth'};
+                  
+                } # END case "com.vmware.vsan.health.test.controllerreleasesupport"
+                
+                case "com.vmware.vsan.health.test.controllerdriver"
+                {
+                  
+                  $controllerdriver = $VSANgroupTest->{'testHealth'};
+                  
+                } # END case "com.vmware.vsan.health.test.controllerdriver"
+                
+              } # END switch ($VSANgroupTest->{'testId'})
+              
+            } # END foreach my $VSANgroupTest (@$VSANgroupTests)
             
-          } # END if ($refClusterVSAN != 0)
+          } # END case "com.vmware.vsan.health.test.hcl"
+                    
+          case "com.vmware.vsan.health.test.network"
+          {
+        
+            foreach my $VSANgroupTest (@$VSANgroupTests)
+            {
+              
+              switch ($VSANgroupTest->{'testId'})
+              {
+                
+                case "com.vmware.vsan.health.test.clusterpartition"
+                {
+                  
+                  $clusterpartition = $VSANgroupTest->{'testHealth'};
+                  
+                } # END case "com.vmware.vsan.health.test.clusterpartition"
+                  
+                case "com.vmware.vsan.health.test.vsanvmknic"
+                {
+                  
+                  $vmknicconfigured = $VSANgroupTest->{'testHealth'};
+                  
+                } # END case "com.vmware.vsan.health.test.vsanvmknic"
+                  
+                case "com.vmware.vsan.health.test.matchingsubnet"
+                {
+                  
+                  $matchingsubnets = $VSANgroupTest->{'testHealth'};
+                  
+                } # END case "com.vmware.vsan.health.test.clusterpartition"
+                  
+                case "com.vmware.vsan.health.test.multicastsettings"
+                {
+                  
+                  $matchingmulticast = $VSANgroupTest->{'testHealth'};
+                  
+                } # END case "com.vmware.vsan.health.test.clusterpartition"
+                
+              } # END switch ($VSANgroupTest->{'testId'})
+              
+            } # END foreach my $VSANgroupTest (@$VSANgroupTests)
+            
+          } # END case "com.vmware.vsan.health.test.network"
+                    
+          case "com.vmware.vsan.health.test.physicaldisks"
+          {
+        
+            foreach my $VSANgroupTest (@$VSANgroupTests)
+            {
+              
+              switch ($VSANgroupTest->{'testId'})
+              {
+                
+                case "com.vmware.vsan.health.test.physdiskoverall"
+                {
+                  
+                  $physdiskoverall = $VSANgroupTest->{'testHealth'};
+                  
+                } # END case "com.vmware.vsan.health.test.physdiskoverall"
+                  
+                case "com.vmware.vsan.health.test.physdiskmetadata"
+                {
+                  
+                  $physdiskmetadata = $VSANgroupTest->{'testHealth'};
+                  
+                } # END case "com.vmware.vsan.health.test.physdiskmetadata"
+                  
+                case "com.vmware.vsan.health.test.physdisksoftware"
+                {
+                  
+                  $physdisksoftware = $VSANgroupTest->{'testHealth'};
+                  
+                } # END case "com.vmware.vsan.health.test.physdisksoftware"
+                  
+                case "com.vmware.vsan.health.test.physdiskcongestion"
+                {
+                  
+                  $physdiskcongestion = $VSANgroupTest->{'testHealth'};
+                  
+                } # END case "com.vmware.vsan.health.test.physdiskcongestion"
+                
+              } # END switch ($VSANgroupTest->{'testId'})
+              
+            } # END foreach my $VSANgroupTest (@$VSANgroupTests)
+            
+          } # END case "com.vmware.vsan.health.test.physicaldisks"
+                    
+          case "com.vmware.vsan.health.test.cluster"
+          {
+        
+            foreach my $VSANgroupTest (@$VSANgroupTests)
+            {
+              
+              switch ($VSANgroupTest->{'testId'})
+              {
+                
+                case "com.vmware.vsan.health.test.healthversion"
+                {
+                  
+                  $healthversion = $VSANgroupTest->{'testHealth'};
+                  
+                } # END case "com.vmware.vsan.health.test.healthversion"
+                  
+                case "com.vmware.vsan.health.test.advcfgsync"
+                {
+                  
+                  $advcfgsync = $VSANgroupTest->{'testHealth'};
+                  
+                } # END case "com.vmware.vsan.health.test.advcfgsync"
+                  
+                case "com.vmware.vsan.health.test.clomdliveness"
+                {
+                  
+                  $clomdliveness = $VSANgroupTest->{'testHealth'};
+                  
+                } # END case "com.vmware.vsan.health.test.clomdliveness"
+                  
+                case "com.vmware.vsan.health.test.diskbalance"
+                {
+                  
+                  $diskbalance = $VSANgroupTest->{'testHealth'};
+                  
+                } # END case "com.vmware.vsan.health.test.diskbalance"
+                  
+                case "com.vmware.vsan.health.test.upgradesoftware"
+                {
+                  
+                  $upgradesoftware = $VSANgroupTest->{'testHealth'};
+                  
+                } # END case "com.vmware.vsan.health.test.upgradesoftware"
+                  
+                case "com.vmware.vsan.health.test.upgradelowerhosts"
+                {
+                  
+                  $upgradelowerhosts = $VSANgroupTest->{'testHealth'};
+                  
+                } # END case "com.vmware.vsan.health.test.upgradelowerhosts"
+                
+              } # END switch ($VSANgroupTest->{'testId'})
+              
+            } # END foreach my $VSANgroupTest (@$VSANgroupTests)
+            
+          } # END case "com.vmware.vsan.health.test.cluster"
           
-          $logger->info("[DEBUG][CLUSTERVSAN-INVENTORY] Adding data for cluster VSAN $moRef") if $showDebug;
-          my $sqlInsert = $dbh->prepare("INSERT INTO clustersVSAN (cluster_id, autohclupdate, hcldbuptodate, controlleronhcl, controllerreleasesupport, controllerdriver, firstseen, lastseen, active) VALUES (?, ?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?), ?)");
-          $sqlInsert->execute(
-            $refCluster->{'id'},
-            $autohclupdate,
-            $hcldbuptodate,
-            $controlleronhcl,
-            $controllerreleasesupport,
-            $controllerdriver,
-            $start,
-            $start,
-            1
-          );
-          $sqlInsert->finish();
-          
-        } # END if ($refCluster != 0) + check
+        } # END switch ($VSANgroup->{'groupId'})
+        
+      } # END foreach my $VSANgroup (@$VSANgroups) 
+ 
+      if ( ($refClusterVSAN != 0)
+        && ($refClusterVSAN->{'hcldbuptodate'} eq $hcldbuptodate)
+        && ($refClusterVSAN->{'autohclupdate'} eq $autohclupdate)
+        && ($refClusterVSAN->{'controlleronhcl'} eq $controlleronhcl)
+        && ($refClusterVSAN->{'controllerreleasesupport'} eq $controllerreleasesupport)
+        && ($refClusterVSAN->{'controllerdriver'} eq $controllerdriver)
+        && ($refClusterVSAN->{'clusterpartition'} eq $clusterpartition)
+        && ($refClusterVSAN->{'vmknicconfigured'} eq $vmknicconfigured)
+        && ($refClusterVSAN->{'matchingsubnets'} eq $matchingsubnets)
+        && ($refClusterVSAN->{'matchingmulticast'} eq $matchingmulticast)
+        && ($refClusterVSAN->{'physdiskoverall'} eq $physdiskoverall)
+        && ($refClusterVSAN->{'physdiskmetadata'} eq $physdiskmetadata)
+        && ($refClusterVSAN->{'physdisksoftware'} eq $physdisksoftware)
+        && ($refClusterVSAN->{'physdiskcongestion'} eq $physdiskcongestion)
+        && ($refClusterVSAN->{'healthversion'} eq $healthversion)
+        && ($refClusterVSAN->{'advcfgsync'} eq $advcfgsync)
+        && ($refClusterVSAN->{'clomdliveness'} eq $clomdliveness)
+        && ($refClusterVSAN->{'diskbalance'} eq $diskbalance)
+        && ($refClusterVSAN->{'upgradesoftware'} eq $upgradesoftware)
+        && ($refClusterVSAN->{'upgradelowerhosts'} eq $upgradelowerhosts))
+      {
+        
+        # Cluster VSAN already exists, have not changed, updated lastseen property
+        $logger->info("[DEBUG][CLUSTERVSAN-INVENTORY] Cluster VSAN $moRef already exists and have not changed since last check, updating lastseen property") if $showDebug;
+        my $sqlUpdate = $dbh->prepare("UPDATE clustersVSAN set lastseen = FROM_UNIXTIME ($start) WHERE id = '" . $refClusterVSAN->{'id'} . "'");
+        $sqlUpdate->execute();
+        $sqlUpdate->finish();
+        
+      }
+      else
+      {
+        
+        if ($refClusterVSAN != 0)
+        {
 
-      } # END foreach my $VSANgroup (@$VSANgroups)
+          # Cluster have changed, we must decom old one before create a new one
+          compareAndLog($refClusterVSAN->{'hcldbuptodate'}, $hcldbuptodate);
+          compareAndLog($refClusterVSAN->{'autohclupdate'}, $autohclupdate);
+          compareAndLog($refClusterVSAN->{'controlleronhcl'}, $controlleronhcl);
+          compareAndLog($refClusterVSAN->{'controllerreleasesupport'}, $controllerreleasesupport);
+          compareAndLog($refClusterVSAN->{'controllerdriver'}, $controllerdriver);
+          compareAndLog($refClusterVSAN->{'clusterpartition'}, $clusterpartition);
+          compareAndLog($refClusterVSAN->{'vmknicconfigured'}, $vmknicconfigured);
+          compareAndLog($refClusterVSAN->{'matchingsubnets'}, $matchingsubnets);
+          compareAndLog($refClusterVSAN->{'matchingmulticast'}, $matchingmulticast);
+          compareAndLog($refClusterVSAN->{'physdiskoverall'}, $physdiskoverall);
+          compareAndLog($refClusterVSAN->{'physdiskmetadata'}, $physdiskmetadata);
+          compareAndLog($refClusterVSAN->{'physdisksoftware'}, $physdisksoftware);
+          compareAndLog($refClusterVSAN->{'physdiskcongestion'}, $physdiskcongestion);
+          compareAndLog($refClusterVSAN->{'healthversion'}, $healthversion);
+          compareAndLog($refClusterVSAN->{'advcfgsync'}, $advcfgsync);
+          compareAndLog($refClusterVSAN->{'clomdliveness'}, $clomdliveness);
+          compareAndLog($refClusterVSAN->{'diskbalance'}, $diskbalance);
+          compareAndLog($refClusterVSAN->{'upgradesoftware'}, $upgradesoftware);
+          compareAndLog($refClusterVSAN->{'upgradelowerhosts'}, $upgradelowerhosts);
+          # $logger->info("[DEBUG][CLUSTERVSAN-INVENTORY] Cluster VSAN $moRef have changed since last check, sending old entry it into oblivion") if $showDebug;
+          # my $sqlUpdate = $dbh->prepare("UPDATE clustersVSAN set active = 0 WHERE id = '" . $refClusterVSAN->{'id'} . "'");
+          # $sqlUpdate->execute();
+          # $sqlUpdate->finish();
+          
+        } # END if ($refClusterVSAN != 0)
+        
+        $logger->info("[DEBUG][CLUSTERVSAN-INVENTORY] Adding data for cluster VSAN $moRef") if $showDebug;
+        my $sqlInsert = $dbh->prepare("INSERT INTO clustersVSAN (cluster_id, autohclupdate, hcldbuptodate, controlleronhcl, controllerreleasesupport, controllerdriver, clusterpartition, vmknicconfigured, matchingsubnets, matchingmulticast, physdiskoverall, physdiskmetadata, physdisksoftware, physdiskcongestion, healthversion, advcfgsync, clomdliveness, diskbalance, upgradesoftware, upgradelowerhosts, firstseen, lastseen) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?))");
+        $sqlInsert->execute(
+          $refCluster->{'id'},
+          $autohclupdate,
+          $hcldbuptodate,
+          $controlleronhcl,
+          $controllerreleasesupport,
+          $controllerdriver,
+          $clusterpartition,
+          $vmknicconfigured,
+          $matchingsubnets,
+          $matchingmulticast,
+          $physdiskoverall,
+          $physdiskmetadata,
+          $physdisksoftware,
+          $physdiskcongestion,
+          $healthversion,
+          $advcfgsync,
+          $clomdliveness,
+          $diskbalance,
+          $upgradesoftware,
+          $upgradelowerhosts,
+          $start,
+          $start
+        );
+        $sqlInsert->finish();
+        
+      } # END if ($refCluster != 0) + check
       
     } # END if (defined($cluster_view->configurationEx->vsanConfigInfo))
     
@@ -1565,7 +1766,7 @@ sub getHardwareStatus
           if (lc($_->status->key) ne 'green' && lc($_->status->key) ne 'unknown')
           {
             
-            my $query = "SELECT * FROM hardwarestatus WHERE host = '" . $hostID . "' AND issuename = '" . $_->name . "' AND active = 1";
+            my $query = "SELECT * FROM hardwarestatus WHERE host = '" . $hostID . "' AND issuename = '" . $_->name . "' ORDER BY lastseen DESC LIMIT 1";
             my $sth = $dbh->prepare($query);
             $sth->execute();
             my $rows = $sth->rows;
@@ -1584,25 +1785,24 @@ sub getHardwareStatus
             else
             {
               
-              if ($rows gt 0)
-              {
-                
-                # HWStatus have changed, we must decom old one before create a new one
-                my $sqlUpdate = $dbh->prepare("UPDATE hardwarestatus set active = 0 WHERE id = '" . $ref->{'id'} . "'");
-                $sqlUpdate->execute();
-                $sqlUpdate->finish();
-                
-              } # END if ($rows gt 0)
+              # if ($rows gt 0)
+              # {
+              #   
+              #   # HWStatus have changed, we must decom old one before create a new one
+              #   my $sqlUpdate = $dbh->prepare("UPDATE hardwarestatus set active = 0 WHERE id = '" . $ref->{'id'} . "'");
+              #   $sqlUpdate->execute();
+              #   $sqlUpdate->finish();
+              #   
+              # } # END if ($rows gt 0)
               
-              my $sqlInsert = $dbh->prepare("INSERT INTO hardwarestatus (host, issuename, issuestate, issuetype, firstseen, lastseen, active) VALUES (?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?), ?)");
+              my $sqlInsert = $dbh->prepare("INSERT INTO hardwarestatus (host, issuename, issuestate, issuetype, firstseen, lastseen) VALUES (?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?))");
               $sqlInsert->execute(
                 $hostID,
                 $_->name,
                 lc($_->status->key),
                 "cpu",
                 $start,
-                $start,
-                1
+                $start
               );
               $sqlInsert->finish();
               
@@ -1620,7 +1820,7 @@ sub getHardwareStatus
           if (lc($_->status->key) ne 'green' && lc($_->status->key) ne 'unknown')
           {
             
-            my $query = "SELECT * FROM hardwarestatus WHERE host = '" . $hostID . "' AND issuename = '" . $_->name . "' AND active = 1";
+            my $query = "SELECT * FROM hardwarestatus WHERE host = '" . $hostID . "' AND issuename = '" . $_->name . "' ORDER BY lastseen DESC LIMIT 1";
             my $sth = $dbh->prepare($query);
             $sth->execute();
             my $rows = $sth->rows;
@@ -1639,25 +1839,24 @@ sub getHardwareStatus
             else
             {
               
-              if ($rows gt 0)
-              {
-                
-                # HWStatus have changed, we must decom old one before create a new one
-                my $sqlUpdate = $dbh->prepare("UPDATE hardwarestatus set active = 0 WHERE id = '" . $ref->{'id'} . "'");
-                $sqlUpdate->execute();
-                $sqlUpdate->finish();
-                
-              } # END if ($rows gt 0)
+              # if ($rows gt 0)
+              # {
+              #   
+              #   # HWStatus have changed, we must decom old one before create a new one
+              #   my $sqlUpdate = $dbh->prepare("UPDATE hardwarestatus set active = 0 WHERE id = '" . $ref->{'id'} . "'");
+              #   $sqlUpdate->execute();
+              #   $sqlUpdate->finish();
+              #   
+              # } # END if ($rows gt 0)
               
-              my $sqlInsert = $dbh->prepare("INSERT INTO hardwarestatus (host, issuename, issuestate, issuetype, firstseen, lastseen, active) VALUES (?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?), ?)");
+              my $sqlInsert = $dbh->prepare("INSERT INTO hardwarestatus (host, issuename, issuestate, issuetype, firstseen, lastseen) VALUES (?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?))");
               $sqlInsert->execute(
                 $hostID,
                 $_->name,
                 lc($_->status->key),
                 "memory",
                 $start,
-                $start,
-                1
+                $start
               );
               $sqlInsert->finish();
               
@@ -1675,7 +1874,7 @@ sub getHardwareStatus
           if (lc($_->status->key) ne 'green' && lc($_->status->key) ne 'unknown')
           {
             
-            my $query = "SELECT * FROM hardwarestatus WHERE host = '" . $hostID . "' AND issuename = '" . $_->name . "' AND active = 1";
+            my $query = "SELECT * FROM hardwarestatus WHERE host = '" . $hostID . "' AND issuename = '" . $_->name . "' ORDER BY lastseen DESC LIMIT 1";
             my $sth = $dbh->prepare($query);
             $sth->execute();
             my $rows = $sth->rows;
@@ -1694,25 +1893,24 @@ sub getHardwareStatus
             else
             {
               
-              if ($rows gt 0)
-              {
-                
-                # HWStatus have changed, we must decom old one before create a new one
-                my $sqlUpdate = $dbh->prepare("UPDATE hardwarestatus set active = 0 WHERE id = '" . $ref->{'id'} . "'");
-                $sqlUpdate->execute();
-                $sqlUpdate->finish();
-                
-              } # END if ($rows gt 0)
+              # if ($rows gt 0)
+              # {
+              #   
+              #   # HWStatus have changed, we must decom old one before create a new one
+              #   my $sqlUpdate = $dbh->prepare("UPDATE hardwarestatus set active = 0 WHERE id = '" . $ref->{'id'} . "'");
+              #   $sqlUpdate->execute();
+              #   $sqlUpdate->finish();
+              #   
+              # } # END if ($rows gt 0)
               
-              my $sqlInsert = $dbh->prepare("INSERT INTO hardwarestatus (host, issuename, issuestate, issuetype, firstseen, lastseen, active) VALUES (?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?), ?)");
+              my $sqlInsert = $dbh->prepare("INSERT INTO hardwarestatus (host, issuename, issuestate, issuetype, firstseen, lastseen) VALUES (?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?))");
               $sqlInsert->execute(
                 $hostID,
                 $_->name,
                 lc($_->status->key),
                 "storage",
                 $start,
-                $start,
-                1
+                $start
               );
               $sqlInsert->finish();
               
@@ -1735,7 +1933,7 @@ sub getHardwareStatus
           if ($_->healthState && lc($_->healthState->key) ne 'green' && lc($_->healthState->key) ne 'unknown')
           {
             
-            my $query = "SELECT * FROM hardwarestatus WHERE host = '" . $hostID . "' AND issuename = '" . $_->name . "' AND active = 1";
+            my $query = "SELECT * FROM hardwarestatus WHERE host = '" . $hostID . "' AND issuename = '" . $_->name . "' ORDER BY lastseen DESC LIMIT 1";
             my $sth = $dbh->prepare($query);
             $sth->execute();
             my $rows = $sth->rows;
@@ -1754,25 +1952,24 @@ sub getHardwareStatus
             else
             {
               
-              if ($rows gt 0)
-              {
-                
-                # HWStatus have changed, we must decom old one before create a new one
-                my $sqlUpdate = $dbh->prepare("UPDATE hardwarestatus set active = 0 WHERE id = '" . $ref->{'id'} . "'");
-                $sqlUpdate->execute();
-                $sqlUpdate->finish();
-                
-              } # END if ($rows gt 0)
+              # if ($rows gt 0)
+              # {
+              #   
+              #   # HWStatus have changed, we must decom old one before create a new one
+              #   my $sqlUpdate = $dbh->prepare("UPDATE hardwarestatus set active = 0 WHERE id = '" . $ref->{'id'} . "'");
+              #   $sqlUpdate->execute();
+              #   $sqlUpdate->finish();
+              #   
+              # } # END if ($rows gt 0)
               
-              my $sqlInsert = $dbh->prepare("INSERT INTO hardwarestatus (host, issuename, issuestate, issuetype, firstseen, lastseen, active) VALUES (?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?), ?)");
+              my $sqlInsert = $dbh->prepare("INSERT INTO hardwarestatus (host, issuename, issuestate, issuetype, firstseen, lastseen) VALUES (?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?))");
               $sqlInsert->execute(
                 $hostID,
                 $_->name,
                 lc($_->healthState->key),
                 $_->sensorType,
                 $start,
-                $start,
-                1
+                $start
               );
               $sqlInsert->finish();
               
@@ -1810,7 +2007,7 @@ sub getAlarms
       $createTime =~ s/T/ /g;
       my $moRef = $alarm->{'mo_ref'}->{'type'}."-".$alarm->{'mo_ref'}->{'value'};
       my $entityMoRef = $entity->{'mo_ref'}->{'type'}."-".$entity->{'mo_ref'}->{'value'};
-      my $query = "SELECT * FROM alarms WHERE vcenter = '" . $vcenterID . "' AND moref = '" . $moRef . "' AND entityMoRef = '" . $entityMoRef . "' AND active = 1";
+      my $query = "SELECT * FROM alarms WHERE vcenter = '" . $vcenterID . "' AND moref = '" . $moRef . "' AND entityMoRef = '" . $entityMoRef . "' ORDER BY lastseen DESC LIMIT 1";
       my $sth = $dbh->prepare($query);
       $sth->execute();
       my $rows = $sth->rows;
@@ -1833,17 +2030,17 @@ sub getAlarms
       else
       {
         
-        if ($rows gt 0)
-        {
-          
-          # Alarm have changed, we must decom old one before create a new one
-          my $sqlUpdate = $dbh->prepare("UPDATE alarms set active = 0 WHERE id = '" . $ref->{'id'} . "'");
-          $sqlUpdate->execute();
-          $sqlUpdate->finish();
-          
-        } # END if ($rows gt 0)
+        # if ($rows gt 0)
+        # {
+        #   
+        #   # Alarm have changed, we must decom old one before create a new one
+        #   my $sqlUpdate = $dbh->prepare("UPDATE alarms set active = 0 WHERE id = '" . $ref->{'id'} . "'");
+        #   $sqlUpdate->execute();
+        #   $sqlUpdate->finish();
+        #   
+        # } # END if ($rows gt 0)
         
-        my $sqlInsert = $dbh->prepare("INSERT INTO alarms (vcenter, moref, entityMoRef, alarm_name, time, status, firstseen, lastseen, active) VALUES (?, ?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?), ?)");
+        my $sqlInsert = $dbh->prepare("INSERT INTO alarms (vcenter, moref, entityMoRef, alarm_name, time, status, firstseen, lastseen) VALUES (?, ?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?))");
         $sqlInsert->execute(
           $vcenterID,
           $moRef,
@@ -1852,8 +2049,7 @@ sub getAlarms
           $createTime,
           $triggeredAlarm->overallStatus->val,
           $start,
-          $start,
-          1
+          $start
         );
         $sqlInsert->finish();
         
@@ -1910,14 +2106,14 @@ sub snapshotInventory
       compareAndLog($refSnapshot->{'quiesced'}, $snapshotTree->quiesced);
       compareAndLog($refSnapshot->{'state'}, $snapshotTree->state->val);
       $logger->info("[DEBUG][SNAPSHOT-INVENTORY] Snapshot $moRef have changed since last check, sending old entry it into oblivion") if $showDebug;
-      my $sqlUpdate = $dbh->prepare("UPDATE snapshots set active = 0 WHERE id = '" . $refSnapshot->{'id'} . "'");
-      $sqlUpdate->execute();
-      $sqlUpdate->finish();
+      # my $sqlUpdate = $dbh->prepare("UPDATE snapshots set active = 0 WHERE id = '" . $refSnapshot->{'id'} . "'");
+      # $sqlUpdate->execute();
+      # $sqlUpdate->finish();
       
     } # END if ($refSnapshot != 0)
     
     $logger->info("[DEBUG][SNAPSHOT-INVENTORY] Adding data for snapshot $moRef") if $showDebug;
-    my $sqlInsert = $dbh->prepare("INSERT INTO snapshots (vm, moref, name, createTime, snapid, description, quiesced, state, firstseen, lastseen, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?), ?)");
+    my $sqlInsert = $dbh->prepare("INSERT INTO snapshots (vm, moref, name, createTime, snapid, description, quiesced, state, firstseen, lastseen) VALUES (?, ?, ?, ?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?))");
     $sqlInsert->execute(
       $vmID,
       $moRef,
@@ -1928,8 +2124,7 @@ sub snapshotInventory
       $snapshotTree->quiesced,
       $snapshotTree->state->val,
       $start,
-      $start,
-      1
+      $start
     );
     $sqlInsert->finish();
     
@@ -1968,7 +2163,7 @@ sub getConfigurationIssue
       if (defined(@$_[0]))
       {
         
-        my $query = "SELECT * FROM configurationissues WHERE host = '" . $hostID . "' AND configissue = '" . @$_[0]->fullFormattedMessage . "' AND active = 1";
+        my $query = "SELECT * FROM configurationissues WHERE host = '" . $hostID . "' AND configissue = '" . @$_[0]->fullFormattedMessage . "' ORDER BY lastseen DESC LIMIT 1";
         my $sth = $dbh->prepare($query);
         $sth->execute();
         my $rows = $sth->rows;
@@ -1989,13 +2184,12 @@ sub getConfigurationIssue
         {
           
           $logger->info("[DEBUG][CONFIGISSUE-INVENTORY] Adding ConfigIssue data for host $hostID") if $showDebug;
-          my $sqlInsert = $dbh->prepare("INSERT INTO configurationissues (host, configissue, firstseen, lastseen, active) VALUES (?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?), ?)");
+          my $sqlInsert = $dbh->prepare("INSERT INTO configurationissues (host, configissue, firstseen, lastseen) VALUES (?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?))");
           $sqlInsert->execute(
             $hostID,
             @$_[0]->fullFormattedMessage,
             $start,
-            $start,
-            1
+            $start
           );
           $sqlInsert->finish();
           
@@ -2027,7 +2221,7 @@ sub getPermissions
     
     my $principal = $perm->principal;
     $principal =~ s/\\/\\\\/g;
-    my $query = "SELECT * FROM permissions WHERE principal LIKE '" . $principal . "' ESCAPE '|' AND vcenter = '" . $vcenterID . "' AND role_name = '" . $h_role{$perm->roleId} . "' AND active = 1";
+    my $query = "SELECT * FROM permissions WHERE principal LIKE '" . $principal . "' ESCAPE '|' AND vcenter = '" . $vcenterID . "' AND role_name = '" . $h_role{$perm->roleId} . "' ORDER BY lastseen DESC LIMIT 1";
     my $sth = $dbh->prepare($query);
     $sth->execute();
     my $rows = $sth->rows;
@@ -2048,7 +2242,7 @@ sub getPermissions
     {
       
       $logger->info("[DEBUG][PERMISSION-INVENTORY] Adding Permission data for role '" . $h_role{$perm->roleId} . " on user '" . $principal . "'") if $showDebug;
-      my $sqlInsert = $dbh->prepare("INSERT INTO permissions (vcenter, principal, role_name, isGroup, inventory_path, firstseen, lastseen, active) VALUES (?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?), ?)");
+      my $sqlInsert = $dbh->prepare("INSERT INTO permissions (vcenter, principal, role_name, isGroup, inventory_path, firstseen, lastseen) VALUES (?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?))");
       my $inventory_path = '/' . Util::get_inventory_path(Vim::get_view(mo_ref => $perm->entity, properties => ['name']), Vim::get_vim());
       $sqlInsert->execute(
         $vcenterID,
@@ -2057,8 +2251,7 @@ sub getPermissions
         $perm->group,
         $inventory_path,
         $start,
-        $start,
-        1
+        $start
       );
       $sqlInsert->finish();
       
@@ -2085,7 +2278,7 @@ sub dvpginventory
       # get vcenter id from database
       my $vcenterID = dbGetVC($vcentersdk->host);
       my $moRef = $distributedVirtualPortgroup_view->{'mo_ref'}->{'type'}."-".$distributedVirtualPortgroup_view->{'mo_ref'}->{'value'};
-      my $query = "SELECT * FROM distributedvirtualportgroups WHERE vcenter = '" . $vcenterID . "' AND moref = '" . $moRef . "' AND active = 1";
+      my $query = "SELECT * FROM distributedvirtualportgroups WHERE vcenter = '" . $vcenterID . "' AND moref = '" . $moRef . "' ORDER BY lastseen DESC LIMIT 1";
       my $sth = $dbh->prepare($query);
       $sth->execute();
       my $rows = $sth->rows;
@@ -2109,17 +2302,17 @@ sub dvpginventory
       else
       {
         
-        if ($rows gt 0)
-        {
-          
-          # DVPortgroup have changed, we must decom old one before create a new one
-          my $sqlUpdate = $dbh->prepare("UPDATE distributedvirtualportgroups set active = 0 WHERE id = '" . $ref->{'id'} . "'");
-          $sqlUpdate->execute();
-          $sqlUpdate->finish();
-          
-        } # END if ($rows gt 0)
+        # if ($rows gt 0)
+        # {
+        #   
+        #   # DVPortgroup have changed, we must decom old one before create a new one
+        #   my $sqlUpdate = $dbh->prepare("UPDATE distributedvirtualportgroups set active = 0 WHERE id = '" . $ref->{'id'} . "'");
+        #   $sqlUpdate->execute();
+        #   $sqlUpdate->finish();
+        #   
+        # } # END if ($rows gt 0)
         
-        my $sqlInsert = $dbh->prepare("INSERT INTO distributedvirtualportgroups (vcenter, moref, name, numports, openports, autoexpand, firstseen, lastseen, active) VALUES (?, ?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?), ?)");
+        my $sqlInsert = $dbh->prepare("INSERT INTO distributedvirtualportgroups (vcenter, moref, name, numports, openports, autoexpand, firstseen, lastseen) VALUES (?, ?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?))");
         $sqlInsert->execute(
           $vcenterID,
           $moRef,
@@ -2128,8 +2321,7 @@ sub dvpginventory
           $openPorts,
           $boolHash{$distributedVirtualPortgroup_view->{'config.autoExpand'}},
           $start,
-          $start,
-          1
+          $start
         );
         $sqlInsert->finish();
         
@@ -2241,15 +2433,14 @@ sub datastoreOrphanedVMFilesreport
                 {
                   
                   $logger->info("[DEBUG][ORPHANFILE-INVENTORY] Adding data for orphan file $fullFilePath") if $showDebug;
-                  my $sqlInsert = $dbh->prepare("INSERT INTO orphanFiles (vcenter, filePath, fileSize, fileModification, firstseen, lastseen, active) VALUES (?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?), ?)");
+                  my $sqlInsert = $dbh->prepare("INSERT INTO orphanFiles (vcenter, filePath, fileSize, fileModification, firstseen, lastseen) VALUES (?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?))");
                   $sqlInsert->execute(
                     $vcenterID,
                     $fullFilePath,
                     $file->fileSize,
                     $file->modification,
                     $start,
-                    $start,
-                    1
+                    $start
                   );
                   $sqlInsert->finish();
                   
@@ -2317,7 +2508,7 @@ sub dbGetSnapshot
   
   # This subroutine will return snapshot object if it exists or 0 if not
   my ($snapshotMoref,$vmID) = @_;
-  my $query = "SELECT * FROM snapshots WHERE moref = '" . $snapshotMoref . "' AND vm = '" . $vmID . "' AND active = 1 LIMIT 1";
+  my $query = "SELECT * FROM snapshots WHERE moref = '" . $snapshotMoref . "' AND vm = '" . $vmID . "' ORDER BY lastseen DESC LIMIT 1";
   my $sth = $dbh->prepare($query);
   $sth->execute();
   my $rows = $sth->rows;
@@ -2347,7 +2538,7 @@ sub dbGetOrphanFile
   
   # This subroutine will return orphan file object if it exists or 0 if not
   my ($orphanFilePath,$vcenterID) = @_;
-  my $query = "SELECT * FROM orphanFiles WHERE filePath = '" . $orphanFilePath . "' AND vcenter = '" . $vcenterID . "' AND active = 1 LIMIT 1";
+  my $query = "SELECT * FROM orphanFiles WHERE filePath = '" . $orphanFilePath . "' AND vcenter = '" . $vcenterID . "' ORDER BY lastseen DESC LIMIT 1";
   my $sth = $dbh->prepare($query);
   $sth->execute();
   my $rows = $sth->rows;
@@ -2377,7 +2568,7 @@ sub dbGetCluster
   
   # This subroutine will return cluster object if it exists or 0 if not
   my ($clusterMoref,$vcenterID) = @_;
-  my $query = "SELECT * FROM clusters WHERE moref = '" . $clusterMoref . "' AND vcenter = '" . $vcenterID . "' AND active = 1 LIMIT 1";
+  my $query = "SELECT * FROM clusters WHERE moref = '" . $clusterMoref . "' AND vcenter = '" . $vcenterID . "' ORDER BY lastseen DESC LIMIT 1";
   my $sth = $dbh->prepare($query);
   $sth->execute();
   my $rows = $sth->rows;
@@ -2407,7 +2598,7 @@ sub dbGetClusterVSAN
   
   # This subroutine will return cluster VSAN object if it exists or 0 if not
   my ($clusterID) = @_;
-  my $query = "SELECT * FROM clustersVSAN WHERE cluster_id = '" . $clusterID . "' AND active = 1 LIMIT 1";
+  my $query = "SELECT * FROM clustersVSAN WHERE cluster_id = '" . $clusterID . "' ORDER BY lastseen DESC LIMIT 1";
   my $sth = $dbh->prepare($query);
   $sth->execute();
   my $rows = $sth->rows;
@@ -2467,7 +2658,7 @@ sub dbGetHost
 
   # This subroutine will return host object if it exists or 0 if not
   my ($hostMoref,$vcenterID) = @_;
-  my $query = "SELECT * FROM hosts WHERE moref = '" . $hostMoref . "' AND vcenter = '" . $vcenterID . "' AND active = 1 LIMIT 1";
+  my $query = "SELECT * FROM hosts WHERE moref = '" . $hostMoref . "' AND vcenter = '" . $vcenterID . "' ORDER BY lastseen DESC LIMIT 1";
   my $sth = $dbh->prepare($query);
   $sth->execute();
   my $rows = $sth->rows;
@@ -2527,7 +2718,7 @@ sub dbGetDatastore
   
   # This subroutine will return datastore object if it exists or 0 if not
   my ($datastoreName,$vcenterID) = @_;
-  my $query = "SELECT * FROM datastores WHERE datastore_name = '" . $datastoreName . "' AND vcenter = '" . $vcenterID . "' AND active = 1 LIMIT 1";
+  my $query = "SELECT * FROM datastores WHERE datastore_name = '" . $datastoreName . "' AND vcenter = '" . $vcenterID . "' ORDER BY lastseen DESC LIMIT 1";
   my $sth = $dbh->prepare($query);
   $sth->execute();
   my $rows = $sth->rows;
@@ -2587,7 +2778,7 @@ sub dbGetVM
   
   # This subroutine will return vm object if it exists or 0 if not
   my ($vmMoref,$vcenterID) = @_;
-  my $query = "SELECT * FROM vms WHERE moref = '" . $vmMoref . "' AND vcenter = '" . $vcenterID . "' AND active = 1 LIMIT 1";
+  my $query = "SELECT * FROM vms WHERE moref = '" . $vmMoref . "' AND vcenter = '" . $vcenterID . "' ORDER BY lastseen DESC LIMIT 1";
   my $sth = $dbh->prepare($query);
   $sth->execute();
   my $rows = $sth->rows;
@@ -2701,26 +2892,27 @@ sub dbPurgeOldData
   
   # This subroutine will scavenge old data based on date threshold
   my ($purgeThreshold) = @_;
-  $dbh->do("DELETE FROM alarms WHERE lastseen < DATE_SUB(NOW(), INTERVAL $purgeThreshold DAY) AND active = 0");
-  $dbh->do("DELETE FROM certificates WHERE lastseen < DATE_SUB(NOW(), INTERVAL $purgeThreshold DAY) AND active = 0");
-  $dbh->do("DELETE FROM clusters WHERE lastseen < DATE_SUB(NOW(), INTERVAL $purgeThreshold DAY) AND active = 0");
+  $dbh->do("DELETE FROM alarms WHERE lastseen < DATE_SUB(NOW(), INTERVAL $purgeThreshold DAY)");
+  $dbh->do("DELETE FROM certificates WHERE lastseen < DATE_SUB(NOW(), INTERVAL $purgeThreshold DAY)");
+  $dbh->do("DELETE FROM clusters WHERE lastseen < DATE_SUB(NOW(), INTERVAL $purgeThreshold DAY)");
+  $dbh->do("DELETE FROM clustersVSAN WHERE lastseen < DATE_SUB(NOW(), INTERVAL $purgeThreshold DAY)");
   $dbh->do("DELETE FROM clusterMetrics WHERE lastseen < DATE_SUB(NOW(), INTERVAL ".($purgeThreshold+1)." DAY)");
-  $dbh->do("DELETE FROM configurationissues WHERE lastseen < DATE_SUB(NOW(), INTERVAL $purgeThreshold DAY) AND active = 0");
-  $dbh->do("DELETE FROM datastores WHERE lastseen < DATE_SUB(NOW(), INTERVAL $purgeThreshold DAY) AND active = 0");
+  $dbh->do("DELETE FROM configurationissues WHERE lastseen < DATE_SUB(NOW(), INTERVAL $purgeThreshold DAY)");
+  $dbh->do("DELETE FROM datastores WHERE lastseen < DATE_SUB(NOW(), INTERVAL $purgeThreshold DAY)");
   $dbh->do("DELETE FROM datastoreMetrics WHERE lastseen < DATE_SUB(NOW(), INTERVAL ".($purgeThreshold+1)." DAY)");
-  $dbh->do("DELETE FROM distributedvirtualportgroups WHERE lastseen < DATE_SUB(NOW(), INTERVAL $purgeThreshold DAY) AND active = 0");
-  $dbh->do("DELETE FROM hardwarestatus WHERE lastseen < DATE_SUB(NOW(), INTERVAL $purgeThreshold DAY) AND active = 0");
-  $dbh->do("DELETE FROM hosts WHERE lastseen < DATE_SUB(NOW(), INTERVAL $purgeThreshold DAY) AND active = 0");
+  $dbh->do("DELETE FROM distributedvirtualportgroups WHERE lastseen < DATE_SUB(NOW(), INTERVAL $purgeThreshold DAY)");
+  $dbh->do("DELETE FROM hardwarestatus WHERE lastseen < DATE_SUB(NOW(), INTERVAL $purgeThreshold DAY)");
+  $dbh->do("DELETE FROM hosts WHERE lastseen < DATE_SUB(NOW(), INTERVAL $purgeThreshold DAY)");
   $dbh->do("DELETE FROM hostMetrics WHERE lastseen < DATE_SUB(NOW(), INTERVAL ".($purgeThreshold+1)." DAY)");
-  $dbh->do("DELETE FROM licenses WHERE lastseen < DATE_SUB(NOW(), INTERVAL $purgeThreshold DAY) AND active = 0");
-  $dbh->do("DELETE FROM sessions WHERE lastseen < DATE_SUB(NOW(), INTERVAL $purgeThreshold DAY) AND active = 0");
-  $dbh->do("DELETE FROM snapshots WHERE lastseen < DATE_SUB(NOW(), INTERVAL $purgeThreshold DAY) AND active = 0");
+  $dbh->do("DELETE FROM licenses WHERE lastseen < DATE_SUB(NOW(), INTERVAL $purgeThreshold DAY)");
+  $dbh->do("DELETE FROM sessions WHERE lastseen < DATE_SUB(NOW(), INTERVAL $purgeThreshold DAY)");
+  $dbh->do("DELETE FROM snapshots WHERE lastseen < DATE_SUB(NOW(), INTERVAL $purgeThreshold DAY)");
   $dbh->do("DELETE FROM vcenters WHERE lastseen < DATE_SUB(NOW(), INTERVAL $purgeThreshold DAY)");
-  $dbh->do("DELETE FROM vms WHERE lastseen < DATE_SUB(NOW(), INTERVAL $purgeThreshold DAY) AND active = 0");
+  $dbh->do("DELETE FROM vms WHERE lastseen < DATE_SUB(NOW(), INTERVAL $purgeThreshold DAY)");
   $dbh->do("DELETE FROM vmMetrics WHERE lastseen < DATE_SUB(NOW(), INTERVAL ".($purgeThreshold+1)." DAY)");
   # After purging data, we run some optimisation task on db
   # TODO = switch to InnoDb RECREATE + ANALYZE tasks as OPTIMIZE is supported only on MyISAM
-  $dbh->do("OPTIMIZE TABLE alarms, certificates, clusters, configurationissues, datastores, distributedvirtualportgroups, hardwarestatus, hosts, licenses, sessions, snapshots, vcenters, vms");
+  $dbh->do("OPTIMIZE TABLE alarms, certificates, clusters, clustersVSAN, clusterMetrics, configurationissues, datastores, datastoreMetrics, distributedvirtualportgroups, hardwarestatus, hosts, hostMetrics, licenses, sessions, snapshots, vcenters, vms, vmMetrics");
 
 } # END sub dbPurgeOldData
 
