@@ -88,12 +88,12 @@ class SexiCheck {
     $this->footer = "";
     $this->graph = "";
 
-    if ($this->selectedDate != date("Y/m/d")) {
+    // if ($this->selectedDate != date("Y/m/d")) {
       # if not the same day, we build our dates objects that will be used in SQL query (after firstseen + before lastseen)
       $sqlQuery .= " AND main.firstseen < '" . $this->selectedDate . " 23:59:59' AND main.lastseen > '" . $this->selectedDate . " 00:00:01'";
-    } else {
-      $sqlQuery .= " AND main.active = 1";
-    }
+    // } else {
+    //   $sqlQuery .= " AND main.active = 1";
+    // }
 
     if (!empty($sqlQueryHaving)) {
       $sqlQuery .= " HAVING $sqlQueryHaving";
@@ -126,7 +126,7 @@ class SexiCheck {
       switch ($this->typeCheck) {
         case 'majorityPerCluster':
           $hMajority = array();
-          $sqlDataMaj = $this->db->rawQuery("SELECT cluster as clus, (SELECT " . $this->majorityProperty . " FROM hosts WHERE cluster = clus GROUP BY " . $this->majorityProperty . " ORDER BY COUNT(*) DESC LIMIT 0,1) AS topProp FROM `hosts` WHERE active = 1 GROUP BY clus");
+          $sqlDataMaj = $this->db->rawQuery("SELECT cluster as clus, (SELECT " . $this->majorityProperty . " FROM hosts WHERE cluster = clus GROUP BY " . $this->majorityProperty . " ORDER BY COUNT(*) DESC LIMIT 0,1) AS topProp FROM `hosts` WHERE lastseen > '" . $this->selectedDate . " 00:00:01' GROUP BY clus");
           foreach ($sqlDataMaj as $entry) {
             $hMajority[$entry["clus"]] = $entry["topProp"];
           }
