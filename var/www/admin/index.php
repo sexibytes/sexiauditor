@@ -7,22 +7,24 @@ $additionalScript = array(  'js/vopendata.js',
 require("header.php");
 require("helper.php");
 require("dbconnection.php");
+$dateToSearch = date("Y-m-d") . " 00:00:01";
 # get vcenters info
 $totalVCs = $db->getValue("vcenters", "COUNT(vcenters.id)");
 # get clusters info
 $db->join("vcenters", "clusters.vcenter = vcenters.id", "INNER");
-$db->where('clusters.active', 1);
-$totalClusters = $db->getValue("clusters", "COUNT(clusters.id)");
+$db->where('clusters.lastseen', $dateToSearch, ">=");
+# We must exclude the 'Standalone' cluster from count
+$totalClusters = $db->getValue("clusters", "COUNT(clusters.id)") - 1;
 # get hosts info
 $db->join("clusters", "hosts.cluster = clusters.id", "INNER");
 $db->join("vcenters", "clusters.vcenter = vcenters.id", "INNER");
-$db->where('hosts.active', 1);
+$db->where('hosts.lastseen', $dateToSearch, ">=");
 $totalHosts = $db->getValue("hosts", "COUNT(hosts.id)");
 # get vms info
 $db->join("hosts", "vms.host = hosts.id", "INNER");
 $db->join("clusters", "hosts.cluster = clusters.id", "INNER");
 $db->join("vcenters", "hosts.vcenter = vcenters.id", "INNER");
-$db->where('vms.active', 1);
+$db->where('vms.lastseen', $dateToSearch, ">=");
 $totalVMs = $db->getValue("vms", "COUNT(vms.id)");
 
 if ($totalVCs == 0 || $totalClusters == 0 || $totalHosts == 0 || $totalVMs == 0)
@@ -95,40 +97,40 @@ else
   
   $introductionLabel = 'This is a selection of statistics from your platform, based on the <a href="http://www.vopendata.org">vOpenData project</a>. These will be updated every time scheduler is running !';
   $db->join("vms", "vms.id = vmMetrics.vm_id", "INNER");
-  $db->where('vms.active', 1);
+  $db->where('vms.lastseen', $dateToSearch, ">=");
   $totalCommited = $db->getValue("vmMetrics", "SUM(vmMetrics.commited)");
   $db->join("vms", "vms.id = vmMetrics.vm_id", "INNER");
-  $db->where('vms.active', 1);
+  $db->where('vms.lastseen', $dateToSearch, ">=");
   $totalUncommited = $db->getValue("vmMetrics", "SUM(vmMetrics.uncommited)");
-  $db->where('vms.active', 1);
+  $db->where('vms.lastseen', $dateToSearch, ">=");
   $totalProvisioned = $db->getValue("vms", "SUM(vms.provisionned)");
-  $db->where('vms.active', 1);
+  $db->where('vms.lastseen', $dateToSearch, ">=");
   $totalVMCPU = $db->getValue("vms", "SUM(vms.numcpu)");
-  $db->where('vms.active', 1);
+  $db->where('vms.lastseen', $dateToSearch, ">=");
   $totalVMMemory = $db->getValue("vms", "SUM(vms.memory)");
-  $db->where('datastores.active', 1);
+  $db->where('datastores.lastseen', $dateToSearch, ">=");
   $db->where('datastores.shared', 1);
   $totalVMFS = $db->getValue("datastores", "COUNT(datastores.id)");
-  $db->where('datastores.active', 1);
+  $db->where('datastores.lastseen', $dateToSearch, ">=");
   $db->where('datastores.type', 'NFS');
   $totalNFS = $db->getValue("datastores", "COUNT(datastores.id)");
   $totalDatastore = $totalNFS + $totalVMFS;
-  $db->where('hosts.active', 1);
+  $db->where('hosts.lastseen', $dateToSearch, ">=");
   $totalHostsCPU = $db->getValue("hosts", "SUM(hosts.numcpu)");
-  $db->where('hosts.active', 1);
+  $db->where('hosts.lastseen', $dateToSearch, ">=");
   $totalHostsCPUMhz = $db->getValue("hosts", "SUM(hosts.cpumhz)");
-  $db->where('hosts.active', 1);
+  $db->where('hosts.lastseen', $dateToSearch, ">=");
   $totalHostsMemory = $db->getValue("hosts", "SUM(hosts.memory)");
   $db->join("datastoreMetrics", "datastores.id = datastoreMetrics.datastore_id", "INNER");
-  $db->where('datastores.active', 1);
+  $db->where('datastores.lastseen', $dateToSearch, ">=");
   $db->orderBy("datastoreMetrics.id","desc");
   $totalDatastoreSize = $db->getValue("datastores", "SUM(datastoreMetrics.size)", 1);
   $db->join("clusters", "clusters.id = clusterMetrics.cluster_id", "INNER");
-  $db->where('clusters.active', 1);
+  $db->where('clusters.lastseen', $dateToSearch, ">=");
   $totalvMotion = $db->getValue("clusterMetrics", "SUM(clusterMetrics.vmotion)");
   $totalBandwidth = 0;
   $db->join("hosts", "hosts.id = hostMetrics.host_id", "INNER");
-  $db->where('hosts.active', 1);
+  $db->where('hosts.lastseen', $dateToSearch, ">=");
   $totalTPSSavings = $db->getValue("hostMetrics", "SUM(hostMetrics.sharedmemory)");
   $averageVMPervCenter = round($totalVMs / $totalVCs);
   $averageVMPerCluster = round($totalVMs / $totalClusters);
@@ -136,19 +138,20 @@ else
   $averageVMDKCommitedSize = round($totalCommited / $totalVMs, 2);
   $averageVMDKProvisionedSize = round($totalProvisioned / $totalVMs, 2);
   $averageVMDKUncommitedSize = round($totalUncommited / $totalVMs, 2);
-  $db->where('active', 1);
+  $db->where('lastseen', $dateToSearch, ">=");
+  $db->where('guestOS', '', '<>');
   $db->groupBy("guestOS");
   $db->orderBy("total","desc");
   $sortedTabGuestOS = $db->get("vms", 11, "guestOS, COUNT(*) as total");
-  $db->where('hosts.active', 1);
+  $db->where('hosts.lastseen', $dateToSearch, ">=");
   $db->groupBy("hosts.model");
   $db->orderBy("total","desc");
   $sortedHostModel = $db->get("hosts", 5, "hosts.model, COUNT(*) as total");
-  $db->where('hosts.active', 1);
+  $db->where('hosts.lastseen', $dateToSearch, ">=");
   $db->groupBy("hosts.cputype");
   $db->orderBy("total","desc");
   $sortedHostCPUType = $db->get("hosts", 5, "hosts.cputype, COUNT(*) as total");
-  $db->where('hosts.active', 1);
+  $db->where('hosts.lastseen', $dateToSearch, ">=");
   $db->groupBy("hosts.esxbuild");
   $db->orderBy("total","desc");
   $sortedESXBuild = $db->get("hosts", 5, "hosts.esxbuild, COUNT(*) as total");
