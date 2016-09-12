@@ -537,3 +537,8 @@ input[readonly] {
   display: flex;
   align-items: center;
 }
+
+#export-feature { margin-top: 10px; }
+
+#inventory_info, #inventory_filter, #inventory_length { font-size: 14px; }
+#inventory_length { margin-right: 40px; }
