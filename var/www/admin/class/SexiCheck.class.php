@@ -103,7 +103,7 @@ class SexiCheck {
     } elseif ($this->id != ("HOSTCONFIGURATIONISSUES" || "HOSTHARDWARESTATUS" || "VCCERTIFICATESREPORT" || "VCLICENCEREPORT")) {
       $sqlQuery .= " GROUP BY main.moref, v.id";
     }
-    error_log($sqlQuery);
+    // error_log($sqlQuery);
     $sqlData = $this->db->rawQuery($sqlQuery);
     if ($this->db->count > 0) {
       $this->header .= '    <h2 class="text-danger anchor" id="' . $this->id . '"><i class="glyphicon glyphicon-exclamation-sign"></i> ' . $this->langDef[$this->id]["title"] . '</h2>'."\n";
