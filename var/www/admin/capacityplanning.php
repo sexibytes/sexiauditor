@@ -32,7 +32,7 @@ try {
     if (!isHttpAvailable("http://$sexigrafNode:8080"))
     {
       
-      throw new Exception('Connection to '. $sexigrafNode . ' seems impossible. Please check URL on <a href="config.php">settings page</a> or check for network/firewall issue.');
+      throw new Exception('Connection to SexiGraf node "'. $sexigrafNode . '" seems impossible. Please check URL on settings page or check for network/firewall issue.');
       
     } # END if (!isHttpAvailable($sexigrafNode))
     
