@@ -1,5 +1,5 @@
 -- --------------------------------------------------------
--- Host:                         sexiauditor-dev2.fr.world.socgen
+-- Host:                         sexiauditor.sexibyt.es
 -- Server version:               10.0.26-MariaDB-0+deb8u1 - (Debian)
 -- Server OS:                    debian-linux-gnu
 -- HeidiSQL Version:             9.3.0.4984
