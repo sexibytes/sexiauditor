@@ -85,7 +85,7 @@ if ($check->getModuleSchedule('clusterAdmissionControl') != 'off' && $check->get
 if ($check->getModuleSchedule('clusterMembersLUNPathCountMismatch') != 'off' && $check->getModuleSchedule('inventory') != 'off')
 {
   
-  $check->displayCheck([  'sqlQuery' => "SELECT main.id as clusterId, main.cluster_name as cluster, h.host_name, h.datastorecount, v.vcname as vcenter FROM hosts h INNER JOIN clusters main ON h.cluster = main.id INNER JOIN vcenters v ON h.vcenter = v.id WHERE h.active = 1",
+  $check->displayCheck([  'sqlQuery' => "SELECT main.id as clusterId, main.cluster_name as cluster, h.host_name, h.datastorecount, v.vcname as vcenter FROM hosts h INNER JOIN clusters main ON h.cluster = main.id INNER JOIN vcenters v ON h.vcenter = v.id WHERE true",
                           "id" => "CLUSTERDATASTORECONSISTENCY",
                           'typeCheck' => 'majorityPerCluster',
                           'majorityProperty' => 'datastorecount',
@@ -115,7 +115,7 @@ if ($check->getModuleSchedule('clusterMembersVersion') != 'off' && $check->getMo
 if ($check->getModuleSchedule('clusterMembersLUNPathCountMismatch') != 'off' && $check->getModuleSchedule('inventory') != 'off')
 {
   
-  $check->displayCheck([  'sqlQuery' => "SELECT main.id as clusterId, main.cluster_name as cluster, h.host_name, h.lunpathcount, v.vcname as vcenter FROM hosts h INNER JOIN clusters main ON h.cluster = main.id INNER JOIN vcenters v ON h.vcenter = v.id WHERE h.active = 1",
+  $check->displayCheck([  'sqlQuery' => "SELECT main.id as clusterId, main.cluster_name as cluster, h.host_name, h.lunpathcount, v.vcname as vcenter FROM hosts h INNER JOIN clusters main ON h.cluster = main.id INNER JOIN vcenters v ON h.vcenter = v.id WHERE true",
                           "id" => "CLUSTERMEMBERSLUNPATHCOUNTMISMATCH",
                           'typeCheck' => 'majorityPerCluster',
                           'majorityProperty' => 'lunpathcount',
@@ -126,8 +126,8 @@ if ($check->getModuleSchedule('clusterMembersLUNPathCountMismatch') != 'off' && 
 
 if ($check->getModuleSchedule('clusterCPURatio') != 'off' && $check->getModuleSchedule('inventory') != 'off')
 {
-  
-  $check->displayCheck([  'sqlQuery' => "SELECT main.cluster_name as name, main.id as clus, (SELECT SUM(h.numcpucore) FROM hosts h WHERE h.active = 1 AND h.cluster = main.id) as pcpu, (SELECT SUM(vms.numcpu) FROM vms INNER JOIN hosts h ON vms.host = h.id WHERE vms.active = 1 AND h.cluster = main.id) as vcpu, ROUND((SELECT SUM(vms.numcpu) FROM vms INNER JOIN hosts h ON vms.host = h.id WHERE vms.active = 1 AND h.cluster = main.id)/(SELECT SUM(h.numcpucore) FROM hosts h WHERE h.active = 1 AND h.cluster = main.id)) as vp_cpuratio, v.vcname as vcenter FROM clusters main INNER JOIN vcenters v ON main.vcenter = v.id WHERE ROUND((SELECT SUM(vms.numcpu) FROM vms INNER JOIN hosts h ON vms.host = h.id WHERE vms.active = 1 AND h.cluster = main.id)/(SELECT SUM(h.numcpucore) FROM hosts h WHERE h.active = 1 AND h.cluster = main.id)) > ". $check->getConfig('thresholdCPURatio'),
+
+  $check->displayCheck([  'sqlQuery' => "SELECT main.cluster_name as name, main.id as clus, (SELECT SUM(h.numcpucore) FROM hosts h WHERE h.cluster = main.id) as pcpu, (SELECT SUM(vms.numcpu) FROM vms INNER JOIN hosts h ON vms.host = h.id WHERE vms.firstseen < '" . $check->getSelectedDate() . " 23:59:59' AND vms.lastseen > '" . $check->getSelectedDate() . " 00:00:01' AND h.cluster = main.id) as vcpu, ROUND((SELECT SUM(vms.numcpu) FROM vms INNER JOIN hosts h ON vms.host = h.id WHERE vms.firstseen < '" . $check->getSelectedDate() . " 23:59:59' AND vms.lastseen > '" . $check->getSelectedDate() . " 00:00:01' AND h.cluster = main.id)/(SELECT SUM(h.numcpucore) FROM hosts h WHERE h.firstseen < '" . $check->getSelectedDate() . " 23:59:59' AND h.lastseen > '" . $check->getSelectedDate() . " 00:00:01' AND h.cluster = main.id)) as vp_cpuratio, v.vcname as vcenter FROM clusters main INNER JOIN vcenters v ON main.vcenter = v.id WHERE ROUND((SELECT SUM(vms.numcpu) FROM vms INNER JOIN hosts h ON vms.host = h.id WHERE vms.firstseen < '" . $check->getSelectedDate() . " 23:59:59' AND vms.lastseen > '" . $check->getSelectedDate() . " 00:00:01' AND h.cluster = main.id)/(SELECT SUM(h.numcpucore) FROM hosts h WHERE h.firstseen < '" . $check->getSelectedDate() . " 23:59:59' AND h.lastseen > '" . $check->getSelectedDate() . " 00:00:01' AND h.cluster = main.id)) > ". $check->getConfig('thresholdCPURatio'),
                           "id" => "CLUSTERCPURATIO",
                           'thead' => array('Cluster Name', 'pCPU', 'vCPU', 'CPU ratio', 'vCenter'),
                           'tbody' => array('"<td>".$entry["name"]."</td>"', '"<td>".$entry["pcpu"]."</td>"', '"<td>".$entry["vcpu"]."</td>"', '"<td>".$entry["vp_cpuratio"]." : 1</td>"', '"<td>".$entry["vcenter"]."</td>"')]);
