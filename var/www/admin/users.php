@@ -1,142 +1,202 @@
-<?php require("session.php"); ?>
 <?php
+require("session.php");
 require("dbconnection.php");
 $isAdminPage = true;
 $title = "Users Management";
 require("header.php");
 require("helper.php");
 require 'phpmailer/PHPMailerAutoload.php';
-// $xmlPasswordsFile = "/var/www/admin/conf/passwords.xml";
-// if (is_writeable($xmlPasswordsFile)):
-  // $xmlPassword = simplexml_load_file($xmlPasswordsFile);
-  if ($_SERVER['REQUEST_METHOD'] == 'POST'){
-    $issue = true;
-    do {
-      $db->where('configid', "smtpAddress");
-      $smtpHost = $db->getOne('config');
-      $smtpHost = $smtpHost['value'];
-      $db->where('configid', "senderMail");
-      $smtpSender = $db->getOne('config');
-      $smtpSender = $smtpSender['value'];
-      $db->where('configid', "recipientMail");
-      $smtpRecipient = $db->getOne('config');
-      $smtpRecipient = $smtpRecipient['value'];
 
-      // $xmlSettingsFile = "/var/www/admin/conf/configs.xml";
-      // if (is_readable($xmlSettingsFile)) {
-      //   $xmlSettings = simplexml_load_file($xmlSettingsFile);
-      //   $smtpHost = $xmlSettings->xpath('/configs/config[id="smtpAddress"]')[0]->value;
-      //   $smtpSender = $xmlSettings->xpath('/configs/config[id="senderMail"]')[0]->value;
-      //   $smtpRecipient = $xmlSettings->xpath('/configs/config[id="recipientMail"]')[0]->value;
-      //   $smtpHost = $xmlSettings->xpath('/configs/config[id="smtpAddress"]')[0]->value;
-      $mail = new PHPMailer;
-      $mail->isSMTP();
-      $mail->Host = $smtpHost;
-      $mail->SMTPAuth = false;
-      $mail->setFrom($smtpSender);
-      $mail->isHTML(true);
-      // } else {
-      //   $issueMessage = $xmlSettingsFile . ' is not existant or not readable';
-      //   break;
-      // }
-      switch ($_POST['submit']) {
-        case "add" :
-          if (!isset($_POST['input-displayname']) || !isset($_POST['input-username']) || !isset($_POST['input-password']) || !isset($_POST['input-email']) || !isset($_POST['input-role']) || secureInput($_POST['input-displayname']) == '' || secureInput($_POST['input-username']) == '' || secureInput($_POST['input-password']) == '' || secureInput($_POST['input-email']) == '' ) {
-            $issueMessage = 'Missing mandatory values, please fill all requested fields';
-            break;
-          }
+if ($_SERVER['REQUEST_METHOD'] == 'POST')
+{
+  
+  $issue = true;
+  
+  do
+  {
+    
+    $db->where('configid', "smtpAddress");
+    $smtpHost = $db->getOne('config');
+    $smtpHost = $smtpHost['value'];
+    $db->where('configid', "senderMail");
+    $smtpSender = $db->getOne('config');
+    $smtpSender = $smtpSender['value'];
+    $db->where('configid', "recipientMail");
+    $smtpRecipient = $db->getOne('config');
+    $smtpRecipient = $smtpRecipient['value'];
+    $mail = new PHPMailer;
+    $mail->isSMTP();
+    $mail->Host = $smtpHost;
+    $mail->SMTPAuth = false;
+    $mail->setFrom($smtpSender);
+    $mail->isHTML(true);
 
-          $db->where('username', secureInput($_POST['input-username']));
-          $resultUser = $db->get('users');
-          if ($db->count > 0) {
-            $issueMessage = 'Username "' . secureInput($_POST['input-username']) . '" already exists';
-            break;
-          }
-          $data = Array ("username" => secureInput($_POST['input-username']),
-                         "displayname" => secureInput($_POST['input-displayname']),
-                         "email" => secureInput($_POST['input-email']),
-                         "role" => secureInput($_POST['input-role']),
-                         "password" => hash('sha512', secureInput($_POST['input-password']))
-          );
-          $id = $db->insert ('users', $data);
-          if(!$id) {
-            $issueMessage = 'Error adding new user "' . secureInput($_POST['username']);
-            break;
-          }
-          $db->where('id', secureInput($_POST['input-role']));
-          $resultRole = $db->getOne('roles');
-          $mail->addAddress(secureInput($_POST['input-email']));
-          $mail->Subject = 'User created on ' . gethostname();
-          $mail->Body    = sendMailNewUser(secureInput($_POST['input-username']), secureInput($_POST['input-displayname']), secureInput($_POST['input-password']), $resultRole['role'], "http://". $_SERVER['HTTP_HOST']);
-          $mail->AltBody = 'This is the body in plain text for non-HTML mail clients';
-          if(!$mail->send()) {
-            $issueMessage = 'Message could not be sent, with the following error: ' . $mail->ErrorInfo;
-            break;
-          }
-          $okMessage = 'New user "' . secureInput($_POST['input-username']) . '" have been successfuly added.';
-          $issue = false;
-        break;
-        case "edit-username" :
-          if (!isset($_POST['input-new-displayname']) || !isset($_POST['input-new-email']) || (!isset($_POST['input-new-role']) && $_POST['input-username'] != "admin") || secureInput($_POST['input-new-displayname']) == '' || secureInput($_POST['input-new-email']) == '' ) {
-            $issueMessage = 'Missing mandatory values, please fill all requested fields';
-            break;
-          }
-          $data = Array ( "displayname" => secureInput($_POST["input-new-displayname"]),
-                          "email" => secureInput($_POST['input-new-email']),
-                          "role" => secureInput($_POST['input-new-role'])
-                        );
-          $db->where ('username', secureInput($_POST['input-username']));
-          if (!$db->update ('users', $data)) {
-            $issueMessage = 'Error editing username "' . secureInput($_POST['username']);
-            break;
-          }
-          $okMessage = 'User "' . secureInput($_POST['input-username']) . '" have been successfuly edited.';
-          $issue = false;
-        break;
-        case "resetpw" :
-          if (!isset($_POST['input-new-password']) || secureInput($_POST['input-new-password']) == '') {
-            $issueMessage = 'Empty password is not supported';
-            break;
-          }
-          $data = Array ("password" => hash('sha512', secureInput($_POST['input-new-password'])));
-          $db->where ('username', secureInput($_POST['input-username']));
-          if (!$db->update ('users', $data)) {
-            $issueMessage = 'Error updating new password for "' . secureInput($_POST['input-username']) . '" username';
-            break;
-          }
-          $mail->addAddress($smtpRecipient);
-          $mail->Subject = 'Password reset initiated for user ' . secureInput($_POST['input-username']);
-          $mail->Body    = 'The password for user ' . secureInput($_POST['input-username']) . ' have been reseted by ' . secureInput($_SESSION['username']) . '<br />New password is '. secureInput($_POST['input-new-password']);
-          $mail->AltBody = 'This is the body in plain text for non-HTML mail clients';
-          if(!$mail->send()) {
-            $issueMessage = 'Message could not be sent, with the following error: ' . $mail->ErrorInfo;
-            break;
-          }
-          $okMessage = 'Password for user "' . secureInput($_POST['input-username']) . '" have been successfuly reseted.';
-          $issue = false;
-          exit;
-        break;
-        case "delete-username" :
+    switch ($_POST['submit'])
+    {
+      
+      case "add" :
+      
+        if (!isset($_POST['input-displayname']) || !isset($_POST['input-username']) || !isset($_POST['input-password']) || !isset($_POST['input-email']) || !isset($_POST['input-role']) || secureInput($_POST['input-displayname']) == '' || secureInput($_POST['input-username']) == '' || secureInput($_POST['input-password']) == '' || secureInput($_POST['input-email']) == '' )
+        {
+          
+          $issueMessage = 'Missing mandatory values, please fill all requested fields';
+          break;
+          
+        } # END if checks
+        
+        $db->where('username', secureInput($_POST['input-username']));
+        $resultUser = $db->get('users');
+        
+        if ($db->count > 0)
+        {
+          
+          $issueMessage = 'Username "' . secureInput($_POST['input-username']) . '" already exists';
+          break;
+          
+        } # END if ($db->count > 0)
+        
+        $data = Array ("username" => secureInput($_POST['input-username']),
+                       "displayname" => secureInput($_POST['input-displayname']),
+                       "email" => secureInput($_POST['input-email']),
+                       "role" => secureInput($_POST['input-role']),
+                       "password" => hash('sha512', secureInput($_POST['input-password']))
+        );
+        $id = $db->insert ('users', $data);
+        
+        if (!$id)
+        {
+          
+          $issueMessage = 'Error adding new user "' . secureInput($_POST['username']);
+          break;
+          
+        } # END if (!$id)
+        
+        $db->where('id', secureInput($_POST['input-role']));
+        $resultRole = $db->getOne('roles');
+        $mail->addAddress(secureInput($_POST['input-email']));
+        $mail->Subject = '['.strtoupper(gethostname()).'] New user has been created';
+        $mail->Body    = sendMailNewUser(secureInput($_POST['input-username']), secureInput($_POST['input-displayname']), secureInput($_POST['input-password']), $resultRole['role'], "http://". $_SERVER['HTTP_HOST']);
+        $mail->AltBody = 'This is the body in plain text for non-HTML mail clients';
+        
+        if (!$mail->send())
+        {
+          
+          $issueMessage = 'Message could not be sent, with the following error: ' . $mail->ErrorInfo;
+          break;
+          
+        } # END if (!$mail->send())
+        
+        $okMessage = 'New user "' . secureInput($_POST['input-username']) . '" have been successfuly added.';
+        $issue = false;
+        
+      break; # END case "add" :
+      
+      case "edit-username" :
+      
+        if (!isset($_POST['input-new-displayname']) || !isset($_POST['input-new-email']) || (!isset($_POST['input-new-role']) && $_POST['input-username'] != "admin") || secureInput($_POST['input-new-displayname']) == '' || secureInput($_POST['input-new-email']) == '' )
+        {
+          
+          $issueMessage = 'Missing mandatory values, please fill all requested fields';
+          break;
+          
+        } # END if checkd
+        
+        $data = Array ( "displayname" => secureInput($_POST["input-new-displayname"]),
+                        "email" => secureInput($_POST['input-new-email']),
+                        "role" => secureInput($_POST['input-new-role'])
+                      );
+        $db->where ('username', secureInput($_POST['input-username']));
+        
+        if (!$db->update ('users', $data))
+        {
+          
+          $issueMessage = 'Error editing username "' . secureInput($_POST['username']);
+          break;
+          
+        } # END if (!$db->update ('users', $data))
+        
+        $okMessage = 'User "' . secureInput($_POST['input-username']) . '" have been successfuly edited.';
+        $issue = false;
+        
+      break; # END case "edit-username" :
+      
+      case "resetpw" :
+      
+        if (!isset($_POST['input-new-password']) || secureInput($_POST['input-new-password']) == '')
+        {
+          
+          $issueMessage = 'Empty password is not supported';
+          break;
+          
+        } # END if (!isset($_POST['input-new-password']) || secureInput($_POST['input-new-password']) == '')
+        
+        $data = Array ("password" => hash('sha512', secureInput($_POST['input-new-password'])));
+        $db->where ('username', secureInput($_POST['input-username']));
+        
+        if (!$db->update ('users', $data))
+        {
+          
+          $issueMessage = 'Error updating new password for "' . secureInput($_POST['input-username']) . '" username';
+          break;
+          
+        } # END if (!$db->update ('users', $data))
+        
+        $mail->addAddress($smtpRecipient);
+        $mail->Subject = '['.strtoupper(gethostname()).'] Password reset initiated for user ' . secureInput($_POST['input-username']);
+        $mail->Body    = 'The password for user ' . secureInput($_POST['input-username']) . ' have been reseted by ' . secureInput($_SESSION['username']) . '<br />New password is '. secureInput($_POST['input-new-password']);
+        $mail->AltBody = 'This is the body in plain text for non-HTML mail clients';
+        
+        if (!$mail->send())
+        {
+          
+          $issueMessage = 'Message could not be sent, with the following error: ' . $mail->ErrorInfo;
+          break;
+          
+        } # END if (!$mail->send())
+        
+        $okMessage = 'Password for user "' . secureInput($_POST['input-username']) . '" have been successfuly reseted.';
+        $issue = false;
+        
+      break; # END case "resetpw" :
+      
+      case "delete-username" :
 
-          $db->where('username', secureInput($_POST['input-username']));
-          if(!$db->delete('users')) {
-            $issueMessage = 'Error deleting user "' . secureInput($_POST['username']) . '" username';
-            break;
-          }
-          $okMessage = 'User "' . secureInput($_POST['input-username']) . '" have been successfuly deleted.';
-          $issue = false;
-        break;
-      }
-    } while (0);
-    if ($issue) {
-      echo '      <div class="alert alert-danger" role="alert"><span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span><span class="sr-only">Error:</span> ' . $issueMessage . '</div>';
-    } else {
-      echo '      <div class="alert alert-success" role="alert"><span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span><span class="sr-only">Success:</span> ' . $okMessage . '</div>';
-      echo "      <script type=\"text/javascript\">$(window).load(function(){ setTimeout(function(){ $('.alert').fadeOut() }, 3000); });</script>";
-    }
+        $db->where('username', secureInput($_POST['input-username']));
+        
+        if (!$db->delete('users'))
+        {
+          
+          $issueMessage = 'Error deleting user "' . secureInput($_POST['username']) . '" username';
+          break;
+          
+        } # END if (!$db->delete('users'))
+        
+        $okMessage = 'User "' . secureInput($_POST['input-username']) . '" have been successfuly deleted.';
+        $issue = false;
+        
+      break; # END case "delete-username" :
+      
+    } # END switch ($_POST['submit'])
+    
+  } while (0); # END do
+  
+  if ($issue)
+  {
+    
+    echo '      <div class="alert alert-danger" role="alert"><span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span><span class="sr-only">Error:</span> ' . $issueMessage . '</div>';
+    
   }
-  // $xpathFullUsers = $xmlPassword->xpath("/passwords/password");
-  $resultUsers = $db->get('users');
+  else
+  {
+    
+    echo '      <div class="alert alert-success" role="alert"><span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span><span class="sr-only">Success:</span> ' . $okMessage . '</div>';
+    echo "      <script type=\"text/javascript\">$(window).load(function(){ setTimeout(function(){ $('.alert').fadeOut() }, 3000); });</script>";
+    
+  } # END if ($issue)
+  
+} # END if ($_SERVER['REQUEST_METHOD'] == 'POST')
+
+$resultUsers = $db->get('users');
 ?>
   <!--override default settings to display custom color -->
   <style>.btn:focus { outline: none; }</style>
@@ -165,15 +225,17 @@ require 'phpmailer/PHPMailerAutoload.php';
       <td><button name="submit" class="btn btn-success" value="add">Add</button></td>
     </form></tr>
 <?php
-    foreach ($resultUsers as $user) {
-      echo '              <tr>
-            <form class="form" action="' . htmlspecialchars($_SERVER["PHP_SELF"]) . '" method="post">
-            <td>' . $user['displayname'] . '</td>
-            <td>' . $user['username'] . '</td>
-            <td>***********</td>
-            <td>' . $user['email'] . '</td>
-            <td>' . (($user['role'] == '1') ? '<i class="glyphicon glyphicon-king"></i>' : '<i class="glyphicon glyphicon-user"></i>'). '</td>';
-      echo '      <td>
+foreach ($resultUsers as $user)
+{
+  
+  echo '              <tr>';
+  echo '            <form class="form" action="' . htmlspecialchars($_SERVER["PHP_SELF"]) . '" method="post">';
+  echo '            <td>' . $user['displayname'] . '</td>';
+  echo '            <td>' . $user['username'] . '</td>';
+  echo '            <td>***********</td>';
+  echo '            <td>' . $user['email'] . '</td>';
+  echo '            <td>' . (($user['role'] == '1') ? '<i class="glyphicon glyphicon-king"></i>' : '<i class="glyphicon glyphicon-user"></i>'). '</td>';
+  echo '      <td>
         <input type="hidden" name="input-username" value="' . $user['username'] . '">';
       echo '<a href="#edit-' . $user['username'] . '" class="btn btn-warning" data-toggle="modal" data-tooltip="Edit user properties"><i class="glyphicon glyphicon-pencil"></i></a>
         <div id="edit-' . $user['username'] . '" class="modal fade">
@@ -253,14 +315,11 @@ require 'phpmailer/PHPMailerAutoload.php';
       echo '</td>
       </form>
     </tr>';
-  }
+
+} # END foreach ($resultUsers as $user)
+
 ?>
         </tbody>
       </table>
   </div>
-<?php
-// else:
-//   echo '  <div class="alert alert-danger" role="alert"><span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span><span class="sr-only">Error:</span> File ' . $xmlPasswordsFile . ' is not existant or not writeable</div>';
-// endif; /* check xml file */
-?>
 <?php require("footer.php"); ?>
