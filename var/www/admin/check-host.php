@@ -60,7 +60,7 @@ if($check->getModuleSchedule('hostNTPCheck') != 'off' && $check->getModuleSchedu
 }
 
 if($check->getModuleSchedule('hostDNSCheck') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
-  $check->displayCheck([  'sqlQuery' => "SELECT c.id as clusterId, c.cluster_name as cluster, main.host_name, main.dnsservers, v.vcname as vcenter FROM hosts main INNER JOIN clusters c ON main.cluster = c.id INNER JOIN vcenters v ON main.vcenter = v.id WHERE main.active = 1",
+  $check->displayCheck([  'sqlQuery' => "SELECT c.id as clusterId, c.cluster_name as cluster, main.host_name, main.dnsservers, v.vcname as vcenter FROM hosts main INNER JOIN clusters c ON main.cluster = c.id INNER JOIN vcenters v ON main.vcenter = v.id WHERE true",
                           "id" => "HOSTDNSCHECK",
                           'typeCheck' => 'majorityPerCluster',
                           'majorityProperty' => 'dnsservers',
@@ -69,7 +69,7 @@ if($check->getModuleSchedule('hostDNSCheck') != 'off' && $check->getModuleSchedu
 }
 
 if($check->getModuleSchedule('hostSyslogCheck') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
-  $check->displayCheck([  'sqlQuery' => "SELECT c.id as clusterId, c.cluster_name as cluster, main.host_name, main.syslog_target, v.vcname as vcenter FROM hosts main INNER JOIN clusters c ON main.cluster = c.id INNER JOIN vcenters v ON main.vcenter = v.id WHERE main.active = 1",
+  $check->displayCheck([  'sqlQuery' => "SELECT c.id as clusterId, c.cluster_name as cluster, main.host_name, main.syslog_target, v.vcname as vcenter FROM hosts main INNER JOIN clusters c ON main.cluster = c.id INNER JOIN vcenters v ON main.vcenter = v.id WHERE true",
                           "id" => "HOSTSYSLOGCHECK",
                           'typeCheck' => 'majorityPerCluster',
                           'majorityProperty' => 'syslog_target',
