@@ -254,7 +254,7 @@ foreach $s_item (@server_list) {
   $view_ClusterComputeResource = Vim::find_entity_views(view_type => 'ClusterComputeResource', properties => ['name', 'host', 'summary', 'configIssue', 'configuration.dasConfig.admissionControlPolicy', 'configuration.dasConfig.admissionControlEnabled', 'configurationEx']);
   $logger->info("[INFO][OBJECTS] End retrieving ClusterComputeResource objects");
   $logger->info("[INFO][OBJECTS] Start retrieving HostSystem objects");
-  $view_HostSystem = Vim::find_entity_views(view_type => 'HostSystem', properties => ['name', 'config.dateTimeInfo.ntpConfig.server', 'config.network.dnsConfig', 'config.powerSystemInfo.currentPolicy.shortName', 'configIssue', 'configManager.advancedOption', 'configManager.firmwareSystem', 'configManager.healthStatusSystem', 'configManager.storageSystem', 'configManager.serviceSystem', 'datastore', 'runtime.inMaintenanceMode', 'summary.config.product.fullName', 'summary.hardware.cpuMhz', 'summary.hardware.cpuModel', 'summary.hardware.memorySize', 'summary.hardware.model', 'summary.hardware.numCpuCores', 'summary.hardware.numCpuPkgs', 'summary.rebootRequired', 'summary.runtime.connectionState']);
+  $view_HostSystem = Vim::find_entity_views(view_type => 'HostSystem', properties => ['name', 'config.dateTimeInfo.ntpConfig.server', 'config.network.dnsConfig', 'config.powerSystemInfo.currentPolicy.shortName', 'configIssue', 'configManager.advancedOption', 'configManager.firmwareSystem', 'configManager.healthStatusSystem', 'configManager.storageSystem', 'configManager.serviceSystem', 'datastore', 'runtime.inMaintenanceMode', 'runtime.connectionState', 'summary.config.product.fullName', 'summary.hardware.cpuMhz', 'summary.hardware.cpuModel', 'summary.hardware.memorySize', 'summary.hardware.model', 'summary.hardware.numCpuCores', 'summary.hardware.numCpuPkgs', 'summary.rebootRequired', 'summary.runtime.connectionState']);
   $logger->info("[INFO][OBJECTS] End retrieving HostSystem objects");
   $logger->info("[INFO][OBJECTS] Start retrieving DistributedVirtualPortgroup objects");
   $view_DistributedVirtualPortgroup = Vim::find_entity_views(view_type => 'DistributedVirtualPortgroup', properties => ['name', 'vm', 'config.numPorts', 'config.autoExpand', 'tag']);
@@ -879,30 +879,49 @@ sub hostinventory
   foreach my $host_view (@$view_HostSystem)
   {
     
-    my $serviceSys = Vim::get_view(mo_ref => $host_view->{'configManager.serviceSystem'}, properties => ['serviceInfo']);
-    my $services = $serviceSys->serviceInfo->service;
     my $service_ssh = 'off';
     my $service_shell = 'off';
+    my $dnsservers = [];
+    my $esxHostName;
     
-    foreach(@$services)
+    # If host not available, we must create some dummy values for mandatory fields
+    if ($host_view->{'runtime.connectionState'}->val ne "connected")
     {
       
-      if ($_->key eq 'TSM-SSH')
-      {
-        
-        $service_ssh = $_->policy;
-        
-      }
-      elsif($_->key eq 'TSM')
-      {
-        
-        $service_shell = $_->policy;
-        
-      } # END if ($_->key eq 'TSM-SSH')
+      $service_ssh = 'n/a';
+      $service_shell = 'n/a';
+      $esxHostName = 'n/a';
       
-    } # END foreach(@$services)
+    }
+    else
+    {
+      
+      my $serviceSys = Vim::get_view(mo_ref => $host_view->{'configManager.serviceSystem'}, properties => ['serviceInfo']);
+      my $services = $serviceSys->serviceInfo->service;
     
-    my $dnsservers = $host_view->{'config.network.dnsConfig'}->address;
+      foreach(@$services)
+      {
+        
+        if ($_->key eq 'TSM-SSH')
+        {
+          
+          $service_ssh = $_->policy;
+          
+        }
+        elsif($_->key eq 'TSM')
+        {
+          
+          $service_shell = $_->policy;
+          
+        } # END if ($_->key eq 'TSM-SSH')
+        
+      } # END foreach(@$services)
+    
+      $dnsservers = $host_view->{'config.network.dnsConfig'}->address;
+      $esxHostName = $host_view->{'config.network.dnsConfig'}->hostName;
+      
+    } # END if ($host_view->{'runtime.connectionState'}->val ne "connected")
+    
     my @sorted_dnsservers = map { $_->[1] } sort { $a->[0] <=> $b->[0] } map {[ unpack('N',inet_aton($_)), $_ ]} @$dnsservers;
     my $ntpservers = $host_view->{'config.dateTimeInfo.ntpConfig.server'} || [];
     my $storageSys = Vim::get_view(mo_ref => $host_view->{'configManager.storageSystem'}, properties => ['storageDeviceInfo.multipathInfo']);
@@ -951,7 +970,7 @@ sub hostinventory
     
     if ( ($refHost != 0)
       && ($refHost->{'cluster'} eq $clusterID)
-      && ($refHost->{'hostname'} eq $host_view->{'config.network.dnsConfig'}->hostName)
+      && ($refHost->{'hostname'} eq $esxHostName)
       && ($refHost->{'host_name'} eq $host_view->name)
       && ($refHost->{'ntpservers'} eq join(';', sort @$ntpservers))
       && ($refHost->{'deadlunpathcount'} eq $lundeadpathcount)
@@ -989,7 +1008,7 @@ sub hostinventory
         
         # Host have changed, we must decom old one before create a new one
         compareAndLog($refHost->{'cluster'}, $clusterID);
-        compareAndLog($refHost->{'hostname'}, $host_view->{'config.network.dnsConfig'}->hostName);
+        compareAndLog($refHost->{'hostname'}, $esxHostName);
         compareAndLog($refHost->{'host_name'}, $host_view->name);
         compareAndLog($refHost->{'ntpservers'}, join(';', sort @$ntpservers));
         compareAndLog($refHost->{'deadlunpathcount'}, $lundeadpathcount);
@@ -1023,7 +1042,7 @@ sub hostinventory
         $vcenterID,
         $clusterID,
         $moRef,
-        $host_view->{'config.network.dnsConfig'}->hostName,
+        $esxHostName,
         $host_view->name,
         join(';', sort @$ntpservers),
         $lundeadpathcount,
