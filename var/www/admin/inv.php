@@ -49,8 +49,8 @@ try {
         <button type="button" class="btn btn-danger btn-xs toggle-vis" style="outline: 5px auto;" name="13" data-column="13">VMPath</button>
         <button type="button" class="btn btn-danger btn-xs toggle-vis" style="outline: 5px auto;" name="14" data-column="14">MAC</button>
       </div>
-      <hr />
-      <table id="inventory" class="display table" cellspacing="0" width="100%">
+  		<hr />
+      <table id="inventory" class="table display" cellspacing="0" width="100%">
         <thead><tr>
           <th>id</th>
           <th>VM</th>
@@ -101,9 +101,13 @@ try {
             "smart": false,
             "regex": true
           },
-          "columnDefs": [ { "targets": [ 0, 5, 6, 7, 8, 9, 10, 11, 13, 14 ], "visible": false } ]
+          "columnDefs": [ { "targets": [ 0, 5, 6, 7, 8, 9, 10, 11, 13, 14 ], "visible": false } ],
+          "lengthMenu": [ [10, 25, 50, -1], [10, 25, 50, "All"] ]
         } );
-
+        
+  			new $.fn.dataTable.Buttons( table, { buttons: [ 'csv', 'excel' ] } );
+        table.buttons().container().appendTo( '#inventory_wrapper .col-sm-6:eq(0)' );
+        
         $('#inventory').on('click', 'a[rel=modal]', function(evt) {
           evt.preventDefault();
           var modal = $('#modal').modal();
