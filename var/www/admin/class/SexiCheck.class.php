@@ -244,10 +244,10 @@ class SexiCheck {
   public function displayHeader($formPage, $visible = true) {
     $dateAvailable = $this->dbGetDate();
     if (count($dateAvailable) < 1) {
-      throw new Exception('There is no data generated yet. Please add some vCenter to the <a href="credstore.php">Credential Store</a> and come back as soon as data will be retrieved (should take just a couple of minutes).');
+      throw new Exception('There is no data generated yet. Please add some vCenter to the Credential Store and come back as soon as data will be retrieved (should take just a couple of minutes).');
     }
     if ($this->dbGetCheckQuantity($formPage) < 1) {
-      throw new Exception('There is no check enabled for this section (which is by default). You can enable some checks on the <a href="moduleselector.php">Module Selector</a> and come back as soon as data will be retrieved (by default it should be daily, but you can force the execution on the <a href="onetime.php">One Time Report</a>).');
+      throw new Exception('There is no check enabled for this section (which is by default). You can enable some checks on the Module Selector and come back as soon as data will be retrieved (by default it should be daily, but you can force the execution on the <a href="onetime.php">One Time Report</a>).');
     }
     if ($_SERVER['REQUEST_METHOD'] == 'POST'){
       $this->selectedDate = $_POST["selectedDate"];
