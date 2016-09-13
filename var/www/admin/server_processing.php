@@ -457,6 +457,28 @@ if (isset($_GET['c']))
       
     break; # END case 'VMINVENTORY':
     
+    case 'HOSTINVENTORY':
+    
+      $table = 'hosts';
+      $primaryKey = 'id';
+      $columns = array(
+        array( 'db' => 'h.id', 'dt' => 0, 'field' => 'id'),
+        array( 'db' => 'h.host_name', 'dt' => 1, 'field' => 'host_name' ),
+        array( 'db' => 'v.vcname', 'dt' => 2, 'field' => 'vcname' ),
+        array( 'db' => 'c.cluster_name', 'dt' => 3, 'field' => 'cluster_name' ),
+        array( 'db' => 'h.numcpu', 'dt' => 4, 'field' => 'numcpu' ),
+        array( 'db' => 'h.numcpucore', 'dt' => 5, 'field' => 'numcpucore' ),
+        array( 'db' => 'h.memory', 'dt' => 6, 'field' => 'memory', 'formatter' => function( $d, $row ) { return human_filesize($d,0); } ),
+        array( 'db' => 'h.model', 'dt' => 7, 'field' => 'model' ),
+        array( 'db' => 'h.cputype', 'dt' => 8, 'field' => 'cputype' ),
+        array( 'db' => 'h.cpumhz', 'dt' => 9, 'field' => 'cpumhz', 'formatter' => function( $d, $row ) { return (round($d/1000,2)) . " GHz"; } ),
+        array( 'db' => 'h.esxbuild', 'dt' => 10, 'field' => 'esxbuild' )
+      );
+      $joinQuery = "FROM {$table} h INNER JOIN clusters c ON h.cluster = c.id INNER JOIN vcenters AS v ON (h.vcenter = v.id)";
+      $extraCondition = "h.firstseen < '" . $dateStart . "' AND h.lastseen > '" . $dateEnd . "' GROUP BY h.moref, v.id";
+      
+    break; # END case 'HOSTINVENTORY':
+    
   } # END switch($_GET['c'])
 
   require( 'class/SSP.class.php' );
