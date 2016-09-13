@@ -16,24 +16,14 @@ if (isset($_GET['c']))
   
   $joinQuery = "";
   $extraCondition = "";
-  // $latest = true;
   
   # if timestamp not sent, we consider it as latest query
   if (isset($_GET['t']))
   {
     
     $dateToSearch = date("Y-m-d", $_GET['t']);
-    
-    # if date sent is today, we consider it as latest query
-    // if ($dateToSearch != date("Y-m-d"))
-    // {
-      
-      # if not, we build our dates objects that will be used in SQL query (after firstseen + before lastseen)
-      // $latest = false;
-      $dateStart = $dateToSearch . " 23:59:59";
-      $dateEnd = $dateToSearch . " 00:00:01";
-      
-    // } # END if ($dateToSearch != date("Y-m-d"))
+    $dateStart = $dateToSearch . " 23:59:59";
+    $dateEnd = $dateToSearch . " 00:00:01";
     
   } # END if (isset($_GET['t']))
 
@@ -123,19 +113,7 @@ if (isset($_GET['c']))
         array( 'db' => 'permissions.isGroup', 'dt' => 4, 'field' => 'isGroup' )
       );
       $joinQuery = "FROM {$table} INNER JOIN vcenters AS v ON (permissions.vcenter = v.id)";
-      
-      // if ($latest)
-      // {
-      //   
-      //   $extraCondition = "permissions.active = 1";
-      //   
-      // }
-      // else
-      // {
-        
-        $extraCondition = "permissions.firstseen < '" . $dateStart . "' AND permissions.lastseen > '" . $dateEnd . "'";
-        
-      // } # END if ($latest)
+      $extraCondition = "permissions.firstseen < '" . $dateStart . "' AND permissions.lastseen > '" . $dateEnd . "'";
       
     break; # END case 'VCPERMISSIONREPORT':
     
@@ -151,21 +129,7 @@ if (isset($_GET['c']))
         array( 'db' => 'v.vcname', 'dt' => 4, 'field' => 'vcname' )
       );
       $joinQuery = "FROM {$table} h INNER JOIN clusters AS c ON (h.cluster = c.id) INNER JOIN vcenters AS v ON (h.vcenter = v.id) INNER JOIN (SELECT MAX(id), host_id, sharedmemory, firstseen, lastseen FROM hostMetrics GROUP BY host_id) hm ON (h.id = hm.host_id)";
-      
-      // if ($latest)
-      // {
-      //   
-      //   $timeCondition = "h.active = 1";
-      //   
-      // }
-      // else
-      // {
-        
-        $timeCondition = "h.firstseen < '" . $dateStart . "' AND h.lastseen > '" . $dateEnd . "' AND hm.firstseen < '" . $dateStart . "' AND hm.lastseen > '" . $dateEnd . "'";
-        
-      // } # END if ($latest)
-      
-      $extraCondition = $timeCondition . " GROUP BY c.cluster_name";
+      $extraCondition = "h.firstseen < '" . $dateStart . "' AND h.lastseen > '" . $dateEnd . "' AND hm.firstseen < '" . $dateStart . "' AND hm.lastseen > '" . $dateEnd . "' GROUP BY c.cluster_name";
       
     break; # END case 'CLUSTERTPSSAVINGS':
     
@@ -181,21 +145,7 @@ if (isset($_GET['c']))
         array( 'db' => 'v.vcname', 'dt' => 4, 'field' => 'vcname' )
       );
       $joinQuery = "FROM {$table} c INNER JOIN vcenters AS v ON (c.vcenter = v.id)";
-      
-      // if ($latest)
-      // {
-      //   
-      //   $timeCondition = "c.active = 1";
-      //   
-      // }
-      // else
-      // {
-        
-        $timeCondition = "c.firstseen < '" . $dateStart . "' AND c.lastseen > '" . $dateEnd . "'";
-        
-      // } # END if ($latest)
-      
-      $extraCondition = $timeCondition . " AND c.isAdmissionEnable = 0 OR (c.isAdmissionEnable = 1 AND c.admissionValue <= c.admissionThreshold)";
+      $extraCondition = "c.firstseen < '" . $dateStart . "' AND c.lastseen > '" . $dateEnd . "' AND c.isAdmissionEnable = 0 OR (c.isAdmissionEnable = 1 AND c.admissionValue <= c.admissionThreshold)";
       
     break; # END case 'CLUSTERADMISSIONCONTROL':
     
@@ -211,21 +161,7 @@ if (isset($_GET['c']))
         array( 'db' => 'v.vcname', 'dt' => 4, 'field' => 'vcname' )
       );
       $joinQuery = "FROM {$table} d INNER JOIN (SELECT MAX(id), datastore_id, size, freespace, firstseen, lastseen FROM datastoreMetrics GROUP BY datastore_id) dm ON (d.id = dm.datastore_id) INNER JOIN vcenters AS v ON (d.vcenter = v.id)";
-      
-      // if ($latest)
-      // {
-      //   
-      //   $timeCondition = "d.active = 1";
-      //   
-      // }
-      // else
-      // {
-        
-        $timeCondition = "d.firstseen < '" . $dateStart . "' AND d.lastseen > '" . $dateEnd . "'";
-        
-      // } # END if ($latest)
-      
-      $extraCondition = $timeCondition . " AND ROUND(100*(dm.freespace/dm.size)) < " . $check->getConfig('datastoreFreeSpaceThreshold');
+      $extraCondition = $timeCondition . "d.firstseen < '" . $dateStart . "' AND d.lastseen > '" . $dateEnd . "' AND ROUND(100*(dm.freespace/dm.size)) < " . $check->getConfig('datastoreFreeSpaceThreshold');
       
     break; # END case 'DATASTORESPACEREPORT':  
     
@@ -240,19 +176,7 @@ if (isset($_GET['c']))
         array( 'db' => 'o.fileModification', 'dt' => 3, 'field' => 'fileModification' )
       );
       $joinQuery = "FROM {$table} o INNER JOIN vcenters AS v ON (o.vcenter = v.id)";
-
-      // if ($latest)
-      // {
-      // 
-      //   $extraCondition = "o.active = 1";
-      //   
-      // }
-      // else
-      // {
-        
-        $extraCondition = "o.firstseen < '" . $dateStart . "' AND o.lastseen > '" . $dateEnd . "'";
-        
-      // } # END if ($latest)
+      $extraCondition = "o.firstseen < '" . $dateStart . "' AND o.lastseen > '" . $dateEnd . "'";
       
     break; # END case 'DATASTOREORPHANEDVMFILESREPORT':
     
@@ -269,21 +193,7 @@ if (isset($_GET['c']))
         array( 'db' => 'v.vcname', 'dt' => 5, 'field' => 'vcname' )
       );
       $joinQuery = "FROM {$table} d INNER JOIN (SELECT MAX(id), datastore_id, size, freespace, uncommitted, firstseen, lastseen FROM datastoreMetrics GROUP BY datastore_id) dm ON (d.id = dm.datastore_id) INNER JOIN vcenters AS v ON (d.vcenter = v.id)";
-      
-      // if ($latest)
-      // {
-      //   
-      //   $timeCondition = "d.active = 1";
-      //   
-      // }
-      // else
-      // {
-        
-        $timeCondition = "d.firstseen < '" . $dateStart . "' AND d.lastseen > '" . $dateEnd . "' AND dm.firstseen < '" . $dateStart . "' AND dm.lastseen > '" . $dateEnd . "'";
-        
-      // } # END if ($latest)
-      
-      $extraCondition = $timeCondition . " AND ROUND(100*((dm.size-dm.freespace+dm.uncommitted)/dm.size)) > ". $check->getConfig('datastoreOverallocation');
+      $extraCondition = "d.firstseen < '" . $dateStart . "' AND d.lastseen > '" . $dateEnd . "' AND dm.firstseen < '" . $dateStart . "' AND dm.lastseen > '" . $dateEnd . "' AND ROUND(100*((dm.size-dm.freespace+dm.uncommitted)/dm.size)) > ". $check->getConfig('datastoreOverallocation');
       
     break; # END case 'DATASTOREOVERALLOCATION':
     
@@ -302,21 +212,7 @@ if (isset($_GET['c']))
         array( 'db' => 's.quiesced', 'dt' => 7, 'field' => 'quiesced' )
       );
       $joinQuery = "FROM {$table} s INNER JOIN vms ON (s.vm = vms.id) INNER JOIN hosts h ON (vms.host = h.id) INNER JOIN vcenters v ON (h.vcenter = v.id)";
-      
-      // if ($latest)
-      // {
-      //   
-      //   $timeCondition = "s.active = 1";
-      //   
-      // }
-      // else
-      // {
-        
-        $timeCondition = "s.firstseen < '" . $dateStart . "' AND s.lastseen > '" . $dateEnd . "'";
-        
-      // } # END if ($latest)
-      
-      $extraCondition = $timeCondition . " AND DATEDIFF('" . $dateToSearch . "', s.createTime) > " . $check->getConfig('vmSnapshotAge');
+      $extraCondition = "s.firstseen < '" . $dateStart . "' AND s.lastseen > '" . $dateEnd . "' AND DATEDIFF('" . $dateToSearch . "', s.createTime) > " . $check->getConfig('vmSnapshotAge');
       
     break; # END case 'VMSNAPSHOTSAGE':
     
@@ -331,21 +227,7 @@ if (isset($_GET['c']))
         array( 'db' => 'v.vcname', 'dt' => 3, 'field' => 'vcname' )
       );
       $joinQuery = "FROM {$table} INNER JOIN hosts AS h ON (vms.host = h.id) INNER JOIN vcenters AS v ON (h.vcenter = v.id)";
-      
-      // if ($latest)
-      // {
-      //   
-      //   $timeCondition = "vms.active = 1";
-      //   
-      // }
-      // else
-      // {
-        
-        $timeCondition = "vms.firstseen < '" . $dateStart . "' AND vms.lastseen > '" . $dateEnd . "'";
-        
-      // } # END if ($latest)
-      
-      $extraCondition = $timeCondition . " AND (vms.cpuReservation > 0 OR vms.memReservation > 0) GROUP BY vms.moref, v.id";
+      $extraCondition = "vms.firstseen < '" . $dateStart . "' AND vms.lastseen > '" . $dateEnd . "' AND (vms.cpuReservation > 0 OR vms.memReservation > 0) GROUP BY vms.moref, v.id";
       
     break; # END case 'VMCPURAMHDDRESERVATION':
     
@@ -358,20 +240,7 @@ if (isset($_GET['c']))
         array( 'db' => 'v.vcname', 'dt' => 1, 'field' => 'vcname' )
       );
       $joinQuery = "FROM {$table} INNER JOIN hosts AS h ON (vms.host = h.id) INNER JOIN vcenters AS v ON (h.vcenter = v.id)";
-      
-      // if ($latest)
-      // {
-      //   
-      //   $timeCondition = "vms.active = 1";
-      //   
-      // }
-      // else
-      // {
-        
-        $timeCondition = "vms.firstseen < '" . $dateStart . "' AND vms.lastseen > '" . $dateEnd . "'";
-        
-      // } # END if ($latest)
-      $extraCondition = $timeCondition . " AND vms.consolidationNeeded = 1 GROUP BY vms.moref, v.id";
+      $extraCondition = "vms.firstseen < '" . $dateStart . "' AND vms.lastseen > '" . $dateEnd . "' AND vms.consolidationNeeded = 1 GROUP BY vms.moref, v.id";
       
     break; # END case 'VMCONSOLIDATIONNEEDED':
     
@@ -384,21 +253,7 @@ if (isset($_GET['c']))
         array( 'db' => 'v.vcname', 'dt' => 1, 'field' => 'vcname' )
       );
       $joinQuery = "FROM {$table} INNER JOIN hosts AS h ON (vms.host = h.id) INNER JOIN vcenters AS v ON (h.vcenter = v.id)";
-      
-      // if ($latest)
-      // {
-      //   
-      //   $timeCondition = "vms.active = 1";
-      //   
-      // }
-      // else
-      // {
-        
-        $timeCondition = "vms.firstseen < '" . $dateStart . "' AND vms.lastseen > '" . $dateEnd . "'";
-        
-      // } # END if ($latest)
-      
-      $extraCondition = $timeCondition . " AND vms.phantomSnapshot > 0 GROUP BY vms.moref, v.id";
+      $extraCondition = "vms.firstseen < '" . $dateStart . "' AND vms.lastseen > '" . $dateEnd . "' AND vms.phantomSnapshot > 0 GROUP BY vms.moref, v.id";
       
     break; # END case 'VMPHANTOMSNAPSHOT':
     
@@ -413,21 +268,7 @@ if (isset($_GET['c']))
         array( 'db' => 'v.vcname', 'dt' => 3, 'field' => 'vcname' )
       );
       $joinQuery = "FROM {$table} INNER JOIN hosts AS h ON (vms.host = h.id) INNER JOIN vcenters AS v ON (h.vcenter = v.id)";
-      
-      // if ($latest)
-      // {
-      //   
-      //   $timeCondition = "vms.active = 1";
-      //   
-      // }
-      // else
-      // {
-        
-        $timeCondition = "vms.firstseen < '" . $dateStart . "' AND vms.lastseen > '" . $dateEnd . "'";
-        
-      // } # END if ($latest)
-      
-      $extraCondition = $timeCondition . " AND (vms.cpuLimit > 0 OR vms.memLimit > 0) GROUP BY vms.moref, v.id";
+      $extraCondition = "vms.firstseen < '" . $dateStart . "' AND vms.lastseen > '" . $dateEnd . "' AND (vms.cpuLimit > 0 OR vms.memLimit > 0) GROUP BY vms.moref, v.id";
       
     break; # END case 'VMCPURAMHDDLIMITS':
     
@@ -442,21 +283,7 @@ if (isset($_GET['c']))
         array( 'db' => 'v.vcname', 'dt' => 3, 'field' => 'vcname' )
       );
       $joinQuery = "FROM {$table} INNER JOIN hosts AS h ON (vms.host = h.id) INNER JOIN vcenters AS v ON (h.vcenter = v.id)";
-      
-      // if ($latest)
-      // {
-      //   
-      //   $timeCondition = "vms.active = 1";
-      //   
-      // }
-      // else
-      // {
-        
-        $timeCondition = "vms.firstseen < '" . $dateStart . "' AND vms.lastseen > '" . $dateEnd . "'";
-        
-      // } # END if ($latest)
-      
-      $extraCondition = $timeCondition . " AND (vms.cpuHotAddEnabled = 1 OR vms.memHotAddEnabled = 1) GROUP BY vms.moref, v.id";
+      $extraCondition = "vms.firstseen < '" . $dateStart . "' AND vms.lastseen > '" . $dateEnd . "' AND (vms.cpuHotAddEnabled = 1 OR vms.memHotAddEnabled = 1) GROUP BY vms.moref, v.id";
       
     break; # END case 'VMCPURAMHOTADD':
     
@@ -472,21 +299,7 @@ if (isset($_GET['c']))
         array( 'db' => 'v.vcname', 'dt' => 4, 'field' => 'vcname' )
       );
       $joinQuery = "FROM {$table} INNER JOIN vcenters AS v ON (vms.vcenter = v.id) INNER JOIN (SELECT MAX(id), vm_id, swappedMemory, balloonedMemory, compressedMemory, firstseen, lastseen FROM vmMetrics GROUP BY vm_id) vmm ON (vmm.vm_id = vms.id)";
-      
-      // if ($latest)
-      // {
-      //   
-      //   $timeCondition = "vms.active = 1";
-      //   
-      // }
-      // else
-      // {
-        
-        $timeCondition = "vms.firstseen < '" . $dateStart . "' AND vms.lastseen > '" . $dateEnd . "' AND vmm.firstseen < '" . $dateStart . "' AND vmm.lastseen > '" . $dateEnd . "'";
-        
-      // } # END if ($latest)
-      
-      $extraCondition = $timeCondition . " AND (vmm.swappedMemory > 0 OR vmm.balloonedMemory > 0 OR vmm.compressedMemory > 0) GROUP BY vms.moref, v.id";
+      $extraCondition = "vms.firstseen < '" . $dateStart . "' AND vms.lastseen > '" . $dateEnd . "' AND vmm.firstseen < '" . $dateStart . "' AND vmm.lastseen > '" . $dateEnd . "' AND (vmm.swappedMemory > 0 OR vmm.balloonedMemory > 0 OR vmm.compressedMemory > 0) GROUP BY vms.moref, v.id";
       
     break; # END case 'VMBALLOONZIPSWAP':
     
@@ -499,21 +312,7 @@ if (isset($_GET['c']))
         array( 'db' => 'v.vcname', 'dt' => 1, 'field' => 'vcname' )
       );
       $joinQuery = "FROM {$table} INNER JOIN hosts AS h ON (vms.host = h.id) INNER JOIN vcenters AS v ON (h.vcenter = v.id)";
-      
-      // if ($latest)
-      // {
-      //   
-      //   $timeCondition = "vms.active = 1";
-      //   
-      // }
-      // else
-      // {
-        
-        $timeCondition = "vms.firstseen < '" . $dateStart . "' AND vms.lastseen > '" . $dateEnd . "'";
-        
-      // } # END if ($latest)
-      
-      $extraCondition = $timeCondition . " AND vms.multiwriter = 1 GROUP BY vms.moref, v.id";
+      $extraCondition = "vms.firstseen < '" . $dateStart . "' AND vms.lastseen > '" . $dateEnd . "' AND vms.multiwriter = 1 GROUP BY vms.moref, v.id";
       
     break; # END case 'VMMULTIWRITERMODE':
     
@@ -527,21 +326,7 @@ if (isset($_GET['c']))
         array( 'db' => 'v.vcname', 'dt' => 2, 'field' => 'vcname' )
       );
       $joinQuery = "FROM {$table} INNER JOIN hosts AS h ON (vms.host = h.id) INNER JOIN vcenters AS v ON (h.vcenter = v.id)";
-      
-      // if ($latest)
-      // {
-      //   
-      //   $timeCondition = "vms.active = 1";
-      //   
-      // }
-      // else
-      // {
-        
-        $timeCondition = "vms.firstseen < '" . $dateStart . "' AND vms.lastseen > '" . $dateEnd . "'";
-        
-      // } # END if ($latest)
-      
-      $extraCondition = $timeCondition . " AND vms.sharedBus = 1 GROUP BY vms.moref, v.id";
+      $extraCondition = "vms.firstseen < '" . $dateStart . "' AND vms.lastseen > '" . $dateEnd . "' AND vms.sharedBus = 1 GROUP BY vms.moref, v.id";
       
     break; # END case 'VMSCSIBUSSHARING':
     
@@ -555,21 +340,7 @@ if (isset($_GET['c']))
         array( 'db' => 'v.vcname', 'dt' => 2, 'field' => 'vcname' )
       );
       $joinQuery = "FROM {$table} INNER JOIN hosts AS h ON (vms.host = h.id) INNER JOIN vcenters AS v ON (h.vcenter = v.id)";
-      
-      // if ($latest)
-      // {
-      //   
-      //   $timeCondition = "vms.active = 1";
-      //   
-      // }
-      // else
-      // {
-        
-        $timeCondition = "vms.firstseen < '" . $dateStart . "' AND vms.lastseen > '" . $dateEnd . "'";
-        
-      // } # END if ($latest)
-      
-      $extraCondition = $timeCondition . " AND vms.connectionState NOT LIKE 'connected' GROUP BY vms.moref, v.id";
+      $extraCondition = "vms.firstseen < '" . $dateStart . "' AND vms.lastseen > '" . $dateEnd . "' AND vms.connectionState NOT LIKE 'connected' GROUP BY vms.moref, v.id";
       
     break; # END case 'VMINVALIDORINACCESSIBLE':
     
@@ -583,21 +354,7 @@ if (isset($_GET['c']))
         array( 'db' => 'v.vcname', 'dt' => 2, 'field' => 'vcname' )
       );
       $joinQuery = "FROM {$table} INNER JOIN hosts AS h ON (vms.host = h.id) INNER JOIN vcenters AS v ON (h.vcenter = v.id)";
-      
-      // if ($latest)
-      // {
-      // 
-      //   $timeCondition = "vms.active = 1";
-      //   
-      // }
-      // else
-      // {
-        
-        $timeCondition = "vms.firstseen < '" . $dateStart . "' AND vms.lastseen > '" . $dateEnd . "'";
-        
-      // } # END if ($latest)
-      
-      $extraCondition = $timeCondition . " AND vms.vmxpath NOT LIKE CONCAT('%', vms.name, '/', vms.name, '.vmx') GROUP BY vms.moref, v.id";
+      $extraCondition = "vms.firstseen < '" . $dateStart . "' AND vms.lastseen > '" . $dateEnd . "' AND vms.vmxpath NOT LIKE CONCAT('%', vms.name, '/', vms.name, '.vmx') GROUP BY vms.moref, v.id";
       
     break; # END case 'VMINCONSISTENT':
     
@@ -611,21 +368,7 @@ if (isset($_GET['c']))
         array( 'db' => 'v.vcname', 'dt' => 2, 'field' => 'vcname' )
       );
       $joinQuery = "FROM {$table} INNER JOIN hosts AS h ON (vms.host = h.id) INNER JOIN vcenters AS v ON (h.vcenter = v.id)";
-      
-      // if ($latest)
-      // {
-      //   
-      //   $timeCondition = "vms.active = 1";
-      //   
-      // }
-      // else
-      // {
-        
-        $timeCondition = "vms.firstseen < '" . $dateStart . "' AND vms.lastseen > '" . $dateEnd . "'";
-        
-      // } # END if ($latest)
-      
-      $extraCondition = $timeCondition . " AND vms.removable = 1 GROUP BY vms.moref, v.id";
+      $extraCondition = "vms.firstseen < '" . $dateStart . "' AND vms.lastseen > '" . $dateEnd . "' AND vms.removable = 1 GROUP BY vms.moref, v.id";
       
     break; # END case 'VMREMOVABLECONNECTED':
     
@@ -641,21 +384,7 @@ if (isset($_GET['c']))
         array( 'db' => 'v.vcname', 'dt' => 4, 'field' => 'vcname' )
       );
       $joinQuery = "FROM {$table} a INNER JOIN vcenters v ON a.vcenter = v.id INNER JOIN vms ON a.entityMoRef = vms.moref";
-      
-      // if ($latest)
-      // {
-      //   
-      //   $timeCondition = "a.active = 1";
-      //   
-      // }
-      // else
-      // {
-        
-        $timeCondition = "a.firstseen > '" . $dateStart . "' AND a.lastseen < '" . $dateEnd . "'";
-        
-      // } # END if ($latest)
-      
-      $extraCondition = $timeCondition . " AND a.entityMoRef LIKE 'VirtualMachine%' GROUP BY a.moref, v.id";
+      $extraCondition = "a.firstseen < '" . $dateStart . "' AND a.lastseen > '" . $dateEnd . "' AND a.entityMoRef LIKE 'VirtualMachine%'";
       
     break; # END case 'ALARMSVM':
     
@@ -670,21 +399,7 @@ if (isset($_GET['c']))
         array( 'db' => 'v.vcname', 'dt' => 3, 'field' => 'vcname' )
       );
       $joinQuery = "FROM {$table} INNER JOIN hosts AS h ON (vms.host = h.id) INNER JOIN vcenters AS v ON (h.vcenter = v.id)";
-      
-      // if ($latest)
-      // {
-      //   
-      //   $timeCondition = "vms.active = 1";
-      //   
-      // }
-      // else
-      // {
-        
-        $timeCondition = "vms.firstseen < '" . $dateStart . "' AND vms.lastseen > '" . $dateEnd . "'";
-        
-      // } # END if ($latest)
-      
-      $extraCondition = $timeCondition . " AND vms.guestId <> 'Not Available' AND vms.guestId <> vms.configGuestId GROUP BY vms.moref, v.id";
+      $extraCondition = "vms.firstseen < '" . $dateStart . "' AND vms.lastseen > '" . $dateEnd . "' AND vms.guestId <> 'Not Available' AND vms.guestId <> vms.configGuestId GROUP BY vms.moref, v.id";
       
     break; # END case 'VMGUESTIDMISMATCH':
     
@@ -697,21 +412,7 @@ if (isset($_GET['c']))
         array( 'db' => 'v.vcname', 'dt' => 1, 'field' => 'vcname' )
       );
       $joinQuery = "FROM {$table} INNER JOIN hosts AS h ON (vms.host = h.id) INNER JOIN vcenters AS v ON (h.vcenter = v.id)";
-      
-      // if ($latest)
-      // {
-      //   
-      //   $timeCondition = "vms.active = 1";
-      //   
-      // }
-      // else
-      // {
-        
-        $timeCondition = "vms.firstseen < '" . $dateStart . "' AND vms.lastseen > '" . $dateEnd . "'";
-        
-      // } # END if ($latest)
-      
-      $extraCondition = $timeCondition . " AND vms.powerState = 'poweredOff' GROUP BY vms.moref, v.id";
+      $extraCondition = "vms.firstseen < '" . $dateStart . "' AND vms.lastseen > '" . $dateEnd . "' AND vms.powerState = 'poweredOff' GROUP BY vms.moref, v.id";
       
     break; # END case 'VMPOWEREDOFF':
     
@@ -725,21 +426,7 @@ if (isset($_GET['c']))
         array( 'db' => 'v.vcname', 'dt' => 2, 'field' => 'vcname' )
       );
       $joinQuery = "FROM {$table} INNER JOIN hosts AS h ON (vms.host = h.id) INNER JOIN vcenters AS v ON (h.vcenter = v.id)";
-      
-      // if ($latest)
-      // {
-      //   
-      //   $timeCondition = "vms.active = 1";
-      //   
-      // }
-      // else
-      // {
-        
-        $timeCondition = "vms.firstseen < '" . $dateStart . "' AND vms.lastseen > '" . $dateEnd . "'";
-        
-      // } # END if ($latest)
-      
-      $extraCondition = $timeCondition . " AND vms.fqdn <> 'Not Available' AND vms.fqdn NOT LIKE CONCAT(vms.name, '%')  GROUP BY vms.moref, v.id";
+      $extraCondition = "vms.firstseen < '" . $dateStart . "' AND vms.lastseen > '" . $dateEnd . "' AND vms.fqdn <> 'Not Available' AND vms.fqdn NOT LIKE CONCAT(vms.name, '%')  GROUP BY vms.moref, v.id";
       
     break; # END case 'VMMISNAMED':
     
@@ -766,19 +453,7 @@ if (isset($_GET['c']))
         array( 'db' => 'vms.host', 'dt' => 15, 'field' => 'host' )
       );
       $joinQuery = "FROM {$table} INNER JOIN (SELECT MAX(id), vm_id, commited, firstseen, lastseen FROM vmMetrics GROUP BY vm_id) vmm ON (vms.id = vmm.vm_id) INNER JOIN hosts AS h ON (vms.host = h.id) INNER JOIN clusters c ON h.cluster = c.id INNER JOIN vcenters AS v ON (h.vcenter = v.id) INNER JOIN datastores AS d ON (vms.datastore = d.id)";
-      
-      // if ($latest)
-      // {
-      //   
-      //   $extraCondition = "vms.active = 1";
-      //   
-      // }
-      // else
-      // {
-        
-        $extraCondition = "vms.firstseen < '" . $dateStart . "' AND vms.lastseen > '" . $dateEnd . "' GROUP BY vms.moref, v.id";
-        
-      // } # END if ($latest)
+      $extraCondition = "vms.firstseen < '" . $dateStart . "' AND vms.lastseen > '" . $dateEnd . "' GROUP BY vms.moref, v.id";
       
     break; # END case 'VMINVENTORY':
     
