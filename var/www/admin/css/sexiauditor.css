@@ -540,5 +540,10 @@ input[readonly] {
 
 #export-feature { margin-top: 10px; }
 
-#inventory_info, #inventory_filter, #inventory_length { font-size: 14px; }
+.dataTables_info, .dataTables_filter, .dataTables_length { font-size: 14px; }
 #inventory_length { margin-right: 40px; }
+
+.importantLabel a { 
+  /*color: #FF4536 !important;*/
+  font-weight: bold !important;
+}
