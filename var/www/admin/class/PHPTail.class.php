@@ -1,5 +1,4 @@
 <?php
-
 class PHPTail {
     /* Source: https://github.com/taktos/php-tail */
 
@@ -286,8 +285,7 @@ class PHPTail {
 	<script src="js/bootstrap.min.js"></script>
 </body>
 </html>
-        <?php
+<?php
     }
 }
-
 ?>
