@@ -1,6 +1,6 @@
-<?php require("session.php"); ?>
 <?php
-$title = "VMHost Inventory";
+require("session.php");
+$title = "Host Inventory";
 $additionalStylesheet = array(  'css/jquery.dataTables.min.css',
                                 'css/bootstrap-datetimepicker.css');
 $additionalScript = array(  'js/jquery.dataTables.min.js',
@@ -18,66 +18,92 @@ $additionalScript = array(  'js/jquery.dataTables.min.js',
 require("header.php");
 require("helper.php");
 
-$scannedDirectories = array_values(array_diff(scandir($xmlStartPath, SCANDIR_SORT_DESCENDING), array('..', '.', 'latest')));
-$xmlSelectedPath = $scannedDirectories[0];
-$selectedDate = DateTime::createFromFormat('Ymd', $scannedDirectories[0])->format('Y/m/d');
-
-?>
-	<div id="purgeLoading" style="display:flex;"><span class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>&nbsp; Loading inventory, please wait for awesomeness ...</div>
-    <div style="display:none; padding-top: 10px; padding-bottom: 10px;" class="container" id="wrapper-container">
-	<div class="row">
-	<div class="col-lg-12 alert alert-info" style="margin-top: 20px; text-align: center;">
-		<h1 style="margin-top: 10px;">VMHost Inventory on <?php echo DateTime::createFromFormat('Y/m/d', $selectedDate)->format('l jS F Y'); ?></h1>
-	</div>
-	</div>
-    <div style="width:98%; padding:10px;">
-        <table id="inventory" class="display table" cellspacing="0" width="100%">
-            <thead>
-                <tr>
-                    <th>vCenter</th>
-                    <th>Cluster</th>
-                    <th>ESX</th>
-                    <th>NumCPU</th>
-                    <th>NumCore</th>
-                </tr>
-            </thead>
-
-            <tbody>
-<?php
-$xmlFile = "$xmlStartPath$xmlSelectedPath/hosts-global.xml";
-$xml = simplexml_load_file($xmlFile);
-
-foreach ($xml->host as $vmhost) {
-echo "<tr>";
-echo "<td>" . $vmhost->vcenter . "</td>";
-echo "<td>" . $vmhost->cluster . "</td>";
-echo "<td>" . $vmhost->name . "</td>";
-echo "<td>" . $vmhost->numcpu . "</td>";
-echo "<td>" . $vmhost->numcpucore . "</td>";
-echo "</tr>";
+try
+{
+  
+  # Main class loading
+  $check = new SexiCheck();
+  # Header generation
+  $check->displayHeader($_SERVER['SCRIPT_NAME'], $visible = false);
+  
 }
+catch (Exception $e)
+{
+  
+  # Any exception will be ending the script, we want exception-free run
+  # CSS hack for navbar margin removal
+  echo '  <style>#wrapper { margin-bottom: 0px !important; }</style>'."\n";
+  require("exception.php");
+  exit;
 
+} # END try
 
 ?>
-            </tbody>
-        </table>
+    <div style="width:98%; padding:10px;">
+      <div>Show/Hide column:
+        <button type="button" class="btn btn-success btn-xs toggle-vis" style="outline: 5px auto;" name="1" data-column="1">Host</button>
+        <button type="button" class="btn btn-danger btn-xs toggle-vis" style="outline: 5px auto;" name="2" data-column="2">vCenter</button>
+        <button type="button" class="btn btn-success btn-xs toggle-vis" style="outline: 5px auto;" name="3" data-column="3">Cluster</button>
+        <button type="button" class="btn btn-success btn-xs toggle-vis" style="outline: 5px auto;" name="4" data-column="4">Socket</button>
+        <button type="button" class="btn btn-danger btn-xs toggle-vis" style="outline: 5px auto;" name="5" data-column="5">Core</button>
+        <button type="button" class="btn btn-success btn-xs toggle-vis" style="outline: 5px auto;" name="6" data-column="6">Memory</button>
+        <button type="button" class="btn btn-success btn-xs toggle-vis" style="outline: 5px auto;" name="7" data-column="7">Model</button>
+        <button type="button" class="btn btn-danger btn-xs toggle-vis" style="outline: 5px auto;" name="8" data-column="8">CPU Type</button>
+        <button type="button" class="btn btn-danger btn-xs toggle-vis" style="outline: 5px auto;" name="9" data-column="9">CPU Freq</button>
+        <button type="button" class="btn btn-success btn-xs toggle-vis" style="outline: 5px auto;" name="10" data-column="10">Build ESX</button>
+      </div>
+  		<hr />
+      <table id="inventory" class="table display" cellspacing="0" width="100%">
+        <thead><tr>
+          <th>id</th>
+          <th>Host</th>
+          <th>vCenter</th>
+          <th>Cluster</th>
+          <th>Socket</th>
+          <th>Core</th>
+          <th>Memory</th>
+          <th>Model</th>
+          <th>CPU Type</th>
+          <th>CPU Freq</th>
+          <th>Build ESX</th>
+        </tr></thead>
+        <tbody>
+        </tbody>
+      </table>
     </div>
+
     <script type="text/javascript">
-        $(document).ready( function () {
-            $('#inventory').DataTable( {
-        dom: 'Bfrtip',
-        buttons: [
-            'csv', 'excel', 'pdf'
-        ],
-                    "search": {
-                            "smart": false,
-                            "regex": true
-                    }
-                }
-            );
-         } );
-                 document.getElementById("wrapper-container").style.display = "block";
-                 document.getElementById("purgeLoading").style.display = "none";
+      $(document).ready( function () {
+        var table = $('#inventory').DataTable( {
+          "language": { "infoFiltered": "" },
+          "processing": true,
+          "serverSide": true,
+          "ajax": "server_processing.php?c=HOSTINVENTORY&t=<?php echo strtotime($check->getSelectedDate()); ?>",
+          "deferRender": true,
+          "search": {
+            "smart": false,
+            "regex": true
+          },
+          "columnDefs": [ { "targets": [ 0, 2, 5, 8, 9 ], "visible": false } ],
+          "lengthMenu": [ [10, 25, 50, -1], [10, 25, 50, "All"] ]
+        } );
+  			new $.fn.dataTable.Buttons( table, { buttons: [ 'csv', 'excel' ] } );
+        table.buttons().container().appendTo( '#inventory_wrapper .col-sm-6:eq(0)' );
+        $('button.toggle-vis').on( 'click', function (e) {
+          e.preventDefault();
+          var column = table.column( $(this).attr('data-column') );
+          column.visible( ! column.visible() );
+          var nodeList = document.getElementsByName( $(this).attr('data-column') );
+          var regexMatch = new RegExp("btn-success","g");
+          if (nodeList[0].className.match(regexMatch)) {
+            nodeList[0].className = "btn btn-danger btn-xs toggle-vis btn-no-outline";
+          } else {
+            nodeList[0].className = "btn btn-success btn-xs toggle-vis btn-no-outline";
+          }
+        } );
+      } );
+      document.getElementById("wrapper-container").style.display = "block";
+      document.getElementById("purgeLoading").style.display = "none";
     </script>
 
 <?php require("footer.php"); ?>
