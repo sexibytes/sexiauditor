@@ -92,6 +92,10 @@ else
                 <ul class="multi-column-dropdown">
                   <li><a href="index.php"><i class="glyphicon glyphicon-map-marker glyphicon-custom"></i> User Dashboard</a></li>
                   <li class="divider"></li>
+                  <li class="importantLabel"><a href="inv.php"><i class="glyphicon glyphicon-list-alt glyphicon-custom"></i> VM Inventory</a></li>
+                  <li class="importantLabel"><a href="invhost.php"><i class="glyphicon glyphicon-list-alt glyphicon-custom"></i> Host Inventory</a></li>
+                  <li><a href="capacityplanning.php"><i class="glyphicon glyphicon-signal glyphicon-custom"></i> Capacity Planning</a></li>
+                  <li class="divider"></li>
                   <li><a href="check-vsan.php"><img src="images/vc-vsan.gif" class="glyphicon-custom" /> VSAN Checks</a></li>
                   <li><a href="check-vcenter.php"><img src="images/vc-vcenter.gif" class="glyphicon-custom" /> vCenter Checks</a></li>
                   <li><a href="check-cluster.php"><img src="images/vc-cluster.gif" class="glyphicon-custom" /> Cluster Checks</a></li>
@@ -99,8 +103,6 @@ else
                   <li><a href="check-datastore.php"><img src="images/vc-datastore.gif" class="glyphicon-custom" /> Datastore Checks</a></li>
                   <li><a href="check-network.php"><img src="images/vc-network.gif" class="glyphicon-custom" /> Network Checks</a></li>
                   <li><a href="check-vm.php"><img src="images/vc-vm.gif" class="glyphicon-custom" /> VM Checks</a></li>
-                  <li><a href="capacityplanning.php"><i class="glyphicon glyphicon-signal glyphicon-custom"></i> Capacity Planning</a></li>
-                  <li><a href="inv.php"><i class="glyphicon glyphicon-list-alt glyphicon-custom"></i> Global Inventory</a></li>
                 </ul>
               </div>
 <?php if (isset($_SESSION['role']) && $_SESSION['role'] == '1'): ?>
