@@ -1316,7 +1316,7 @@ sub datastoreinventory
       
       # Datastore already exists, have not changed, updated lastseen property
       $logger->info("[DEBUG][DATASTORE-INVENTORY] Datastore " . $refDatastore->{'id'} . " already exists and have not changed since last check, updating lastseen property") if $showDebug;
-      my $sqlUpdate = $dbh->prepare("UPDATE datastores set lastseen = FROM_UNIXTIME (?) WHERE id = '.$refDatastore->{'id'}.'");
+      my $sqlUpdate = $dbh->prepare("UPDATE datastores SET lastseen = FROM_UNIXTIME (?) WHERE id = '" . $refDatastore->{'id'} . "'");
       $sqlUpdate->execute($start);
       $sqlUpdate->finish();
       
