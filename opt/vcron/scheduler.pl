@@ -1316,7 +1316,7 @@ sub datastoreinventory
       
       # Datastore already exists, have not changed, updated lastseen property
       $logger->info("[DEBUG][DATASTORE-INVENTORY] Datastore " . $refDatastore->{'id'} . " already exists and have not changed since last check, updating lastseen property") if $showDebug;
-      my $sqlUpdate = $dbh->prepare("UPDATE datastores set lastseen = FROM_UNIXTIME (?) WHERE id = '$moRef'");
+      my $sqlUpdate = $dbh->prepare("UPDATE datastores set lastseen = FROM_UNIXTIME (?) WHERE id = '.$refDatastore->{'id'}.'");
       $sqlUpdate->execute($start);
       $sqlUpdate->finish();
       
@@ -2398,7 +2398,6 @@ sub datastoreOrphanedVMFilesreport
       my $vcenterID = dbGetVC($vcentersdk->host);
       my $dsbrowser = Vim::get_view(mo_ref => $datastore_view->browser);
       my $ds_path = "[" . $datastore_view->name . "]";
-      print $ds_path."\n";
       my $file_query = FileQueryFlags->new(fileOwner => 0, fileSize => 1, fileType => 0, modification => 1);
       my $search_res;
       eval
@@ -3022,7 +3021,7 @@ sub bundleBackup
   {
     
     # We want to backup only connected ESX to avoid error
-    if ($host_view->{'summary.runtime.connectionState'} ne 'connected') { next; }
+    if ($host_view->{'runtime.connectionState'}->val ne 'connected') { next; }
     my $firmwareSys = Vim::get_view(mo_ref => $host_view->{'configManager.firmwareSystem'});
     my $downloadUrl;
     
