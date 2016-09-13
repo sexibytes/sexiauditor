@@ -18,18 +18,25 @@ $additionalScript = array(  'js/jquery.dataTables.min.js',
 require("header.php");
 require("helper.php");
 
-try {
+try
+{
+  
   # Main class loading
   $check = new SexiCheck();
   # Header generation
   $check->displayHeader($_SERVER['SCRIPT_NAME'], $visible = false);
-} catch (Exception $e) {
+  
+}
+catch (Exception $e)
+{
+  
   # Any exception will be ending the script, we want exception-free run
   # CSS hack for navbar margin removal
   echo '  <style>#wrapper { margin-bottom: 0px !important; }</style>'."\n";
   require("exception.php");
   exit;
-}
+
+} # END try
 
 ?>
     <div style="width:98%; padding:10px;">
@@ -75,12 +82,6 @@ try {
     <div id="modal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="plan-info" aria-hidden="true">
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
-          <!-- <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
-              <span class="glyphicon glyphicon-remove-circle"></span>
-            </button>
-            <h4 class="modal-title"><strong>VM Details<strong></h4>
-          </div> -->
           <div class="modal-body"><!-- /# content will goes here after ajax calls --></div>
           <div class="modal-footer">
             <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
@@ -104,22 +105,17 @@ try {
           "columnDefs": [ { "targets": [ 0, 5, 6, 7, 8, 9, 10, 11, 13, 14 ], "visible": false } ],
           "lengthMenu": [ [10, 25, 50, -1], [10, 25, 50, "All"] ]
         } );
-        
   			new $.fn.dataTable.Buttons( table, { buttons: [ 'csv', 'excel' ] } );
         table.buttons().container().appendTo( '#inventory_wrapper .col-sm-6:eq(0)' );
-        
         $('#inventory').on('click', 'a[rel=modal]', function(evt) {
           evt.preventDefault();
           var modal = $('#modal').modal();
-          modal
-            .find('.modal-body')
-            .load($(this).attr('href'), function (responseText, textStatus) {
-              if ( textStatus === 'success' || textStatus === 'notmodified') {
-                modal.show();
-              }
+          modal.find('.modal-body').load($(this).attr('href'), function (responseText, textStatus) {
+            if ( textStatus === 'success' || textStatus === 'notmodified') {
+              modal.show();
+            }
           });
         });
-
         $('button.toggle-vis').on( 'click', function (e) {
           e.preventDefault();
           var column = table.column( $(this).attr('data-column') );
