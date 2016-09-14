@@ -587,3 +587,4 @@ input[readonly] {
 .tt-suggestion p { margin: 0; }
 .tt-highlight { color: #FF4536;}
 .suggestionList { font-weight: normal;}
+.searchLookup {margin-top: 10px;}
