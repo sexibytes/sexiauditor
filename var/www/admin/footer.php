@@ -38,7 +38,7 @@
         limit: 15,
         source: source.ttAdapter(),
         templates: {
-          suggestion: Handlebars.compile('<a href="/infos.php?q={{urlid}}"><p class="suggestionList"><img src="images/{{imgid}}" class="glyphicon-custom" /> {{id}}</p></a>')
+          suggestion: Handlebars.compile('<a href="{{urlid}}" rel="modal"><p class="suggestionList"><img src="images/{{imgid}}" class="glyphicon-custom" /> {{id}}</p></a>')
         }
       });
 
@@ -53,6 +53,16 @@
         'typeahead:closed'
       ].join(' '), function(x) {
         //console.log(this.value); 
+      });
+    });
+    
+    $('#sexisearch').on('click', 'a[rel=modal]', function(evt) {
+      evt.preventDefault();
+      var modal = $('#modal').modal();
+      modal.find('.modal-body').load($(this).attr('href'), function (responseText, textStatus) {
+        if ( textStatus === 'success' || textStatus === 'notmodified') {
+          modal.show();
+        }
       });
     });
 
