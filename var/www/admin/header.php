@@ -32,8 +32,11 @@ if (isset($additionalStylesheet))
 } # END if (isset($additionalStylesheet))
 
 ?>
-  <script type="text/javascript" src="js/jquery.min.js"></script>
+  <script type="text/javascript" src="js/jquery-3.1.0.min.js"></script>
   <script type="text/javascript" src="js/bootstrap.min.js"></script>
+  <script type="text/javascript" src="js/handlebars.min-latest.js"></script>
+  <script type="text/javascript" src="js/typeahead.jquery.min.js"></script>
+  <script type="text/javascript" src="js/bloodhound.min.js"></script>
 <?php
 
 if (isset($additionalScript))
@@ -59,6 +62,17 @@ if (isset($additionalScript))
     </nav>
 <?php endif; ?>
     <nav class="navbar navbar-default navbar-fixed-top" role="navigation" style="margin-bottom: 0">
+      <div class="col-sm-3 col-md-3 searchLookup">
+        <form class="navbar-form" role="search" action="search.php">
+        <div class="input-group" id="sexisearch">
+          <input type="text" class="form-control typeahead" placeholder="SexiSearch" autocomplete="off"> -->
+          <!-- <input type="text" class="form-control typeahead" placeholder="SexiSearch" name="q" autocomplete="off"> -->
+          <!-- <div class="input-group-btn">
+            <button class="btn btn-default" type="submit"><i class="glyphicon glyphicon-search"></i></button>
+          </div> -->
+        </div>
+        </form>
+      </div>
       <div class="navbar-brand">SexiAuditor</div>
       <ul class="nav navbar-top-links navbar-right">
         <li><a href="passwordupdate.php">Welcome <?php echo (isset($_SESSION['displayname']) ? $_SESSION['displayname'] : (isset($_SESSION['username']) ? $_SESSION['username'] : 'Unknown')) . ((isset($_SESSION['role']) && $_SESSION['role'] == '1') ? ' <i class="glyphicon glyphicon-star"></i>' : ''); ?></a></li>

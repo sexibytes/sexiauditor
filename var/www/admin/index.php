@@ -3,7 +3,7 @@ require("session.php");
 $title = "Platform stats";
 $additionalStylesheet = array('css/vopendata.css');
 $additionalScript = array(  'js/vopendata.js',
-                            'js/isotope.min.js');
+                            'js/isotope.pkgd.min.js');
 require("header.php");
 require("helper.php");
 require("dbconnection.php");
