@@ -187,8 +187,8 @@ if (isset($_GET['c']))
       $columns = array(
         array( 'db' => 'd.datastore_name', 'dt' => 0, 'field' => 'datastore_name' ),
         array( 'db' => 'dm.size', 'dt' => 1, 'field' => 'size', 'formatter' => function( $d, $row ) { return human_filesize($d,0); } ),
-        array( 'db' => 'dm.freespace', 'dt' => 2, 'field' => 'freespace', 'formatter' => function( $d, $row ) { return human_filesize($d,0); } ),
-        array( 'db' => 'dm.uncommitted', 'dt' => 3, 'field' => 'uncommitted', 'formatter' => function( $d, $row ) { return human_filesize($d,0); } ),
+        array( 'db' => 'dm.freespace', 'dt' => 2, 'field' => 'freespace', 'formatter' => function( $d, $row ) { return human_filesize($d,2); } ),
+        array( 'db' => 'dm.uncommitted', 'dt' => 3, 'field' => 'uncommitted', 'formatter' => function( $d, $row ) { return human_filesize($d,2); } ),
         array( 'db' => 'ROUND(100*((dm.size-dm.freespace+dm.uncommitted)/dm.size)) as pct_overallocation', 'dt' => 4, 'field' => 'pct_overallocation', 'formatter' => function( $d, $row ) { return round(100*(($row[1]-$row[2]+$row[3])/$row[1])) . " %"; } ),
         array( 'db' => 'v.vcname', 'dt' => 5, 'field' => 'vcname' )
       );
