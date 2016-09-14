@@ -350,8 +350,9 @@ class SexiCheck {
 
   public function getDatastoreInfos($datastoreID) {
     $this->db->join("datastoreMetrics dm", "datastores.id = dm.datastore_id", "INNER");
+    $this->db->join("vcenters v", "datastores.vcenter = v.id", "INNER");
     $this->db->where('datastores.id', $datastoreID);
-    $resultVM = $this->db->getOne("datastores", "datastore_name, size, ROUND(100*(freespace/size)) as pct_free");
+    $resultVM = $this->db->getOne("datastores", "datastores.*, dm.*, ROUND(100*(freespace/size)) as pct_free, v.vcname as vcenter");
     if ($this->db->count > 0) {
       return $resultVM;
     } else {
