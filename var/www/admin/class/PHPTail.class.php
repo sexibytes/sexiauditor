@@ -1,4 +1,5 @@
 <?php
+
 class PHPTail {
     /* Source: https://github.com/taktos/php-tail */
 
