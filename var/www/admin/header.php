@@ -63,15 +63,9 @@ if (isset($additionalScript))
 <?php endif; ?>
     <nav class="navbar navbar-default navbar-fixed-top" role="navigation" style="margin-bottom: 0">
       <div class="col-sm-3 col-md-3 searchLookup">
-        <form class="navbar-form" role="search" action="search.php">
         <div class="input-group" id="sexisearch">
-          <input type="text" class="form-control typeahead" placeholder="SexiSearch" autocomplete="off"> -->
-          <!-- <input type="text" class="form-control typeahead" placeholder="SexiSearch" name="q" autocomplete="off"> -->
-          <!-- <div class="input-group-btn">
-            <button class="btn btn-default" type="submit"><i class="glyphicon glyphicon-search"></i></button>
-          </div> -->
+          <input type="text" class="form-control typeahead" placeholder="SexiSearch" autocomplete="off" size="40">
         </div>
-        </form>
       </div>
       <div class="navbar-brand">SexiAuditor</div>
       <ul class="nav navbar-top-links navbar-right">
@@ -153,4 +147,14 @@ else
         </li>
       </ul>
     </nav>
+    <div id="modal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="plan-info" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-body"><!-- /# content will goes here after ajax calls --></div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
