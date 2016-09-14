@@ -8,6 +8,7 @@ $powerChoice = array("static" => "High performance", "dynamic" => "Balanced", "l
 $servicePolicyChoice = array("off" => "Start and stop manually", "on" => "Start and stop with host", "automatic" => "Start and stop automatically");
 $langChoice = array("en" => "English");
 $alarmStatus = array("unknown" => '<i class="glyphicon glyphicon-question-sign"></i>', "green" => '<i class="glyphicon glyphicon-ok-sign alarm-green"></i>', "yellow" => '<i class="glyphicon glyphicon-exclamation-sign alarm-yellow"></i>', "red" => "<i class='glyphicon glyphicon-remove-sign alarm-red'></i>");
+$enableStatus = array("0" => '<i class="glyphicon glyphicon-remove-sign alarm-red"></i>', "1" => '<i class="glyphicon glyphicon-ok-sign alarm-green"></i>', "yellow" => '<i class="glyphicon glyphicon-exclamation-sign alarm-yellow"></i>', "red" => "<i class='glyphicon glyphicon-remove-sign alarm-red'></i>");
 $userAgent = array("Perl" => '<img src="images/logo-perl.png" title="VI Perl" />', 'Client' => '<img src="images/logo-viclient.png" title="VMware Client" />', 'Mozilla' => '<img src="images/logo-chrome.png" title="Browser" />', 'java' => '<img src="images/logo-java.png" title="VMware vim-java" />', "PowerCLI" => '<img src="images/logo-powercli.png" title="PowerCLI" />');
 #############################
 # VARIABLE EDITION END ZONE #
