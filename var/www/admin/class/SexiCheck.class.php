@@ -87,13 +87,7 @@ class SexiCheck {
     $this->body = "";
     $this->footer = "";
     $this->graph = "";
-
-    // if ($this->selectedDate != date("Y/m/d")) {
-      # if not the same day, we build our dates objects that will be used in SQL query (after firstseen + before lastseen)
-      $sqlQuery .= " AND main.firstseen < '" . $this->selectedDate . " 23:59:59' AND main.lastseen > '" . $this->selectedDate . " 00:00:01'";
-    // } else {
-    //   $sqlQuery .= " AND main.active = 1";
-    // }
+    $sqlQuery .= " AND main.firstseen < '" . $this->selectedDate . " 23:59:59' AND main.lastseen > '" . $this->selectedDate . " 00:00:01'";
 
     if (!empty($sqlQueryHaving)) {
       $sqlQuery .= " HAVING $sqlQueryHaving";
@@ -379,7 +373,7 @@ class SexiCheck {
 
   private function dbGetCheckQuantity($formPage) {
     # hack for handling inventory page
-    if ($formPage == '/inv.php' OR $formPage == '/invhost.php' OR $formPage == '/bundle.php' OR $formPage == '/capacityplanning.php') { return 1; }
+    if ($formPage == '/inv.php' OR $formPage == '/infos.php' OR $formPage == '/invhost.php' OR $formPage == '/bundle.php' OR $formPage == '/capacityplanning.php') { return 1; }
     # this will return eabled checks for the requested formpage
     $this->db->join("moduleCategory", "modules.category_id = moduleCategory.id", "INNER");
     $this->db->where('modules.schedule', 'off', '<>');
