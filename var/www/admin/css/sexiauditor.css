@@ -588,3 +588,4 @@ input[readonly] {
 .tt-highlight { color: #FF4536;}
 .suggestionList { font-weight: normal;}
 .searchLookup {margin-top: 10px;}
+.dataTables_wrapper .dataTables_paginate { font-size: 14px; }
