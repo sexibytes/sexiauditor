@@ -157,12 +157,12 @@ if (isset($_GET['c']))
         array( 'db' => 'h.host_name', 'dt' => 0, 'field' => 'host_name' ),
         array( 'db' => 'h.ssh_policy', 'dt' => 1, 'field' => 'ssh_policy', 'formatter' => function( $d, $row ) { global $servicePolicyChoice; return $servicePolicyChoice[$d]; } ),
         array( 'db' => 'h.ssh_policy', 'dt' => 2, 'field' => 'ssh_policy', 'formatter' => function( $d, $row ) { global $servicePolicyChoice; global $check; return $servicePolicyChoice[$check->getConfig('hostSSHPolicy')]; } ),
-        array( 'db' => 'h.shell_policy', 'dt' => 3, 'field' => 'ssh_policy', 'formatter' => function( $d, $row ) { global $servicePolicyChoice; return $servicePolicyChoice[$d]; } ),
-        array( 'db' => 'h.shell_policy', 'dt' => 4, 'field' => 'ssh_policy', 'formatter' => function( $d, $row ) { global $servicePolicyChoice; global $check;  return $servicePolicyChoice[$check->getConfig('hostShellPolicy')]; } ),
+        array( 'db' => 'h.shell_policy', 'dt' => 3, 'field' => 'shell_policy', 'formatter' => function( $d, $row ) { global $servicePolicyChoice; return $servicePolicyChoice[$d]; } ),
+        array( 'db' => 'h.shell_policy', 'dt' => 4, 'field' => 'shell_policy', 'formatter' => function( $d, $row ) { global $servicePolicyChoice; global $check;  return $servicePolicyChoice[$check->getConfig('hostShellPolicy')]; } ),
         array( 'db' => 'v.vcname', 'dt' => 5, 'field' => 'vcname' )
       );
       $joinQuery = "FROM {$table} h INNER JOIN vcenters AS v ON (h.vcenter = v.id)";
-      $extraCondition = "h.firstseen < '" . $dateStart . "' AND h.lastseen > '" . $dateEnd . "' AND h.ssh_policy <> '". $check->getConfig('hostSSHPolicy') . "' OR h.shell_policy <> '" . $check->getConfig('hostSSHPolicy'). "'";
+      $extraCondition = "h.firstseen < '" . $dateStart . "' AND h.lastseen > '" . $dateEnd . "' AND h.ssh_policy <> '". $check->getConfig('hostSSHPolicy') . "' OR h.shell_policy <> '" . $check->getConfig('hostSSHPolicy'). "' GROUP BY h.host_name";
       
     break; # END case 'HOSTSSHSHELL':
     
@@ -193,7 +193,7 @@ if (isset($_GET['c']))
         array( 'db' => 'v.vcname', 'dt' => 4, 'field' => 'vcname' )
       );
       $joinQuery = "FROM {$table} d INNER JOIN (SELECT MAX(id), datastore_id, size, freespace, firstseen, lastseen FROM datastoreMetrics GROUP BY datastore_id) dm ON (d.id = dm.datastore_id) INNER JOIN vcenters AS v ON (d.vcenter = v.id)";
-      $extraCondition = $timeCondition . "d.firstseen < '" . $dateStart . "' AND d.lastseen > '" . $dateEnd . "' AND ROUND(100*(dm.freespace/dm.size)) < " . $check->getConfig('datastoreFreeSpaceThreshold');
+      $extraCondition = $timeCondition . "d.firstseen < '" . $dateStart . "' AND d.lastseen > '" . $dateEnd . "' AND ROUND(100*(dm.freespace/dm.size)) < " . $check->getConfig('datastoreFreeSpaceThreshold') . " GROUP BY d.datastore_name, d.vcenter";
       
     break; # END case 'DATASTORESPACEREPORT':  
     
