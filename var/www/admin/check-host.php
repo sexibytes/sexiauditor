@@ -1,5 +1,5 @@
-<?php require("session.php"); ?>
 <?php
+require("session.php");
 $title = "Host Checks";
 $additionalStylesheet = array(  'css/jquery.dataTables.min.css',
                                 'css/bootstrap-datetimepicker.css');
@@ -14,22 +14,30 @@ $additionalScript = array(  'js/jquery.dataTables.min.js',
                             'js/buttons.html5.min.js',
                             'js/file-size.js',
                             'js/moment.js',
-                            'js/bootstrap-datetimepicker.js');
+                            'js/bootstrap-datetimepicker.js',
+                            'js/echarts-all-english-v2.js');
 require("header.php");
 require("helper.php");
 
-try {
+try
+{
+  
   # Main class loading
   $check = new SexiCheck();
   # Header generation
   $check->displayHeader($_SERVER['SCRIPT_NAME']);
-} catch (Exception $e) {
+  
+}
+catch (Exception $e)
+{
+  
   # Any exception will be ending the script, we want exception-free run
   # CSS hack for navbar margin removal
   echo '  <style>#wrapper { margin-bottom: 0px !important; }</style>'."\n";
   require("exception.php");
   exit;
-}
+  
+} # END try
 
 if($check->getModuleSchedule('hostLUNPathDead') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
   $check->displayCheck([  'sqlQuery' => "SELECT main.host_name, main.deadlunpathcount, main.lunpathcount, c.cluster_name as cluster, v.vcname as vcenter FROM hosts main INNER JOIN vcenters v ON main.vcenter = v.id INNER JOIN clusters c ON main.cluster = c.id WHERE main.deadlunpathcount > 0",
@@ -130,6 +138,19 @@ if($check->getModuleSchedule('hostPowerManagementPolicy') != 'off' && $check->ge
                           'thead' => array('Name', 'Cluster', 'Power Policy', 'Desired Power Policy', 'vCenter'),
                           'tbody' => array('"<td>".$entry["host_name"]."</td>"', '"<td>".$entry["cluster"]."</td>"', '"<td>".$this->powerChoice[(string) $entry["powerpolicy"]]."</td>"', '"<td>'.$powerChoice[$currentPolicy].'</td>"', '"<td>".$entry["vcenter"]."</td>"')]);
 }
+
+if ($check->getModuleSchedule('hostBuildPivot') != 'off' && $check->getModuleSchedule('inventory') != 'off')
+{
+  
+  $check->displayCheck([  'sqlQuery' => "SELECT main.esxbuild as dataKey, COUNT(*) as dataValue FROM hosts AS main WHERE true",
+                          'sqlQueryGroupBy' => "main.esxbuild",
+                          "id" => "HOSTBUILDPIVOT",
+                          'typeCheck' => 'pivotTableGraphed',
+                          'thead' => array('Host Build', 'Count'),
+                          'order' => '[ 1, "desc" ]']);
+
+} # END if ($check->getModuleSchedule('hostBuildPivot') != 'off' && $check->getModuleSchedule('inventory') != 'off')
+
   ?>
     <h2>Host ballooning/zip/swap ==> perfManager?</h2>
   </div>
