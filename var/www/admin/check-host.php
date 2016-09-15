@@ -49,14 +49,18 @@ if($check->getModuleSchedule('hostLUNPathDead') != 'off' && $check->getModuleSch
     <h2>Host Profile Compliance</h2>
     <h2>Host LocalSwapDatastore Compliance</h2>
 <?php
-if($check->getModuleSchedule('hostSshShell') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
+
+if ($check->getModuleSchedule('hostSshShell') != 'off' && $check->getModuleSchedule('inventory') != 'off')
+{
+  
   $currentSshPolicy = $check->getConfig('hostSSHPolicy');
   $currentShellPolicy = $check->getConfig('hostShellPolicy');
-  $check->displayCheck([  'sqlQuery' => "SELECT main.host_name, main.ssh_policy, main.shell_policy, c.cluster_name as cluster, v.vcname as vcenter FROM hosts main INNER JOIN vcenters v ON main.vcenter = v.id INNER JOIN clusters c ON main.cluster = c.id WHERE main.ssh_policy <> '$currentSshPolicy' OR main.shell_policy <> '$currentShellPolicy'",
+  $check->displayCheck([  'sqlQuery' => "SELECT main.id FROM hosts main INNER JOIN vcenters v ON main.vcenter = v.id INNER JOIN clusters c ON main.cluster = c.id WHERE main.ssh_policy <> '$currentSshPolicy' OR main.shell_policy <> '$currentShellPolicy'",
                           "id" => "HOSTSSHSHELL",
-                          'thead' => array('Name', 'Cluster', 'SSH Policy', 'Desired SSH Policy', 'Shell Policy', 'Desired Shell Policy', 'vCenter'),
-                          'tbody' => array('"<td>".$entry["host_name"]."</td>"', '"<td>".$entry["cluster"]."</td>"', '"<td>".$this->servicePolicyChoice[(string) $entry["ssh_policy"]]."</td>"', '"<td>'.$servicePolicyChoice[$currentSshPolicy].'</td>"', '"<td>".$this->servicePolicyChoice[(string) $entry["shell_policy"]]."</td>"', '"<td>'.$servicePolicyChoice[$currentShellPolicy].'</td>"', '"<td>".$entry["vcenter"]."</td>"')]);
-}
+                          "typeCheck" => 'ssp',
+                          'thead' => array('Name', 'SSH Policy', 'Desired SSH Policy', 'Shell Policy', 'Desired Shell Policy', 'vCenter')]);
+                          
+} # END if ($check->getModuleSchedule('hostSshShell') != 'off' && $check->getModuleSchedule('inventory') != 'off')
 
 if($check->getModuleSchedule('hostNTPCheck') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
   $check->displayCheck([  'sqlQuery' => "SELECT c.id as clusterId, c.cluster_name as cluster, main.host_name, main.ntpservers, v.vcname as vcenter FROM hosts main INNER JOIN clusters c ON main.cluster = c.id INNER JOIN vcenters v ON main.vcenter = v.id WHERE true",
@@ -131,13 +135,16 @@ if($check->getModuleSchedule('hostMaintenanceMode') != 'off' && $check->getModul
                           'tbody' => array('"<td><img src=\"images/vc-hostInMaintenance.gif\"> ".$entry["host_name"]."</td>"', '"<td>".$entry["cluster"]."</td>"', '"<td>".$entry["vcenter"]."</td>"')]);
 }
 
-if($check->getModuleSchedule('hostPowerManagementPolicy') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
+if ($check->getModuleSchedule('hostPowerManagementPolicy') != 'off' && $check->getModuleSchedule('inventory') != 'off')
+{
+  
   $currentPolicy = $check->getConfig('powerSystemInfo');
-  $check->displayCheck([  'sqlQuery' => "SELECT main.host_name, main.powerpolicy, c.cluster_name as cluster, v.vcname as vcenter FROM hosts main INNER JOIN vcenters v ON main.vcenter = v.id INNER JOIN clusters c ON main.cluster = c.id WHERE main.powerpolicy <> '" . $currentPolicy . "'",
+  $check->displayCheck([  'sqlQuery' => "SELECT main.id FROM hosts main INNER JOIN vcenters v ON main.vcenter = v.id INNER JOIN clusters c ON main.cluster = c.id WHERE main.powerpolicy <> '" . $currentPolicy . "'",
                           "id" => "HOSTPOWERMANAGEMENTPOLICY",
-                          'thead' => array('Name', 'Cluster', 'Power Policy', 'Desired Power Policy', 'vCenter'),
-                          'tbody' => array('"<td>".$entry["host_name"]."</td>"', '"<td>".$entry["cluster"]."</td>"', '"<td>".$this->powerChoice[(string) $entry["powerpolicy"]]."</td>"', '"<td>'.$powerChoice[$currentPolicy].'</td>"', '"<td>".$entry["vcenter"]."</td>"')]);
-}
+                          "typeCheck" => 'ssp',
+                          'thead' => array('Name', 'Power Policy', 'Desired Power Policy', 'vCenter')]);
+
+} # END if ($check->getModuleSchedule('hostPowerManagementPolicy') != 'off' && $check->getModuleSchedule('inventory') != 'off')
 
 if ($check->getModuleSchedule('hostBuildPivot') != 'off' && $check->getModuleSchedule('inventory') != 'off')
 {
