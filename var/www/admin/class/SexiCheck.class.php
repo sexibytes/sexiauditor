@@ -148,7 +148,7 @@ class SexiCheck {
           }
           break;
         case 'pivotTableGraphed':
-          $this->graph .= '    <div id="graph_' . $this->id . '" class="col-lg-8" style="min-height: 550px;"></div>'."\n";
+          $this->graph .= '    <div id="graph_' . $this->id . '" class="col-lg-8" style="min-height: 450px;"></div>'."\n";
           $this->graph .= '            <script>'."\n";
           $this->graph .= '          var option = {'."\n";
           $this->graph .= '            tooltip : {'."\n";
