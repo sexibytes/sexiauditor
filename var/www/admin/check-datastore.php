@@ -95,6 +95,7 @@ if ($check->getModuleSchedule('datastoreAccessible') != 'off' && $check->getModu
 {
   
   $check->displayCheck([  'sqlQuery' => "SELECT main.datastore_name, v.vcname as vcenter FROM datastores main INNER JOIN vcenters v ON main.vcenter = v.id WHERE main.isAccessible = 0",
+                          'sqlQueryGroupBy' => "main.datastore_name, main.vcenter",
                           "id" => "DATASTOREACCESSIBLE",
                           'thead' => array('Datastore Name', 'vCenter'),
                           'tbody' => array('"<td>".$entry["datastore_name"]."</td>"', '"<td>".$entry["vcenter"]."</td>"')]);
