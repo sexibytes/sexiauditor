@@ -128,8 +128,8 @@ if (isset($_GET['c']))
         array( 'db' => 'ROUND(100*1024*SUM(hm.sharedmemory)/SUM(h.memory)) as savedmemory', 'dt' => 3, 'field' => 'savedmemory', 'formatter' => function( $d, $row ) { return "$d %"; } ),
         array( 'db' => 'v.vcname', 'dt' => 4, 'field' => 'vcname' )
       );
-      $joinQuery = "FROM {$table} h INNER JOIN clusters AS c ON (h.cluster = c.id) INNER JOIN vcenters AS v ON (h.vcenter = v.id) INNER JOIN (SELECT MAX(id), host_id, sharedmemory, firstseen, lastseen FROM hostMetrics GROUP BY host_id) hm ON (h.id = hm.host_id)";
-      $extraCondition = "h.firstseen < '" . $dateStart . "' AND h.lastseen > '" . $dateEnd . "' AND hm.firstseen < '" . $dateStart . "' AND hm.lastseen > '" . $dateEnd . "' GROUP BY c.cluster_name";
+      $joinQuery = "FROM {$table} h INNER JOIN clusters AS c ON (h.cluster = c.id) INNER JOIN vcenters AS v ON (h.vcenter = v.id) INNER JOIN (SELECT MAX(id), host_id, sharedmemory, firstseen, lastseen FROM hostMetrics WHERE firstseen < '" . $dateStart . "' AND lastseen > '" . $dateEnd . "'GROUP BY host_id) hm ON (h.id = hm.host_id)";
+      $extraCondition = "h.firstseen < '" . $dateStart . "' AND h.lastseen > '" . $dateEnd . "' GROUP BY c.cluster_name";
       
     break; # END case 'CLUSTERTPSSAVINGS':
     
