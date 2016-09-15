@@ -43,6 +43,7 @@ $lang['HOSTREBOOTREQUIRED'] = array('title' => 'Host Reboot required', 'descript
 $lang['HOSTFQDNHOSTNAMEMISMATCH'] = array('title' => 'Host FQDN and hostname mismatch', 'description' => 'The following displays host that have FQDN and hostname mismatch.');
 $lang['HOSTMAINTENANCEMODE'] = array('title' => 'Host in maintenance mode', 'description' => 'The following displays host that are in maintenance mode.');
 $lang['HOSTPOWERMANAGEMENTPOLICY'] = array('title' => 'Host PowerManagement Policy', 'description' => 'The following displays host that not match the selected power management policy.');
+$lang['HOSTBUILDPIVOT'] = array('title' => 'Host ESXBuild Pivot Table', 'description' => 'Will display a list of all ESX build group by count.');
 
 # datastore items
 $lang['DATASTORESPACEREPORT'] = array('title' => 'Datastore Space report', 'description' => 'Datastores which run out of space will cause impact on the virtual machines held on these datastores.');
