@@ -149,6 +149,38 @@ if (isset($_GET['c']))
       
     break; # END case 'CLUSTERADMISSIONCONTROL':
     
+    case 'HOSTSSHSHELL':
+
+      $table = 'hosts';
+      $primaryKey = 'id';
+      $columns = array(
+        array( 'db' => 'h.host_name', 'dt' => 0, 'field' => 'host_name' ),
+        array( 'db' => 'h.ssh_policy', 'dt' => 1, 'field' => 'ssh_policy', 'formatter' => function( $d, $row ) { global $servicePolicyChoice; return $servicePolicyChoice[$d]; } ),
+        array( 'db' => 'h.ssh_policy', 'dt' => 2, 'field' => 'ssh_policy', 'formatter' => function( $d, $row ) { global $servicePolicyChoice; global $check; return $servicePolicyChoice[$check->getConfig('hostSSHPolicy')]; } ),
+        array( 'db' => 'h.shell_policy', 'dt' => 3, 'field' => 'ssh_policy', 'formatter' => function( $d, $row ) { global $servicePolicyChoice; return $servicePolicyChoice[$d]; } ),
+        array( 'db' => 'h.shell_policy', 'dt' => 4, 'field' => 'ssh_policy', 'formatter' => function( $d, $row ) { global $servicePolicyChoice; global $check;  return $servicePolicyChoice[$check->getConfig('hostShellPolicy')]; } ),
+        array( 'db' => 'v.vcname', 'dt' => 5, 'field' => 'vcname' )
+      );
+      $joinQuery = "FROM {$table} h INNER JOIN vcenters AS v ON (h.vcenter = v.id)";
+      $extraCondition = "h.firstseen < '" . $dateStart . "' AND h.lastseen > '" . $dateEnd . "' AND h.ssh_policy <> '". $check->getConfig('hostSSHPolicy') . "' OR h.shell_policy <> '" . $check->getConfig('hostSSHPolicy'). "'";
+      
+    break; # END case 'HOSTSSHSHELL':
+    
+    case 'HOSTPOWERMANAGEMENTPOLICY':
+
+      $table = 'hosts';
+      $primaryKey = 'id';
+      $columns = array(
+        array( 'db' => 'h.host_name', 'dt' => 0, 'field' => 'host_name' ),
+        array( 'db' => 'h.powerpolicy', 'dt' => 1, 'field' => 'powerpolicy', 'formatter' => function( $d, $row ) { global $powerChoice; return $powerChoice[$d]; } ),
+        array( 'db' => 'h.ssh_policy', 'dt' => 2, 'field' => 'ssh_policy', 'formatter' => function( $d, $row ) { global $powerChoice; global $check; return $powerChoice[$check->getConfig('powerSystemInfo')]; } ),
+        array( 'db' => 'v.vcname', 'dt' => 3, 'field' => 'vcname' )
+      );
+      $joinQuery = "FROM {$table} h INNER JOIN vcenters AS v ON (h.vcenter = v.id)";
+      $extraCondition = "h.firstseen < '" . $dateStart . "' AND h.lastseen > '" . $dateEnd . "' AND h.powerpolicy <> '". $check->getConfig('powerSystemInfo') . "'";
+      
+    break; # END case 'HOSTPOWERMANAGEMENTPOLICY':
+    
     case 'DATASTORESPACEREPORT':
     
       $table = 'datastores';
