@@ -72,7 +72,7 @@ if($check->getModuleSchedule('hostNTPCheck') != 'off' && $check->getModuleSchedu
 }
 
 if($check->getModuleSchedule('hostDNSCheck') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
-  $check->displayCheck([  'sqlQuery' => "SELECT c.id as clusterId, c.cluster_name as cluster, main.host_name, main.dnsservers, v.vcname as vcenter FROM hosts main INNER JOIN clusters c ON main.cluster = c.id INNER JOIN vcenters v ON main.vcenter = v.id WHERE true",
+  $check->displayCheck([  'sqlQuery' => "SELECT c.id as clusterId, c.cluster_name as cluster, main.host_name, main.dnsservers, v.vcname as vcenter FROM hosts main INNER JOIN clusters c ON main.cluster = c.id INNER JOIN vcenters v ON main.vcenter = v.id WHERE c.id <> 1",
                           "id" => "HOSTDNSCHECK",
                           'typeCheck' => 'majorityPerCluster',
                           'majorityProperty' => 'dnsservers',
@@ -98,6 +98,7 @@ if($check->getModuleSchedule('hostConfigurationIssues') != 'off') {
 
 if($check->getModuleSchedule('alarms') != 'off') {
   $check->displayCheck([  'sqlQuery' => "SELECT main.alarm_name, main.status, main.time, main.entityMoRef, v.vcname as vcenter, h.host_name as entity FROM alarms main INNER JOIN vcenters v ON main.vcenter = v.id INNER JOIN hosts h ON main.entityMoRef = h.moref WHERE main.entityMoRef LIKE 'HostSystem%'",
+                          'sqlQueryGroupBy' => "main.entityMoRef",
                           "id" => "ALARMSHOST",
                           'thead' => array('Status', 'Alarm', 'Date', 'Name', 'vCenter'),
                           'tbody' => array('"<td>" . $this->alarmStatus[(string) $entry["status"]] . "</td>"', '"<td>" . $entry["alarm_name"] . "</td>"', '"<td>" . $entry["time"] . "</td>"', '"<td>" . $entry["entity"] . "</td>"', '"<td>" . $entry["vcenter"] . "</td>"'),
@@ -123,6 +124,7 @@ if($check->getModuleSchedule('hostRebootrequired') != 'off' && $check->getModule
 
 if($check->getModuleSchedule('hostFQDNHostnameMismatch') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
   $check->displayCheck([  'sqlQuery' => "SELECT main.host_name, main.hostname, c.cluster_name as cluster, v.vcname as vcenter FROM hosts main INNER JOIN vcenters v ON main.vcenter = v.id INNER JOIN clusters c ON main.cluster = c.id WHERE main.host_name NOT LIKE CONCAT(main.hostname, '%')",
+                          'sqlQueryGroupBy' => "main.host_name",
                           "id" => "HOSTFQDNHOSTNAMEMISMATCH",
                           'thead' => array('FQDN', 'Hostname', 'Cluster', 'vCenter'),
                           'tbody' => array('"<td>".$entry["host_name"]."</td>"', '"<td>".$entry["hostname"]."</td>"', '"<td>".$entry["cluster"]."</td>"', '"<td>".$entry["vcenter"]."</td>"')]);
