@@ -210,7 +210,21 @@ class SexiCheck {
           $this->footer .= '      "paging":   false,'."\n";
           $this->footer .= '      "info":   false,'."\n";
         }
-        if ($this->typeCheck != "pivotTableGraphed") { $this->footer .= '      "search": { "smart": false, "regex": true },'."\n"; } else { $this->footer .= '      "searching": false, "lengthChange": false, "info": false,'."\n"; }
+        
+        if ($this->typeCheck != "pivotTableGraphed")
+        {
+        
+          $this->footer .= '      "search": { "smart": false, "regex": true },'."\n";
+        
+        }
+        else
+        {
+          
+          $this->footer .= '      "searching": false, "lengthChange": false, "info": false,'."\n";
+          $this->footer .= '      "dom": "<\'row\'<\'col-sm-6\'l><\'col-sm-6\'f>><\'row\'<\'col-sm-12\'tr>><\'row\'<\'col-sm-12\'p>>",';
+        
+        } # END if ($this->typeCheck != "pivotTableGraphed")
+        
         if (!is_null($this->order)) { $this->footer .= '      "order": [' . $this->order . '],'."\n"; }
         if (!is_null($this->columnDefs)) { $this->footer .= '      "columnDefs": [' . $this->columnDefs . '],'."\n"; }
 
@@ -320,6 +334,10 @@ class SexiCheck {
 
   public function getSumValue() {
     # code...
+  }
+
+  public function getServicePolicyChoice() {
+    return $this->servicePolicyChoice;
   }
 
   public function getSelectedPath() {
