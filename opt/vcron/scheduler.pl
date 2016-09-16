@@ -7,6 +7,7 @@ use DBD::mysql;
 use Data::Dumper;
 use Date::Format qw(time2str);
 use Date::Parse;
+use Encode;
 use File::Fetch;
 use File::Find;
 use File::Path qw( make_path remove_tree );
@@ -20,6 +21,7 @@ use Socket;
 use Switch;
 use Time::Piece;
 use URI::URL;
+use utf8;
 use VMware::VIRuntime;
 use VMware::VICredStore;
 
@@ -150,6 +152,7 @@ my %actions = ( inventory => \&inventory,
                 hostNTPCheck => \&dummy,
                 hostSshShell => \&dummy,
                 hostLUNPathDead => \&dummy,
+                hostBuildPivot => \&dummy,
                 hostBundlebackup => \&bundleBackup,
                 vmSnapshotsage => \&dummy,
                 vmphantomsnapshot => \&dummy,
@@ -179,7 +182,8 @@ my %actions = ( inventory => \&inventory,
                 datastoreOverallocation => \&dummy,
                 datastoreSIOCdisabled => \&dummy,
                 datastoremaintenancemode => \&dummy,
-                datastoreAccessible => \&dummy
+                datastoreAccessible => \&dummy,
+                mailAlert => \&mailAlert
               );
 
 # Data purge
@@ -1803,16 +1807,6 @@ sub getHardwareStatus
             else
             {
               
-              # if ($rows gt 0)
-              # {
-              #   
-              #   # HWStatus have changed, we must decom old one before create a new one
-              #   my $sqlUpdate = $dbh->prepare("UPDATE hardwarestatus set active = 0 WHERE id = '" . $ref->{'id'} . "'");
-              #   $sqlUpdate->execute();
-              #   $sqlUpdate->finish();
-              #   
-              # } # END if ($rows gt 0)
-              
               my $sqlInsert = $dbh->prepare("INSERT INTO hardwarestatus (host, issuename, issuestate, issuetype, firstseen, lastseen) VALUES (?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?))");
               $sqlInsert->execute(
                 $hostID,
@@ -1857,16 +1851,6 @@ sub getHardwareStatus
             else
             {
               
-              # if ($rows gt 0)
-              # {
-              #   
-              #   # HWStatus have changed, we must decom old one before create a new one
-              #   my $sqlUpdate = $dbh->prepare("UPDATE hardwarestatus set active = 0 WHERE id = '" . $ref->{'id'} . "'");
-              #   $sqlUpdate->execute();
-              #   $sqlUpdate->finish();
-              #   
-              # } # END if ($rows gt 0)
-              
               my $sqlInsert = $dbh->prepare("INSERT INTO hardwarestatus (host, issuename, issuestate, issuetype, firstseen, lastseen) VALUES (?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?))");
               $sqlInsert->execute(
                 $hostID,
@@ -1910,16 +1894,6 @@ sub getHardwareStatus
             }
             else
             {
-              
-              # if ($rows gt 0)
-              # {
-              #   
-              #   # HWStatus have changed, we must decom old one before create a new one
-              #   my $sqlUpdate = $dbh->prepare("UPDATE hardwarestatus set active = 0 WHERE id = '" . $ref->{'id'} . "'");
-              #   $sqlUpdate->execute();
-              #   $sqlUpdate->finish();
-              #   
-              # } # END if ($rows gt 0)
               
               my $sqlInsert = $dbh->prepare("INSERT INTO hardwarestatus (host, issuename, issuestate, issuetype, firstseen, lastseen) VALUES (?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?))");
               $sqlInsert->execute(
@@ -1969,16 +1943,6 @@ sub getHardwareStatus
             }
             else
             {
-              
-              # if ($rows gt 0)
-              # {
-              #   
-              #   # HWStatus have changed, we must decom old one before create a new one
-              #   my $sqlUpdate = $dbh->prepare("UPDATE hardwarestatus set active = 0 WHERE id = '" . $ref->{'id'} . "'");
-              #   $sqlUpdate->execute();
-              #   $sqlUpdate->finish();
-              #   
-              # } # END if ($rows gt 0)
               
               my $sqlInsert = $dbh->prepare("INSERT INTO hardwarestatus (host, issuename, issuestate, issuetype, firstseen, lastseen) VALUES (?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?))");
               $sqlInsert->execute(
@@ -2048,16 +2012,6 @@ sub getAlarms
       else
       {
         
-        # if ($rows gt 0)
-        # {
-        #   
-        #   # Alarm have changed, we must decom old one before create a new one
-        #   my $sqlUpdate = $dbh->prepare("UPDATE alarms set active = 0 WHERE id = '" . $ref->{'id'} . "'");
-        #   $sqlUpdate->execute();
-        #   $sqlUpdate->finish();
-        #   
-        # } # END if ($rows gt 0)
-        
         my $sqlInsert = $dbh->prepare("INSERT INTO alarms (vcenter, moref, entityMoRef, alarm_name, time, status, firstseen, lastseen) VALUES (?, ?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?))");
         $sqlInsert->execute(
           $vcenterID,
@@ -2086,7 +2040,6 @@ sub snapshotInventory
   
   my ($snapshotTree,$vmID) = @_;
   my $description = (defined($snapshotTree->description) ? $snapshotTree->description : 'Not Available');
-  utf8::downgrade($description);
   my $moRef = $snapshotTree->{'snapshot'}->{'type'}."-".$snapshotTree->{'snapshot'}->{'value'};
   my $createTime = "0000-00-00 00:00:00";
   $createTime = substr($snapshotTree->createTime, 0, 19);
@@ -2095,10 +2048,10 @@ sub snapshotInventory
   my $refSnapshot = dbGetSnapshot($moRef,$vmID);
   
   if ( ($refSnapshot != 0)
-    && ($refSnapshot->{'name'} eq $snapshotTree->name)
+    && (decode_utf8($refSnapshot->{'name'}) eq $snapshotTree->name)
     && ($refSnapshot->{'createTime'} eq $createTime)
     && ($refSnapshot->{'snapid'} eq $snapshotTree->id)
-    && ($refSnapshot->{'description'} eq $description)
+    && (decode_utf8($refSnapshot->{'description'}) eq $description)
     && ($refSnapshot->{'quiesced'} eq $snapshotTree->quiesced)
     && ($refSnapshot->{'state'} eq $snapshotTree->state->val))
   {
@@ -2147,7 +2100,7 @@ sub snapshotInventory
     $sqlInsert->finish();
     
   } # END if ($refSnapshot != 0) + check
-
+  
   # recurse through the tree of snaps
   if ($snapshotTree->childSnapshotList)
   {
@@ -2180,8 +2133,9 @@ sub getConfigurationIssue
       
       if (defined(@$_[0]))
       {
-        
-        my $query = "SELECT * FROM configurationissues WHERE host = '" . $hostID . "' AND configissue = '" . @$_[0]->fullFormattedMessage . "' ORDER BY lastseen DESC LIMIT 1";
+
+        my $fullFormattedMessage = $dbh->quote(@$_[0]->fullFormattedMessage);
+        my $query = "SELECT * FROM configurationissues WHERE host = '" . $hostID->{'id'} . "' AND configissue = " . $fullFormattedMessage . " ORDER BY lastseen DESC LIMIT 1";
         my $sth = $dbh->prepare($query);
         $sth->execute();
         my $rows = $sth->rows;
@@ -2319,16 +2273,6 @@ sub dvpginventory
       }
       else
       {
-        
-        # if ($rows gt 0)
-        # {
-        #   
-        #   # DVPortgroup have changed, we must decom old one before create a new one
-        #   my $sqlUpdate = $dbh->prepare("UPDATE distributedvirtualportgroups set active = 0 WHERE id = '" . $ref->{'id'} . "'");
-        #   $sqlUpdate->execute();
-        #   $sqlUpdate->finish();
-        #   
-        # } # END if ($rows gt 0)
         
         my $sqlInsert = $dbh->prepare("INSERT INTO distributedvirtualportgroups (vcenter, moref, name, numports, openports, autoexpand, firstseen, lastseen) VALUES (?, ?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?))");
         $sqlInsert->execute(
@@ -3122,3 +3066,10 @@ sub QuickQueryPerf
   } # END foreach(@$metrics)
 
 } # END sub QuickQueryPerf
+
+sub mailAlert
+{
+  
+  # code
+  
+} # END sub mailAlert
