@@ -116,6 +116,7 @@ if ($check->getModuleSchedule('clusterMembersLUNPathCountMismatch') != 'off' && 
 {
   
   $check->displayCheck([  'sqlQuery' => "SELECT main.id as clusterId, main.cluster_name as cluster, h.host_name, h.lunpathcount, v.vcname as vcenter FROM hosts h INNER JOIN clusters main ON h.cluster = main.id INNER JOIN vcenters v ON h.vcenter = v.id WHERE true",
+                          "sqlQueryGroupBy" =>  "main.cluster_name",
                           "id" => "CLUSTERMEMBERSLUNPATHCOUNTMISMATCH",
                           'typeCheck' => 'majorityPerCluster',
                           'majorityProperty' => 'lunpathcount',
