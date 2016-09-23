@@ -56,7 +56,7 @@ if (!is_array($vm = $check->getVMInfos($_GET['vmid']))) {
     </div>
 </div>
 <div style="min-height:20px;">&nbsp;</div>
-<div class="row table" style="margin-bottom:0px;">
+<div class="row" style="margin-bottom:0px; font-size: 14px;">
   <div class="col-sm-6">
     <div class="panel panel-default">
       <div class="panel-heading text-center"><strong>vHardware Configuration</strong></div>
@@ -84,7 +84,7 @@ if (!is_array($vm = $check->getVMInfos($_GET['vmid']))) {
           <tr><td class="table-title text-right">Name</td><td style="padding-left: 10px;"><?php echo (string)$vm["name"]; ?></td></tr>
           <tr><td class="table-title text-right">FQDN</td><td style="padding-left: 10px;"><?php echo (string)$vm["fqdn"]; ?></td></tr>
           <tr><td class="table-title text-right">MoRef</td><td style="padding-left: 10px;"><?php echo (string)$vm["moref"]; ?></td></tr>
-          <tr><td class="table-title text-right">ESX Host</td><td style="padding-left: 10px;"><?php echo (string)$vm["host"]; ?></td></tr>
+          <tr><td class="table-title text-right">ESX Host</td><td style="padding-left: 10px;"><a href="showhost.php?hostid=<?php echo $vm["hostid"]; ?>" rel="modal"><?php echo (string)$vm["host"]; ?></a></td></tr>
           <tr><td class="table-title text-right">Cluster</td><td style="padding-left: 10px;"><?php echo (string)$vm["cluster"]; ?></td></tr>
           <tr><td class="table-title text-right">vCenter</td><td style="padding-left: 10px;"><?php echo (string)$vm["vcenter"]; ?></td></tr>
           <tr><td class="table-title text-right">Guest OS</td><td style="padding-left: 10px;"><?php echo (string)$vm["guestOS"]; ?></td></tr>

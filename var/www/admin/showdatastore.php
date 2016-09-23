@@ -75,7 +75,7 @@ if (!is_array($datastore = $check->getDatastoreInfos($_GET['dsid'])))
     </div>
 </div>
 <div style="min-height:20px;">&nbsp;</div>
-<div class="row table" style="margin-bottom:0px;">
+<div class="row" style="margin-bottom:0px; font-size: 14px">
   <div class="col-sm-6">
     <div class="panel panel-default">
       <div class="panel-heading text-center"><strong>Hardware Configuration</strong></div>
