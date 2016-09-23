@@ -10,11 +10,11 @@
           filter: function(x) {
             return $.map(x, function(item) {
               if (item.type == "ESX") {
-                return {id: item.name, imgid: "vc-host.gif", urlid: item.urlid};
+                return {id: item.name, imgid: "vc-host.gif", urlid: item.urlid, lastseen: item.lastseen.split(" ")[0]};
               } else if (item.type == "VM") {
-                return {id: item.name, imgid: "vc-vm.gif", urlid: item.urlid};
+                return {id: item.name, imgid: "vc-vm.gif", urlid: item.urlid, lastseen: item.lastseen.split(" ")[0]};
               } else if (item.type == "DS") {
-                return {id: item.name, imgid: "vc-datastore.gif", urlid: item.urlid};
+                return {id: item.name, imgid: "vc-datastore.gif", urlid: item.urlid, lastseen: item.lastseen.split(" ")[0]};
               }
             });
           },
@@ -38,7 +38,7 @@
         limit: 15,
         source: source.ttAdapter(),
         templates: {
-          suggestion: Handlebars.compile('<a href="{{urlid}}" rel="modal"><p class="suggestionList"><img src="images/{{imgid}}" class="glyphicon-custom" /> {{id}}</p></a>')
+          suggestion: Handlebars.compile('<a href="{{urlid}}" rel="modal"><p class="suggestionList"><img src="images/{{imgid}}" class="glyphicon-custom" /> {{id}} <span class="lastseen">lastseen: {{lastseen}}</span></p></a>')
         }
       });
 
@@ -56,7 +56,7 @@
       });
     });
     
-    $('#sexisearch').on('click', 'a[rel=modal]', function(evt) {
+    $('#sexisearch, #modal').on('click', 'a[rel=modal]', function(evt) {
       evt.preventDefault();
       var modal = $('#modal').modal();
       modal.find('.modal-body').load($(this).attr('href'), function (responseText, textStatus) {
@@ -65,7 +65,11 @@
         }
       });
     });
-
+    
+    $("#modal").on("shown.bs.modal",function(){
+       $(this).hide().show(); 
+    })
+      
     $(function() {
       $(".toclink").click(function() {
         if (location.pathname.replace(/^\//,'') == this.pathname.replace(/^\//,'') && location.hostname == this.hostname) {
