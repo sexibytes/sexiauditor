@@ -19,35 +19,34 @@ require("helper.php");
 ?>
   <div class="container">
     <h1><i class="glyphicon glyphicon-print"></i> <?php echo $title; ?></h1>
-    blabla coming soon
-    in the mea time > pong html5
-    
-  </div>
+    <p></p>
+    <div class="alert alert-warning"><p><i class="glyphicon glyphicon-exclamation-sign"></i> Here you will find all PDF reports that have been automatically generated. You can also request additionnal report generation.</p><p>This feature is not yet available, but be assure we're working hard to bring it to you as soon as possible. In the mean time, enjoy this awesome HTML5 Pong game!</p></div>
     <div id="gamediv">
-	<div id="titleScreen">
-		<h1>Pong!</h1>
-		<p>This game is based on the HTML5 elements <b>canvas</b> and <b>audio</b>. With some simple javascript to make it work.</p>
-		<p>To play this game you need a modern web browser with support for HTML5. Audio only works with Firefox 3.5+ at the moment.</p>
-		<p class="vcard">Made by <a href="http://daverix.net/" class="url fn" target="_top" rel="me">David Laurell</a></p>
-		<button id="playButton">Play!</button>
-	</div>
-	<div id="playScreen">
-		<canvas width="640" height="360" id="gameCanvas">
-			<p>Your browser <b>does not</b> support HTML5!</p>
-			<p>Download <a href="http://firefox.com">Firefox3.6</a> for the full experience or another with good HTML5 support. The game is tested in Firefox 3.0+, Chromium 4+, Chrome 4 beta, Opera and Internet Explorer 8. To get the audio to work you are required to use Firefox for the moment.</p>
-			<p>Visit the <a href="http://daverix.net/projects/pong/">project page</a> for more info.</p>
-		</canvas>
-		<div id="computerScore">0</div>
-		<div id="playerScore">0</div>
-		<div class="ingamebuttons">
-			<button id="pauseButton">Pause</button>
-			<!-- <button id="soundButton">Turn off sound</button> -->
-		</div>
-		<div id="pauseText">Paused</div>
-	</div>
-</div>
+    	<div id="titleScreen">
+    		<h1>Pong!</h1>
+    		<p>This game is based on the HTML5 elements <b>canvas</b>.</p>
+    		<p>To play this game you need a modern web browser with support for HTML5.</p>
+    		<p class="vcard">Made by <a href="http://daverix.net/" class="url fn" target="_top" rel="me">David Laurell</a></p>
+    		<button id="playButton">Play!</button>
+    	</div>
+    	<div id="playScreen">
+    		<canvas width="640" height="360" id="gameCanvas">
+    			<p>Your browser <b>does not</b> support HTML5!</p>
+    			<p>Download <a href="http://firefox.com">Firefox3.6</a> for the full experience or another with good HTML5 support. The game is tested in Firefox 3.0+, Chromium 4+, Chrome 4 beta, Opera and Internet Explorer 8. To get the audio to work you are required to use Firefox for the moment.</p>
+    			<p>Visit the <a href="http://daverix.net/projects/pong/">project page</a> for more info.</p>
+    		</canvas>
+    		<div id="computerScore">0</div>
+    		<div id="playerScore">0</div>
+    		<div class="ingamebuttons">
+    			<button id="pauseButton">Pause</button>
+    			<!-- <button id="soundButton">Turn off sound</button> -->
+    		</div>
+    		<div id="pauseText">Paused</div>
+    	</div>
+    </div>
 
-    
+
+</div>
     
     <!-- <h2>One Time Generation</h2>
     <div class="col-lg-12">
