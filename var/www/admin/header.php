@@ -139,6 +139,7 @@ else
                   <li><a href="status.php"><i class="glyphicon glyphicon-screenshot glyphicon-custom"></i> Scheduler Status</a></li>
                   <li class="divider"></li>
                   <li><a href="passwordupdate.php"><i class="glyphicon glyphicon-asterisk glyphicon-custom"></i> Update Password</a></li>
+                  <li><a href="about.php"><i class="glyphicon glyphicon-question-sign glyphicon-custom"></i> About SexiAuditor</a></li>
                   <li><a href="logout.php"><i class="glyphicon glyphicon-log-out glyphicon-custom"></i> Logout</a></li>
                 </ul>
               </div>
