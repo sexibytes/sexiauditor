@@ -28,13 +28,13 @@
 }
 #titleScreen h1 {
 	font-weight: normal;
-	color: #ffc;
+	color: #FF4536;
 	font-size: 1.5em;
 }
 #titleScreen p {
 	font-weight: bold;
 	font-size: 0.8em;
-	color: #ccc;
+	color: #FF4536;
 	text-align: left;
 }
 
@@ -42,7 +42,7 @@
 	font-size: 0.8em;
 }
 #titleScreen .vcard a {
-	color: #ccc;
+	color: black;
 }
 
 /*
