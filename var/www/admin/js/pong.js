@@ -81,19 +81,19 @@ function moveMouse(e) {
 		game.player.y = y;
 }
 
-function playSound(snd) {
-	if(game.sound) {
-		try {
-			if (!snd.paused) {
-				// Pause and reset it
-				snd.pause();	
-				snd.currentTime = 0;
-			}
-			snd.play();
-		}
-		catch(e) {}
-	}
-}
+// function playSound(snd) {
+// 	if(game.sound) {
+// 		try {
+// 			if (!snd.paused) {
+// 				// Pause and reset it
+// 				snd.pause();	
+// 				snd.currentTime = 0;
+// 			}
+// 			snd.play();
+// 		}
+// 		catch(e) {}
+// 	}
+// }
 
 function update() {
 	dateTime = new Date();
@@ -199,14 +199,14 @@ function draw() {
 		}
 
 		// left player
-		ctx.fillStyle = "rgba(128,128,128,.8)";
+		ctx.fillStyle = "rgba(255,69,54,.8)";
 		ctx.fillRect(0, game.computer.y - game.playerHeight / 2,
 				game.playerWidth, game.playerHeight);
 		// right player
 		ctx.fillRect(canvas.width - game.playerWidth, game.player.y
 				- game.playerHeight / 2, game.playerWidth, game.playerHeight);
 
-		ctx.fillStyle = "rgba(192,192,192,8)";
+		ctx.fillStyle = "rgba(94,94,94,8)";
 		ctx.fillRect(game.ball.x - game.ball.radius, game.ball.y
 				- game.ball.radius, game.ball.radius * 2, game.ball.radius * 2);
 	}
