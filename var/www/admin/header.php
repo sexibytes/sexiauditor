@@ -152,6 +152,7 @@ else
         <div class="modal-content">
           <div class="modal-body"><!-- /# content will goes here after ajax calls --></div>
           <div class="modal-footer">
+            <a href="#" id="modal-previous" rel="modal" style="display:none;" class="btn btn-primary">Go back</a>
             <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
           </div>
         </div>

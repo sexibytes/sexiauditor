@@ -84,7 +84,7 @@ if (!is_array($vm = $check->getVMInfos($_GET['vmid']))) {
           <tr><td class="table-title text-right">Name</td><td style="padding-left: 10px;"><?php echo (string)$vm["name"]; ?></td></tr>
           <tr><td class="table-title text-right">FQDN</td><td style="padding-left: 10px;"><?php echo (string)$vm["fqdn"]; ?></td></tr>
           <tr><td class="table-title text-right">MoRef</td><td style="padding-left: 10px;"><?php echo (string)$vm["moref"]; ?></td></tr>
-          <tr><td class="table-title text-right">ESX Host</td><td style="padding-left: 10px;"><a href="showhost.php?hostid=<?php echo $vm["hostid"]; ?>" rel="modal"><?php echo (string)$vm["host"]; ?></a></td></tr>
+          <tr><td class="table-title text-right">ESX Host</td><td style="padding-left: 10px;"><a href="showhost.php?hostid=<?php echo $vm["hostid"]; ?>&vmidsource=<?php echo $vm["id"]; ?>" rel="modal"><?php echo $vm["host"]; ?> <i class="glyphicon glyphicon-share"></i></a></td></tr>
           <tr><td class="table-title text-right">Cluster</td><td style="padding-left: 10px;"><?php echo (string)$vm["cluster"]; ?></td></tr>
           <tr><td class="table-title text-right">vCenter</td><td style="padding-left: 10px;"><?php echo (string)$vm["vcenter"]; ?></td></tr>
           <tr><td class="table-title text-right">Guest OS</td><td style="padding-left: 10px;"><?php echo (string)$vm["guestOS"]; ?></td></tr>
@@ -118,7 +118,5 @@ if (is_array($datastore = $check->getDatastoreInfos($vm["datastore"], $vm["vcent
   linkElement.rel = "stylesheet";
   linkElement.href = "css/whhg.css";
   document.head.appendChild(linkElement);
+  $("#modal-previous").css('display', 'none');
 </script>
-
-</body>
-</html>

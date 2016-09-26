@@ -1,5 +1,5 @@
-<?php require("session.php"); ?>
 <?php
+require("session.php");
 require("helper.php");
 
 if (empty($_GET['hostid'])) {  exit('  <div class="alert alert-danger" role="alert"><span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span><span class="sr-only">Error:</span> Missing mandatory values</div>'); }
@@ -81,7 +81,8 @@ if (!is_array($esxhost = $check->getHostInfos($_GET['hostid']))) {
   linkElement.rel = "stylesheet";
   linkElement.href = "css/whhg.css";
   document.head.appendChild(linkElement);
+<?php if (!empty($_GET['vmidsource'])) : ?>
+  $("#modal-previous").attr('href', 'showvm.php?vmid=<?php echo $_GET['vmidsource']; ?>');
+  $("#modal-previous").css('display', 'inline');
+<?php endif; ?>
 </script>
-
-</body>
-</html>
