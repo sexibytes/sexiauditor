@@ -593,6 +593,6 @@ input[readonly] {
 .lastseen {
   font-style: italic;
   font-size: 12px;
-  color: #CCC;
+  color: #777;
   margin-left: 10px;
 }
