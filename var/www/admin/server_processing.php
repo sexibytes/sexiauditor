@@ -254,8 +254,8 @@ if (isset($_GET['c']))
       $primaryKey = 'id';
       $columns = array(
         array( 'db' => 'vms.name', 'dt' => 0, 'field' => 'name' ),
-        array( 'db' => 'vms.memReservation', 'dt' => 1, 'field' => 'memReservation', 'formatter' => function( $d, $row ) { return "$d MB"; } ),
-        array( 'db' => 'vms.cpuReservation', 'dt' => 2, 'field' => 'cpuReservation', 'formatter' => function( $d, $row ) { return "$d MB"; } ),
+        array( 'db' => 'vms.cpuReservation', 'dt' => 1, 'field' => 'cpuReservation', 'formatter' => function( $d, $row ) { return "$d MHz"; } ),
+        array( 'db' => 'vms.memReservation', 'dt' => 2, 'field' => 'memReservation', 'formatter' => function( $d, $row ) { return "$d MB"; } ),
         array( 'db' => 'v.vcname', 'dt' => 3, 'field' => 'vcname' )
       );
       $joinQuery = "FROM {$table} INNER JOIN hosts AS h ON (vms.host = h.id) INNER JOIN vcenters AS v ON (h.vcenter = v.id)";
