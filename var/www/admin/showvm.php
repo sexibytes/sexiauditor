@@ -2,20 +2,34 @@
 require("session.php");
 require("helper.php");
 
-if (empty($_GET['vmid'])) {  exit('  <div class="alert alert-danger" role="alert"><span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span><span class="sr-only">Error:</span> Missing mandatory values</div>'); }
+if (empty($_GET['vmid']))
+{
+  
+  exit('  <div class="alert alert-danger" role="alert"><span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span><span class="sr-only">Error:</span> Missing mandatory values</div>');
 
-try {
+} # END if (empty($_GET['vmid']))
+
+try
+{
+  
   # Main class loading
   $check = new SexiCheck();
-  # Header generation
-} catch (Exception $e) {
+  
+}
+catch (Exception $e)
+{
+  
   # Any exception will be ending the script, we want exception-free run
   exit('  <div class="alert alert-danger" role="alert"><span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span><span class="sr-only">Error:</span> ' . $e->getMessage() . '</div>');
-}
+  
+} # END try
 
-if (!is_array($vm = $check->getVMInfos($_GET['vmid']))) {
+if (!is_array($vm = $check->getVMInfos($_GET['vmid'])))
+{
+  
   exit('  <div class="alert alert-danger" role="alert"><span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span><span class="sr-only">Error:</span> ' . $vm . '</div>');
-}
+  
+} # END if (!is_array($vm = $check->getVMInfos($_GET['vmid'])))
 
 ?>
 
@@ -84,27 +98,49 @@ if (!is_array($vm = $check->getVMInfos($_GET['vmid']))) {
           <tr><td class="table-title text-right">Name</td><td style="padding-left: 10px;"><?php echo (string)$vm["name"]; ?></td></tr>
           <tr><td class="table-title text-right">FQDN</td><td style="padding-left: 10px;"><?php echo (string)$vm["fqdn"]; ?></td></tr>
           <tr><td class="table-title text-right">MoRef</td><td style="padding-left: 10px;"><?php echo (string)$vm["moref"]; ?></td></tr>
-          <tr><td class="table-title text-right">ESX Host</td><td style="padding-left: 10px;"><a href="showhost.php?hostid=<?php echo $vm["hostid"]; ?>&vmidsource=<?php echo $vm["id"]; ?>" rel="modal"><?php echo $vm["host"]; ?> <i class="glyphicon glyphicon-share"></i></a></td></tr>
+          <tr><td class="table-title text-right">ESX Host</td><td style="padding-left: 10px;"><a href="showhost.php?hostid=<?php echo $vm["hostid"]; ?>&amp;vmidsource=<?php echo $vm["id"]; ?>" rel="modal"><?php echo $vm["host"]; ?> <i class="glyphicon glyphicon-share"></i></a></td></tr>
           <tr><td class="table-title text-right">Cluster</td><td style="padding-left: 10px;"><?php echo (string)$vm["cluster"]; ?></td></tr>
           <tr><td class="table-title text-right">vCenter</td><td style="padding-left: 10px;"><?php echo (string)$vm["vcenter"]; ?></td></tr>
           <tr><td class="table-title text-right">Guest OS</td><td style="padding-left: 10px;"><?php echo (string)$vm["guestOS"]; ?></td></tr>
 <?php
-if (is_array($datastore = $check->getDatastoreInfos($vm["datastore"], $vm["vcenterID"]))) {
+
+if (is_array($datastore = $check->getDatastoreInfos($vm["datastore"], $vm["vcenterID"])))
+{
+  
   $datastoreName = $datastore["datastore_name"];
-  if ($datastore["pct_free"] < 10) {
+  
+  if ($datastore["pct_free"] < 10)
+  {
+    
     $labelFreeColor = "danger";
-  } elseif ($datastore["pct_free"] < 20) {
-    $labelFreeColor = "warning";
-  } else {
-    $labelFreeColor = "success";
+    
   }
+  elseif ($datastore["pct_free"] < 20)
+  {
+    
+    $labelFreeColor = "warning";
+    
+  }
+  else
+  {
+    
+    $labelFreeColor = "success";
+    
+  } # END if ($datastore["pct_free"] < 10)
+  
   $additionalDatastoreInfos = " <span class=\"label label-primary\">" . human_filesize($datastore["size"]) . " total size</span> <span class=\"label label-" . $labelFreeColor . "\">" . $datastore["pct_free"] . "% free</span>";
-} else {
+
+}
+else
+{
+  
   $datastoreName = "Undefined";
   $additionalDatastoreInfos = " <span class=\"label label-default\">Unknow infos</span>";
-}
+  
+} # END if (is_array($datastore = $check->getDatastoreInfos($vm["datastore"], $vm["vcenterID"])))
+
 ?>
-          <tr><td class="table-title text-right">Datastore</td><td style="padding-left: 10px;"><?php echo (string)$datastoreName.$additionalDatastoreInfos; ?></td></tr>
+          <tr><td class="table-title text-right">Datastore</td><td style="padding-left: 10px;"><a href="showdatastore.php?dsid=<?php echo $vm["datastore"]; ?>&amp;vmidsource=<?php echo $vm["id"]; ?>" rel="modal"><?php echo $datastoreName; ?> <i class="glyphicon glyphicon-share"></i> <?php echo $additionalDatastoreInfos; ?></a></td></tr>
           <tr><td class="table-title text-right">VMX Path</td><td style="padding-left: 10px;"><?php echo (string)$vm["vmxpath"]; ?></td></tr>
           <tr><td class="table-title text-right">VM Path</td><td style="padding-left: 10px;"><?php echo (string)$vm["vmpath"]; ?></td></tr>
         </table>

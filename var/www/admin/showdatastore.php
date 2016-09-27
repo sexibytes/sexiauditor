@@ -109,6 +109,10 @@ if (!is_array($datastore = $check->getDatastoreInfos($_GET['dsid'])))
   linkElement.rel = "stylesheet";
   linkElement.href = "css/whhg.css";
   document.head.appendChild(linkElement);
+<?php if (!empty($_GET['vmidsource'])) : ?>
+  $("#modal-previous").attr('href', 'showvm.php?vmid=<?php echo $_GET['vmidsource']; ?>');
+  $("#modal-previous").css('display', 'inline');
+<?php endif; ?>
 </script>
 
 </body>

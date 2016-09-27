@@ -128,8 +128,8 @@ if (isset($_GET['c']))
         array( 'db' => 'ROUND(100*1024*SUM(hm.sharedmemory)/SUM(h.memory)) as savedmemory', 'dt' => 3, 'field' => 'savedmemory', 'formatter' => function( $d, $row ) { return "$d %"; } ),
         array( 'db' => 'v.vcname', 'dt' => 4, 'field' => 'vcname' )
       );
-      $joinQuery = "FROM {$table} h INNER JOIN clusters AS c ON (h.cluster = c.id) INNER JOIN vcenters AS v ON (h.vcenter = v.id) INNER JOIN (SELECT MAX(id), host_id, sharedmemory, firstseen, lastseen FROM hostMetrics WHERE firstseen < '" . $dateStart . "' AND lastseen > '" . $dateEnd . "'GROUP BY host_id) hm ON (h.id = hm.host_id)";
-      $extraCondition = "h.firstseen < '" . $dateStart . "' AND h.lastseen > '" . $dateEnd . "' GROUP BY c.cluster_name";
+      $joinQuery = "FROM {$table} h INNER JOIN clusters AS c ON (h.cluster = c.id) INNER JOIN vcenters AS v ON (h.vcenter = v.id) INNER JOIN hostMetrics AS hm ON (h.id = hm.host_id)";
+      $extraCondition = "h.firstseen < '" . $dateStart . "' AND h.lastseen > '" . $dateEnd . "' AND hm.id IN (SELECT MAX(id) FROM hostMetrics WHERE firstseen < '" . $dateStart . "' AND lastseen > '" . $dateEnd . "' GROUP BY host_id) GROUP BY c.cluster_name";
       
     break; # END case 'CLUSTERTPSSAVINGS':
     
@@ -192,8 +192,8 @@ if (isset($_GET['c']))
         array( 'db' => 'ROUND(100*(dm.freespace/dm.size)) as pct_free', 'dt' => 3, 'field' => 'pct_free', 'formatter' => function( $d, $row ) { return "$d %"; } ),
         array( 'db' => 'v.vcname', 'dt' => 4, 'field' => 'vcname' )
       );
-      $joinQuery = "FROM {$table} d INNER JOIN (SELECT MAX(id), datastore_id, size, freespace, firstseen, lastseen FROM datastoreMetrics GROUP BY datastore_id) dm ON (d.id = dm.datastore_id) INNER JOIN vcenters AS v ON (d.vcenter = v.id)";
-      $extraCondition = $timeCondition . "d.firstseen < '" . $dateStart . "' AND d.lastseen > '" . $dateEnd . "' AND ROUND(100*(dm.freespace/dm.size)) < " . $check->getConfig('datastoreFreeSpaceThreshold') . " GROUP BY d.datastore_name, d.vcenter";
+      $joinQuery = "FROM {$table} d INNER JOIN datastoreMetrics AS dm ON (d.id = dm.datastore_id) INNER JOIN vcenters AS v ON (d.vcenter = v.id)";
+      $extraCondition = $timeCondition . "d.firstseen < '" . $dateStart . "' AND d.lastseen > '" . $dateEnd . "' AND dm.id IN (SELECT MAX(id) FROM datastoreMetrics WHERE firstseen < '" . $dateStart . "' AND lastseen > '" . $dateEnd . "' GROUP BY datastore_id) AND ROUND(100*(dm.freespace/dm.size)) < " . $check->getConfig('datastoreFreeSpaceThreshold') . " GROUP BY d.datastore_name, d.vcenter";
       
     break; # END case 'DATASTORESPACEREPORT':  
     
@@ -224,8 +224,8 @@ if (isset($_GET['c']))
         array( 'db' => 'ROUND(100*((dm.size-dm.freespace+dm.uncommitted)/dm.size)) as pct_overallocation', 'dt' => 4, 'field' => 'pct_overallocation', 'formatter' => function( $d, $row ) { return round(100*(($row[1]-$row[2]+$row[3])/$row[1])) . " %"; } ),
         array( 'db' => 'v.vcname', 'dt' => 5, 'field' => 'vcname' )
       );
-      $joinQuery = "FROM {$table} d INNER JOIN (SELECT MAX(id), datastore_id, size, freespace, uncommitted, firstseen, lastseen FROM datastoreMetrics GROUP BY datastore_id) dm ON (d.id = dm.datastore_id) INNER JOIN vcenters AS v ON (d.vcenter = v.id)";
-      $extraCondition = "d.firstseen < '" . $dateStart . "' AND d.lastseen > '" . $dateEnd . "' AND dm.firstseen < '" . $dateStart . "' AND dm.lastseen > '" . $dateEnd . "' AND ROUND(100*((dm.size-dm.freespace+dm.uncommitted)/dm.size)) > ". $check->getConfig('datastoreOverallocation');
+      $joinQuery = "FROM {$table} d INNER JOIN datastoreMetrics dm ON (d.id = dm.datastore_id) INNER JOIN vcenters AS v ON (d.vcenter = v.id)";
+      $extraCondition = "d.firstseen < '" . $dateStart . "' AND d.lastseen > '" . $dateEnd . "' AND dm.id IN (SELECT MAX(id) FROM datastoreMetrics WHERE firstseen < '" . $dateStart . "' AND lastseen > '" . $dateEnd . "' GROUP BY datastore_id) AND ROUND(100*((dm.size-dm.freespace+dm.uncommitted)/dm.size)) > ". $check->getConfig('datastoreOverallocation');
       
     break; # END case 'DATASTOREOVERALLOCATION':
     
@@ -330,8 +330,8 @@ if (isset($_GET['c']))
         array( 'db' => 'vmm.swappedMemory', 'dt' => 3, 'field' => 'swappedMemory', 'formatter' => function( $d, $row ) { return human_filesize($d); } ),
         array( 'db' => 'v.vcname', 'dt' => 4, 'field' => 'vcname' )
       );
-      $joinQuery = "FROM {$table} INNER JOIN vcenters AS v ON (vms.vcenter = v.id) INNER JOIN (SELECT MAX(id), vm_id, swappedMemory, balloonedMemory, compressedMemory, firstseen, lastseen FROM vmMetrics GROUP BY vm_id) vmm ON (vmm.vm_id = vms.id)";
-      $extraCondition = "vms.firstseen < '" . $dateStart . "' AND vms.lastseen > '" . $dateEnd . "' AND vmm.firstseen < '" . $dateStart . "' AND vmm.lastseen > '" . $dateEnd . "' AND (vmm.swappedMemory > 0 OR vmm.balloonedMemory > 0 OR vmm.compressedMemory > 0) GROUP BY vms.moref, v.id";
+      $joinQuery = "FROM {$table} INNER JOIN vcenters AS v ON (vms.vcenter = v.id) INNER JOIN vmMetrics AS vmm ON (vmm.vm_id = vms.id)";
+      $extraCondition = "vms.firstseen < '" . $dateStart . "' AND vms.lastseen > '" . $dateEnd . "' AND vmm.id IN (SELECT MAX(id) FROM vmMetrics WHERE firstseen < '" . $dateStart . "' AND lastseen > '" . $dateEnd . "' GROUP BY vm_id) AND (vmm.swappedMemory > 0 OR vmm.balloonedMemory > 0 OR vmm.compressedMemory > 0) GROUP BY vms.moref, v.id";
       
     break; # END case 'VMBALLOONZIPSWAP':
     
@@ -484,8 +484,8 @@ if (isset($_GET['c']))
         array( 'db' => 'vms.mac', 'dt' => 14, 'field' => 'mac', 'formatter' => function( $d, $row ) { return str_ireplace(',','<br/>',$d); } ),
         array( 'db' => 'vms.host', 'dt' => 15, 'field' => 'host' )
       );
-      $joinQuery = "FROM {$table} INNER JOIN (SELECT MAX(id), vm_id, commited, firstseen, lastseen FROM vmMetrics GROUP BY vm_id) vmm ON (vms.id = vmm.vm_id) INNER JOIN hosts AS h ON (vms.host = h.id) INNER JOIN clusters c ON h.cluster = c.id INNER JOIN vcenters AS v ON (h.vcenter = v.id) INNER JOIN datastores AS d ON (vms.datastore = d.id)";
-      $extraCondition = "vms.firstseen < '" . $dateStart . "' AND vms.lastseen > '" . $dateEnd . "' GROUP BY vms.moref, v.id";
+      $joinQuery = "FROM {$table} INNER JOIN vmMetrics AS vmm ON (vms.id = vmm.vm_id) INNER JOIN hosts AS h ON (vms.host = h.id) INNER JOIN clusters c ON h.cluster = c.id INNER JOIN vcenters AS v ON (h.vcenter = v.id) INNER JOIN datastores AS d ON (vms.datastore = d.id)";
+      $extraCondition = "vms.firstseen < '" . $dateStart . "' AND vms.lastseen > '" . $dateEnd . "' AND vmm.id IN (SELECT MAX(id) FROM vmMetrics WHERE firstseen < '" . $dateStart . "' AND lastseen > '" . $dateEnd . "' GROUP BY vm_id) GROUP BY vms.moref, v.id";
       
     break; # END case 'VMINVENTORY':
     

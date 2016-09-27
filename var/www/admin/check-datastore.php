@@ -41,7 +41,7 @@ catch (Exception $e)
 if ($check->getModuleSchedule('datastoreSpacereport') != 'off' && $check->getModuleSchedule('inventory') != 'off')
 {
   
-  $check->displayCheck([  'sqlQuery' => "SELECT main.id FROM datastores AS main INNER JOIN (SELECT MAX(id), datastore_id, size, freespace, firstseen, lastseen FROM datastoreMetrics GROUP BY datastore_id) dm ON (main.id = dm.datastore_id) WHERE ROUND(100*(dm.freespace/dm.size)) < ". $check->getConfig('datastoreFreeSpaceThreshold'),
+  $check->displayCheck([  'sqlQuery' => "SELECT main.id FROM datastores AS main INNER JOIN datastoreMetrics AS dm ON (main.id = dm.datastore_id) WHERE dm.id IN (SELECT MAX(id) FROM datastoreMetrics WHERE firstseen < '" . $check->getSelectedDate() . " 23:59:59' AND lastseen > '" . $check->getSelectedDate() . " 00:00:01' GROUP BY datastore_id) AND ROUND(100*(dm.freespace/dm.size)) < ". $check->getConfig('datastoreFreeSpaceThreshold'),
                           "id" => "DATASTORESPACEREPORT",
                           "typeCheck" => 'ssp',
                           'thead' => array('Datastore Name', 'Capacity', 'FreeSpace', '% Free', 'vCenter'),
@@ -63,7 +63,7 @@ if ($check->getModuleSchedule('datastoreOrphanedVMFilesreport') != 'off' && $che
 if ($check->getModuleSchedule('datastoreOverallocation') != 'off' && $check->getModuleSchedule('inventory') != 'off')
 {
   
-  $check->displayCheck([  'sqlQuery' => "SELECT main.id FROM datastores AS main INNER JOIN (SELECT MAX(id), datastore_id, size, freespace, uncommitted, firstseen, lastseen FROM datastoreMetrics GROUP BY datastore_id) dm ON (main.id = dm.datastore_id) WHERE dm.firstseen < '" . $check->getSelectedDate() . " 23:59:59' AND dm.lastseen > '" . $check->getSelectedDate() . " 00:00:01' AND ROUND(100*((dm.size-dm.freespace+dm.uncommitted)/dm.size)) > ". $check->getConfig('datastoreOverallocation'),
+  $check->displayCheck([  'sqlQuery' => "SELECT main.id FROM datastores AS main INNER JOIN datastoreMetrics dm ON (main.id = dm.datastore_id) WHERE dm.id IN (SELECT MAX(id) FROM datastoreMetrics WHERE firstseen < '" . $check->getSelectedDate() . " 23:59:59' AND lastseen > '" . $check->getSelectedDate() . " 00:00:01' GROUP BY datastore_id) AND ROUND(100*((dm.size-dm.freespace+dm.uncommitted)/dm.size)) > ". $check->getConfig('datastoreOverallocation'),
                           "id" => "DATASTOREOVERALLOCATION",
                           "typeCheck" => 'ssp',
                           'thead' => array('Datastore Name', 'Capacity', 'FreeSpace', 'Uncommitted', 'Allocation', 'vCenter'),

@@ -2,19 +2,34 @@
 require("session.php");
 require("helper.php");
 
-if (empty($_GET['hostid'])) {  exit('  <div class="alert alert-danger" role="alert"><span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span><span class="sr-only">Error:</span> Missing mandatory values</div>'); }
+if (empty($_GET['hostid']))
+{
+  
+  exit('  <div class="alert alert-danger" role="alert"><span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span><span class="sr-only">Error:</span> Missing mandatory values</div>');
 
-try {
+} # END if (empty($_GET['hostid']))
+
+try
+{
+  
   # Main class loading
   $check = new SexiCheck();
-} catch (Exception $e) {
+  
+}
+catch (Exception $e)
+{
+  
   # Any exception will be ending the script, we want exception-free run
   exit('  <div class="alert alert-danger" role="alert"><span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span><span class="sr-only">Error:</span> ' . $e->getMessage() . '</div>');
-}
+  
+} # END try
 
-if (!is_array($esxhost = $check->getHostInfos($_GET['hostid']))) {
+if (!is_array($esxhost = $check->getHostInfos($_GET['hostid'])))
+{
+  
   exit('  <div class="alert alert-danger" role="alert"><span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span><span class="sr-only">Error:</span> ' . $esxhost . '</div>');
-}
+  
+} # END if (!is_array($esxhost = $check->getHostInfos($_GET['hostid'])))
 
 ?>
 
