@@ -76,6 +76,7 @@ if (!is_array($vm = $check->getVMInfos($_GET['vmid'])))
       <div class="panel-heading text-center"><strong>vHardware Configuration</strong></div>
       <div class="panel-body" style="padding: 0px;">
         <table>
+          <tr><td class="table-title text-right">Last Seen</td><td style="padding-left: 10px;"><?php echo (string)$vm["lastseen"]; ?></td></tr>
           <tr><td class="table-title text-right">Connection State</td><td style="padding-left: 10px;"><?php echo (string)$vm["connectionState"]; ?></td></tr>
           <tr><td class="table-title text-right">Power State</td><td style="padding-left: 10px;"><?php echo (string)$vm["powerState"]; ?></td></tr>
           <tr><td class="table-title text-right">IP Address</td><td style="padding-left: 10px;"><?php echo (string)$vm["ip"]; ?></td></tr>
