@@ -596,3 +596,5 @@ input[readonly] {
   color: #777;
   margin-left: 10px;
 }
+
+#apropos i {font-size: .7em;}
