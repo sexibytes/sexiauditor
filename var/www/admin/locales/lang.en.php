@@ -7,6 +7,20 @@ Language: English
 
 $lang = array();
 
+# Login
+$lang['LOGINSEXIAUDITOR'] = "Login to SexiAuditor";
+$lang['USERNAME'] = "Username";
+$lang['PASSWORD'] = "Password";
+$lang['SIGNIN'] = "Sign in";
+$lang['TIMEOUT'] = "Your session have timeout, please reconnect...";
+$lang['UNKNOWNUSERNAME'] = "Unknown username";
+$lang['BADPASSWORD'] = "Bad password for username";
+
+# Header
+
+# Footer
+$lang['ADMINRIGHTS'] = "Beware of these awesome admin rights, with power comes great responsibility-ish !!!";
+
 # VSAN items
 $lang['VSANHARDWARECOMPATIBILITY'] = array("title" => "Hardware Compatibility", "description" => 'This module will display hardware compatibility checks for VSAN. Further information can be found <a href=\"https://kb.vmware.com/kb/2114803\">here</a>');
 $lang['VSANNETWORK'] = array("title" => "Network", "description" => 'This module will display network checks for VSAN. Further information can be found <a href=\"https://kb.vmware.com/kb/2114803\">here</a>');
