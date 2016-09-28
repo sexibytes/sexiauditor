@@ -97,7 +97,7 @@ class SexiCheck {
     } elseif ($this->id != ("HOSTCONFIGURATIONISSUES" || "HOSTHARDWARESTATUS" || "VCCERTIFICATESREPORT" || "VCLICENCEREPORT")) {
       $sqlQuery .= " GROUP BY main.moref, v.id";
     }
-    // error_log($sqlQuery);
+    error_log($sqlQuery);
     $sqlData = $this->db->rawQuery($sqlQuery);
     if ($this->db->count > 0) {
       $this->header .= '    <h2 class="text-danger anchor" id="' . $this->id . '"><i class="glyphicon glyphicon-exclamation-sign"></i> ' . $this->langDef[$this->id]["title"] . '</h2>'."\n";
@@ -358,7 +358,7 @@ class SexiCheck {
     $this->db->join("vcenters v", "vms.vcenter = v.id", "INNER");
     $this->db->join("vmMetrics vmm", "vms.id = vmm.vm_id", "INNER");
     $this->db->where('vms.id', $vmID);
-    $resultVM = $this->db->getOne("vms", "vms.*, vmm.*, c.cluster_name as cluster, h.host_name as host, v.vcname as vcenter, v.id as vcenterID");
+    $resultVM = $this->db->getOne("vms", "vms.*, vmm.*, vms.host as hostid, c.cluster_name as cluster, h.host_name as host, v.vcname as vcenter, v.id as vcenterID");
     if ($this->db->count > 0) {
       return $resultVM;
     } else {
@@ -423,5 +423,12 @@ class SexiCheck {
     }
     return $this->db->getValue("modules", "COUNT(modules.id)");
   }
+  
+  public function getLocaleText($textId)
+  {
+    
+    return (array_key_exists($textId, $this->langDef) ? $this->langDef[$textId] : "$textId-undefined");
+    
+  } # END private function getLocaleText($textId)
 }
 ?>
