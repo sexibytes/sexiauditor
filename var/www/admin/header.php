@@ -52,13 +52,15 @@ if (isset($additionalScript))
   
 } # END if (isset($additionalScript))
 
+require_once("class/SexiLang.class.php");
+$classLang = new SexiLang();
 ?>
 </head>
 <body>
   <div id="wrapper">
 <?php if (isset($isAdminPage) && $isAdminPage): ?>
     <nav class="navbar navbar-default navbar-fixed-bottom navbar-danger">
-      <div class="">Beware of these awesome admin rights, with power comes great responsibility-ish !!!</div>
+      <div class=""><?php echo $classLang->getLocaleText('ADMINRIGHTS'); ?></div>
     </nav>
 <?php endif; ?>
     <nav class="navbar navbar-default navbar-fixed-top" role="navigation" style="margin-bottom: 0">
