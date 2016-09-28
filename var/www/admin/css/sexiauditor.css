@@ -597,4 +597,10 @@ input[readonly] {
   margin-left: 10px;
 }
 
-#apropos i {font-size: .7em;}
+#apropos>h1 i { font-size: .7em; }
+#apropos p { text-align: center; }
+#apropos h1 { margin-top: 40px; }
+#apropos img {
+  margin: 0 auto;
+  max-width: 120px;  
+}
