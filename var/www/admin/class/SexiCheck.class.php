@@ -697,13 +697,6 @@ class SexiCheck
     return $this->db->getValue("modules", "COUNT(modules.id)");
     
   } # END private function dbGetCheckQuantity($formPage)
-  
-  public function getLocaleText($textId)
-  {
-    
-    return (array_key_exists($textId, $this->langDef) ? $this->langDef[$textId] : "$textId-undefined");
-    
-  } # END private function getLocaleText($textId)
 
 } # END class SexiCheck
 
