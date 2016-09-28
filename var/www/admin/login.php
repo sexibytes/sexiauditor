@@ -1,21 +1,51 @@
 <?php
 require("dbconnection.php");
-if ($_SERVER['REQUEST_METHOD'] == 'POST'){
-  require("helper.php");
+require("helper.php");
+
+try
+{
+  
+  # Main class loading
+  $check = new SexiCheck();
+  
+}
+catch (Exception $e)
+{
+  
+  # Any exception will be ending the script, we want exception-free run
+  # CSS hack for navbar margin removal
+  echo '  <style>#wrapper { margin-bottom: 0px !important; }</style>'."\n";
+  require("exception.php");
+  exit;
+  
+} # END try
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST')
+{
+  
   $issue = true;
-  do {
+  
+  do
+  {
+    
     $db->where('username', secureInput($_POST['username']));
     $resultUser = $db->getOne('users');
 
-    if ($db->count < 1) {
-      $issueMessage = "Unknown username " . secureInput($_POST['username']);
+    if ($db->count < 1)
+    {
+      
+      $issueMessage = $check->getLocaleText("UNKNOWNUSERNAME") . " " . secureInput($_POST['username']);
       break;
-    }
+      
+    } # END if ($db->count < 1)
 
-    if ($resultUser['password'] != hash('sha512', secureInput($_POST['password']))) {
-      $issueMessage = "Bad password for username " . secureInput($_POST['username']);
+    if ($resultUser['password'] != hash('sha512', secureInput($_POST['password'])))
+    {
+      
+      $issueMessage = $check->getLocaleText("BADPASSWORD") . " " . secureInput($_POST['username']);
       break;
-    }
+      
+    } # END if ($resultUser['password'] != hash('sha512', secureInput($_POST['password'])))
 
     # everything is doing ok, we are good to go
     # session instanciation and variable definition
@@ -28,17 +58,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST'){
     $_SESSION['email'] = $resultUser['email'];
     $_SESSION['isLogged'] = true;
     header('Location: index.php');
-  } while (0);
-} elseif (!empty($_GET['e']) && $_GET['e'] == "timeout") {
-  $issue = true;
-  $issueMessage = "Your session have timeout, please reconnect...";
+    
+  } # END do
+  while (0);
+  
 }
+elseif (!empty($_GET['e']) && $_GET['e'] == "timeout")
+{
+  
+  $issue = true;
+  $issueMessage = $check->getLocaleText("TIMEOUT");
+  
+} # END if ($_SERVER['REQUEST_METHOD'] == 'POST')
+
 ?>
 <!DOCTYPE HTML>
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Login to SexiAuditor</title>
+  <title><?php echo $check->getLocaleText("LOGINSEXIAUDITOR"); ?></title>
   <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
   <link rel="stylesheet" type="text/css" href="css/sexiauditor.css">
   <link rel="stylesheet" type="text/css" href="css/auth.css">
@@ -50,14 +88,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST'){
       <div class="account-wall">
     		<img class="profile-img" src="images/unicorn.png" alt="">
         <form class="form-signin" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>" method="post">
-        <input type="text" name="username" class="form-control" placeholder="Username" required autofocus>
-        <input type="password" name="password" class="form-control" placeholder="Password" required>
+        <input type="text" name="username" class="form-control" placeholder="<?php echo $check->getLocaleText("USERNAME"); ?>" required autofocus>
+        <input type="password" name="password" class="form-control" placeholder="<?php echo $check->getLocaleText("PASSWORD"); ?>" required>
 <?php
-if (isset($issue) && $issue) {
+
+if (!empty($issue))
+{
+  
 	echo '<div class="alert alert-danger" role="alert"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span><span class="sr-only">Error:</span> ' . $issueMessage . '</div>';
-}
+  
+} # END if (!empty($issue))
+
 ?>
-        <button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
+        <button class="btn btn-lg btn-primary btn-block" type="submit"><?php echo $check->getLocaleText("SIGNIN"); ?></button>
         </form>
       </div>
     </div>
