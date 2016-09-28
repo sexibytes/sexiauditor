@@ -74,7 +74,7 @@ if ($check->getModuleSchedule('datastoreOverallocation') != 'off' && $check->get
 if ($check->getModuleSchedule('datastoreSIOCdisabled') != 'off' && $check->getModuleSchedule('inventory') != 'off')
 {
   
-  $check->displayCheck([  'sqlQuery' => "SELECT main.datastore_name, v.vcname as vcenter FROM datastores main INNER JOIN vcenters v ON main.vcenter = v.id WHERE main.iormConfiguration = 0",
+  $check->displayCheck([  'sqlQuery' => "SELECT main.datastore_name, v.vcname as vcenter FROM datastores main INNER JOIN vcenters v ON main.vcenter = v.id WHERE main.iormConfiguration = 0 AND main.isAccessible = 1",
                           "id" => "DATASTORESIOCDISABLED",
                           'thead' => array('Datastore Name', 'vCenter'),
                           'tbody' => array('"<td>".$entry["datastore_name"]."</td>"', '"<td>".$entry["vcenter"]."</td>"')]);
