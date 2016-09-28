@@ -7,13 +7,25 @@ require("header.php");
   <div class="container">
     <section id="apropos">
       <h1><i class="glyphicon glyphicon-question-sign"></i> What is SexiAuditor?</h1>
-      <p>SexiAuditor can be summarize as a automatic web morning check on steroids. It basically handle all chekcs, aggregate through fancy web pages, and send morning check reports for VMware admin</p>
+      <p>SexiAuditor can be summarize as a automatic web morning check on steroids. It basically handle all checks that VMware admin need, aggregate them into fancy web pages, and send morning check reports. You can visualize all data through its web access, or use its morning check report to optimize your platforms</p>
       <h1><i class="glyphicon glyphicon-book"></i> A little piece of history</h1>
-      <p>For the history class, Sexiauditor was born in our twisted lazy minds, as we always wanted to have accurate morning checks to know what's going on our managed platform, but with a minimum work (we told you we were lazy). We used to deploy vCheck everywhere (as we also were active in its development), but there was some lacks. So after having released SexiLog and SexiGraf, we asked ourselves if we cannot do something more sutuable for us (and hopefully for lot of people too) :)</p>
+      <p>For the history class, Sexiauditor was born in our twisted lazy minds, as we always wanted to have accurate morning checks to know what's going on our VMware platform, but with a minimum work needed (we told you we were lazy). We used to deploy and use vCheck everywhere (as we also were active in its development), but there was some lacks on multi-vcenter infrastructure. So after we released <a href="htttp://www.sexilog.fr">SexiLog</a> and <a href="http://www.sexigraf.fr">SexiGraf</a>, we asked ourselves if we couldn't fill the missing block and if we cannot do something more suituable for us (and hopefully for lot of people too) :). And thus, <a href="http://www.sexiauditor.fr">SexiAuditor</a> was born!</p>
       <h1><i class="glyphicon glyphicon-user"></i> Who are we?</h1>
       <p>The team remain the same as development of SexiLog and SexiGraf, here we are:</p>
-      <img src="img/vmdude.png" class="img-responsive" alt="vmdude">
-      <img src="img/hypervisor.png" class="img-responsive" alt="hypervisor">
+      <div class="row">
+        <div class="col-sm-3"></div>
+        <div class="col-sm-3">
+          <img src="images/author-hypervisor.jpg" class="img-responsive img-circle" alt="hypervisor">
+          <p><a href="http://www.hypervisor.fr">http://www.hypervisor.fr</a></p>
+          <p><a href="">@hypervisor_fr</a></p>
+        </div>
+        <div class="col-sm-3">
+          <img src="images/author-vmdude.png" class="img-responsive img-circle" alt="vmdude">
+          <p><a href="http://www.vmdude.fr">http://www.vmdude.fr</a></p>
+          <p><a href="">@vmdude_fr</a></p>
+        </div>
+        <div class="col-sm-3"></div>
+      </div>
       <h1><i class="glyphicon glyphicon-envelope"></i> Contact information</h1>
       <p>If you want to contact us or to discover more about our work, here are some ways to keep in touch!<br/>Feel free to contact us, we'll certainly answer back (we love any feeback):</p>
       <p><i class="icon-emailalt"></i> <a href="mailto:check@sexiauditor.fr">check@sexiauditor.fr</a></p>
