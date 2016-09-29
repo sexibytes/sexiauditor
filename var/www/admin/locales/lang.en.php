@@ -2,6 +2,7 @@
 /*
 ------------------
 Language: English
+Credits: Frederic MARTIN and Raphael SCHITZ
 ------------------
 */
 
@@ -17,6 +18,36 @@ $lang['UNKNOWNUSERNAME'] = "Unknown username";
 $lang['BADPASSWORD'] = "Bad password for username";
 
 # Header
+$lang['WELCOME'] = "Welcome";
+$lang['USERDASHBOARD'] = "User Dashboard";
+$lang['VMINVENTORY'] = "VM Inventory";
+$lang['HOSTINVENTORY'] = "Host Inventory";
+$lang['CAPACITYPLANNING'] = "Capacity Planning";
+$lang['VSANCHECKS'] = "VSAN Checks";
+$lang['VCENTERCHECKS'] = "vCenter Checks";
+$lang['CLUSTERCHECKS'] = "Cluster Checks";
+$lang['HOSTCHECKS'] = "Host Checks";
+$lang['DATASTORECHECKS'] = "Datastore Checks";
+$lang['NETWORKCHECKS'] = "Network Checks";
+$lang['VMCHECKS'] = "VM Checks";
+$lang['ADMINDASHBOARD'] = "Admin Dashboard";
+$lang['CREDENTIALSTORE'] = "Credential Store";
+$lang['PACKAGEUPDATER'] = "Package Updater";
+$lang['MODULESELECTOR'] = "Module Selector";
+$lang['LOGVIEWER'] = "Log Viewer";
+$lang['TIMETOBUILD'] = "Time To Build";
+$lang['ESXBUNDLE'] = "ESX Bundle";
+$lang['MODULESETTINGS'] = "Module Settings";
+$lang['USERSMANAGEMENT'] = "Users Management";
+$lang['IMPORTEXPORT'] = "Import/Export";
+$lang['ONETIMEREPORT'] = "One Time Report";
+$lang['PDFREPORTS'] = "PDF Reports";
+$lang['SCHEDULERSTATUS'] = "Scheduler Status";
+$lang['UPDATEPASSWORD'] = "Update Password";
+$lang['ABOUTSEXIAUDITOR'] = "About SexiAuditor";
+$lang['LOGOUT'] = "Logout";
+$lang['GOBACK'] = "Go back";
+$lang['CLOSE'] = "Close";
 
 # Footer
 $lang['ADMINRIGHTS'] = "Beware of these awesome admin rights, with power comes great responsibility-ish !!!";
