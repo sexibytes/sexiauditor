@@ -142,9 +142,9 @@ INSERT INTO `modules` (`id`, `module`, `type`, `displayName`, `version`, `descri
 	(58, 'vmPoweredOff', 'report', 'Powered Off', 1, 'This module will display VM that are Powered Off. This can be useful to check if this state is expected.', 7, 'off'),
 	(59, 'vmGuestPivot', 'report', 'GuestID Pivot Table', 1, 'Will display a list of all guest OS group by count.', 7, 'off'),
 	(60, 'vmMisnamed', 'report', 'Misnamed based on FQDN', 1, 'Will display VM that have FQDN mismatched with the VM object name.', 7, 'off'),
-	(61, 'VSANHealthCheck', 'report', 'VSAN Health Check', 0, 'Display VSAN information about Health Check.', 1, 'daily'),
+	(61, 'VSANHealthCheck', 'report', 'VSAN Health Check', 0, 'Display VSAN information about Health Check.', 1, 'off'),
 	(62, 'alarms', 'report', 'Alarms', 1, 'Will display triggered alarms on objects level with status and time of creation.', 8, 'off'),
-	(63, 'hostBuildPivot', 'report', 'Host ESXBuild Pivot Table', 1, 'Will display a list of all ESX build group by count.', 7, 'daily'),
+	(63, 'hostBuildPivot', 'report', 'Host ESXBuild Pivot Table', 1, 'Will display a list of all ESX build group by count.', 7, 'off'),
 	(99, 'mailAlert', 'action', 'Mail Alert', 0, 'Will send an email with all defective checks', 8, 'daily');
 /*!40000 ALTER TABLE `modules` ENABLE KEYS */;
 
