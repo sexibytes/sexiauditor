@@ -14,6 +14,7 @@ use File::Path qw( make_path remove_tree );
 use Getopt::Long;
 use JSON;
 use Log::Log4perl qw(:easy);
+use LWP::UserAgent;
 use MIME::Lite::TT::HTML;
 use Number::Bytes::Human qw(format_bytes);
 use POSIX qw(strftime);
@@ -200,60 +201,117 @@ if ($purgeThreshold ne 0)
 # TODO = plan to kill some previous execution if it's hang
 VMware::VICredStore::init (filename => $filename) or $logger->logdie ("[ERROR] Unable to initialize Credential Store.");
 @server_list = VMware::VICredStore::get_hosts ();
-foreach $s_item (@server_list) {
+
+foreach $s_item (@server_list)
+{
+  
+  # next if ($s_item ne "vmlon03vce2.lon.uk.world.socgen");
   $activeVC = $s_item;
   $logger->info("[INFO][VCENTER] Start processing vCenter $s_item");
   my $normalizedServerName = $s_item;
   @user_list = VMware::VICredStore::get_usernames (server => $s_item);
-  if (scalar @user_list == 0) {
+  
+  if (scalar @user_list == 0)
+  {
+    
     $logger->error("[ERROR] No credential store user detected for $s_item");
     next;
-  } elsif (scalar @user_list > 1) {
+    
+  }
+  elsif (scalar @user_list > 1)
+  {
+    
     $logger->error("[ERROR] Multiple credential store user detected for $s_item");
     next;
-  } else {
+    
+  }
+  else
+  {
+    
     $u_item = "@user_list";
     $password = VMware::VICredStore::get_password (server => $s_item, username => $u_item);
     $url = "https://" . $s_item . "/sdk";
     $normalizedServerName =~ s/[ .]/_/g;
     $normalizedServerName = lc ($normalizedServerName);
     my $sessionfile = "/tmp/vpx_${normalizedServerName}.dat";
-    if (-e $sessionfile) {
-      eval { Vim::load_session(service_url => $url, session_file => $sessionfile); };
-      if ($@) {
+    
+    if (-e $sessionfile)
+    {
+      
+      eval
+      {
+        
+        Vim::load_session(service_url => $url, session_file => $sessionfile);
+      
+      }; # END eval
+      
+      if ($@)
+      {
+        
         # session is no longer valid, we must destroy it to let it be recreated
         $logger->warn("[WARNING][TOKEN] Session file $sessionfile is no longer valid, it has been destroyed");
         unlink($sessionfile);
-        eval { Vim::login(service_url => $url, user_name => $u_item, password => $password); };
-        if ($@) {
+        
+        eval
+        {
+          
+          Vim::login(service_url => $url, user_name => $u_item, password => $password);
+        
+        }; # END eval
+        
+        if ($@)
+        {
+          
           $logger->error("[ERROR] Cannot connect to vCenter $normalizedServerName and login $u_item, moving on to next vCenter entry");
           next;
-        } else {
+          
+        }
+        else
+        {
+          
           $logger->info("[INFO][TOKEN] Saving session token in file $sessionfile");
           Vim::save_session(session_file => $sessionfile);
-        }
-      }
-    } else {
-      eval { Vim::login(service_url => $url, user_name => $u_item, password => $password); };
-      if ($@) {
+          
+        } # END if ($@)
+        
+      } # END if ($@)
+      
+    }
+    else
+    {
+      
+      eval
+      {
+        
+        Vim::login(service_url => $url, user_name => $u_item, password => $password);
+      
+      }; # END eval
+      
+      if ($@)
+      {
+        
         $logger->error("[ERROR] Cannot connect to vCenter $normalizedServerName and login $u_item, moving on to next vCenter entry");
         next;
-      } else {
+        
+      }
+      else
+      {
+        
         $logger->info("[INFO][TOKEN] Saving session token in file $sessionfile");
         Vim::save_session(session_file => $sessionfile);
-      }
-    }
-  }
+        
+      } # END if ($@)
+      
+    } # END if (-e $sessionfile)
+    
+  } # END if (scalar @user_list == 0)
 
   # TODO
   # check version
   # watchdog
-
   $perfMgr = (Vim::get_view(mo_ref => Vim::get_service_content()->perfManager));
   %perfCntr = map { $_->groupInfo->key . "." . $_->nameInfo->key . "." . $_->rollupType->val => $_ } @{$perfMgr->perfCounter};
-
-  # vCenter connection should be OK at this point
-  # generating meta objects
+  # vCenter connection should be OK at this point, generating meta objects
   $logger->info("[INFO][OBJECTS] Start retrieving ClusterComputeResource objects");
   $view_ClusterComputeResource = Vim::find_entity_views(view_type => 'ClusterComputeResource', properties => ['name', 'host', 'summary', 'configIssue', 'configuration.dasConfig.admissionControlPolicy', 'configuration.dasConfig.admissionControlEnabled', 'configurationEx']);
   $logger->info("[INFO][OBJECTS] End retrieving ClusterComputeResource objects");
@@ -272,75 +330,156 @@ foreach $s_item (@server_list) {
   $logger->info("[INFO][OBJECTS] Start retrieving VirtualMachine objects");
   $view_VirtualMachine = Vim::find_entity_views(view_type => 'VirtualMachine', properties => ['name','guest','summary.config.vmPathName','layoutEx.file','layout.swapFile','config.guestId','runtime','network','summary.config.numCpu','summary.config.memorySizeMB','summary.storage','triggeredAlarmState','config.hardware.device','config.version','resourceConfig','config.cpuHotAddEnabled','config.memoryHotAddEnabled','config.extraConfig','summary.quickStats','snapshot']);
   $logger->info("[INFO][OBJECTS] End retrieving VirtualMachine objects");
+  
   # hastables creation to speed later queries
-  foreach my $cluster_view (@$view_ClusterComputeResource) {
+  foreach my $cluster_view (@$view_ClusterComputeResource)
+  {
+    
     my $cluster_hosts_views = Vim::find_entity_views(view_type => 'HostSystem', begin_entity => $cluster_view , properties => [ 'name' ]);
-    foreach my $cluster_host_view (@$cluster_hosts_views) {
+    
+    foreach my $cluster_host_view (@$cluster_hosts_views)
+    {
+      
       $h_hostcluster{%$cluster_host_view{'mo_ref'}->type . "-" . %$cluster_host_view{'mo_ref'}->value} = %$cluster_view{'mo_ref'}->type . "-" . %$cluster_view{'mo_ref'}->value;
-    }
-  }
+      
+    } # END foreach my $cluster_host_view (@$cluster_hosts_views)
+    
+  } # END foreach my $cluster_view (@$view_ClusterComputeResource)
+  
   my $StandaloneComputeResources = Vim::find_entity_views(view_type => 'ComputeResource', filter => {'summary.numHosts' => "1"}, properties => [ 'host' ]);
-  foreach my $StandaloneComputeResource (@$StandaloneComputeResources) {
-    if  ($StandaloneComputeResource->{'mo_ref'}->type eq "ComputeResource" ) {
+  
+  foreach my $StandaloneComputeResource (@$StandaloneComputeResources)
+  {
+        
+    if ($StandaloneComputeResource->{'mo_ref'}->type eq "ComputeResource" )
+    {
+      
       my @StandaloneResourceVMHost = Vim::get_views(mo_ref_array => $StandaloneComputeResource->host, properties => ['name']);
       my $StandaloneResourceVMHostName = $StandaloneResourceVMHost[0][0]->{'name'};
       $h_host{$StandaloneResourceVMHost[0][0]->{'mo_ref'}->value} = $StandaloneResourceVMHostName;
-    }
-  }
+      
+    } # END if ($StandaloneComputeResource->{'mo_ref'}->type eq "ComputeResource" )
+    
+  } # END foreach my $StandaloneComputeResource (@$StandaloneComputeResources)
 
   $sth = $dbh->prepare($query);
   $sth->execute();
-  while (my $ref = $sth->fetchrow_hashref()) {
+  
+  while (my $ref = $sth->fetchrow_hashref())
+  {
+    
     my $key = $ref->{'module'};
     my $value = $ref->{'schedule'};
     my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
-    if ($force && $value ne "off") {
+    
+    if ($force && $value ne "off")
+    {
+      
       # --force switch have been triggered, unleashed the subroutine
       $logger->info("[INFO][SUBROUTINE-FORCE] Start process for $key (normal schedule is $value)");
       $actions{ $key }->();
       $logger->info("[INFO][SUBROUTINE-FORCE] End process for $key (normal schedule is $value)");
-    } else {
-      switch ($value) {
-        case "hourly" {
+      
+    }
+    else
+    {
+      
+      switch ($value)
+      {
+        
+        case "hourly"
+        {
+          
           $logger->info("[INFO][SUBROUTINE] Start hourly process for $key");
           $actions{ $key }->();
           $logger->info("[INFO][SUBROUTINE] End hourly process for $key");
-        }
-        case "daily" {
-          if ($hour == $dailySchedule) {
+          
+        } # END case "hourly"
+        
+        case "daily"
+        {
+          
+          if ($hour == $dailySchedule)
+          {
+            
             $logger->info("[INFO][SUBROUTINE] Start daily process for $key");
             $actions{ $key }->();
             $logger->info("[INFO][SUBROUTINE] End daily process for $key");
-          } else {
-            $logger->info("[DEBUG][SUBROUTINE] Skipping daily process for $key as it's not yet daily schedule $dailySchedule");
+            
           }
-         }
-        case "weekly" {
-          if ($wday == $weeklySchedule) {
+          else
+          {
+            
+            $logger->info("[DEBUG][SUBROUTINE] Skipping daily process for $key as it's not yet daily schedule $dailySchedule");
+            
+          } # END if ($hour == $dailySchedule)
+          
+        } # END case "daily"
+        
+        case "weekly"
+        {
+          
+          if ($wday == $weeklySchedule) 
+          {
+            
             $logger->info("[INFO][SUBROUTINE] Start weekly process for $key");
             $actions{ $key }->();
             $logger->info("[INFO][SUBROUTINE] End weekly process for $key");
-          } else {
-            $logger->info("[DEBUG][SUBROUTINE] Skipping weekly process for $key as it's not yet weekly schedule $weeklySchedule");
+            
           }
-        }
-        case "monthly" {
-          if ($wday == $weeklySchedule) {
+          else
+          {
+            
+            $logger->info("[DEBUG][SUBROUTINE] Skipping weekly process for $key as it's not yet weekly schedule $weeklySchedule");
+            
+          } # END if ($wday == $weeklySchedule) 
+          
+        } # END case "weekly"
+        
+        case "monthly"
+        {
+          
+          if ($wday == $weeklySchedule)
+          {
+            
             $logger->info("[INFO][SUBROUTINE] Start monthly process for $key");
             $actions{ $key }->();
             $logger->info("[INFO][SUBROUTINE] End monthly process for $key");
-          } else {
-            $logger->info("[DEBUG][SUBROUTINE] Skipping monthly process for $key as it's not yet monthly schedule $monthlySchedule") if $showDebug;
+            
           }
-        }
-        case "off" { $logger->info("[INFO][SUBROUTINE] Ignoring process for $key as it's off"); }
-        else { $logger->warning("[WARNING][SUBROUTINE] Unknow schedule $value for $key"); }
-      }
-    }
-  }
+          else
+          {
+            
+            $logger->info("[DEBUG][SUBROUTINE] Skipping monthly process for $key as it's not yet monthly schedule $monthlySchedule") if $showDebug;
+            
+          } # END if ($wday == $weeklySchedule)
+          
+        } # END case "monthly"
+         
+        case "off"
+        {
+          
+          $logger->info("[INFO][SUBROUTINE] Ignoring process for $key as it's off");
+          
+        } # END case "off"
+        
+        else
+        {
+          
+          $logger->warning("[WARNING][SUBROUTINE] Unknow schedule $value for $key");
+        
+        } # END else
+        
+      } # END switch ($value)
+      
+    } # END if ($force && $value ne "off")
+    
+  } # END while (my $ref = $sth->fetchrow_hashref())
+  
   $sth->finish();
   $logger->info("[INFO][VCENTER] End processing vCenter $s_item");
-}
+  
+} # END foreach $s_item (@server_list)
 
 my $sqlInsert = $dbh->prepare("INSERT INTO executiontime (date, seconds) VALUES (FROM_UNIXTIME (?), ?)");
 $sqlInsert->execute($start, time - $start);
@@ -355,12 +494,17 @@ $dbh->disconnect();
 
 sub dummy { }
 
-sub sessionage {
+sub sessionage
+{
+  
   my $sessionMgr = Vim::get_view(mo_ref => Vim::get_service_content()->sessionManager);
   my $sessionList = eval {$sessionMgr->sessionList || []};
   my $currentSessionkey = $sessionMgr->currentSession->key;
   my $vcentersdk = new URI::URL $sessionMgr->{'vim'}->{'service_url'};
-  foreach my $session (@$sessionList) {
+  
+  foreach my $session (@$sessionList)
+  {
+    
     my $loginTime = "0000-00-00 00:00:00";
     $loginTime = substr($session->loginTime, 0, 19);
     $loginTime =~ s/T/ /g;
@@ -378,24 +522,24 @@ sub sessionage {
     my $rows = $sth->rows;
     # TODO > generate error and skip if multiple + manage deletion (execute query on lastseen != $start)
     my $ref = $sth->fetchrow_hashref();
+    
     if (($rows gt 0)
       && ($ref->{'sessionKey'} eq $sessionKey)
       && ($ref->{'loginTime'} eq $loginTime)
       && ($ref->{'userAgent'} eq $userAgent)
       && ($ref->{'ipAddress'} eq $ipAddress)
-      && ($ref->{'userName'} eq $session->userName)) {
+      && ($ref->{'userName'} eq $session->userName))
+    {
+      
       # Sessions already exists, have not changed, updated lastseen property
       my $sqlUpdate = $dbh->prepare("UPDATE sessions set lastseen = FROM_UNIXTIME (?) WHERE id = '" . $ref->{'id'} . "'");
       $sqlUpdate->execute($start);
       $sqlUpdate->finish();
-    } else {
-      # if ($rows gt 0) {
-      #   # Sessions have changed, we must decom old one before create a new one
-      #   my $sqlUpdate = $dbh->prepare("UPDATE sessions set active = 0 WHERE id = '" . $ref->{'id'} . "'");
-      #   $sqlUpdate->execute();
-      #   $sqlUpdate->finish();
-      # }
-
+      
+    }
+    else
+    {
+      
       my $sqlInsert = $dbh->prepare("INSERT INTO sessions (vcenter, sessionKey, loginTime, userAgent, ipAddress, lastActiveTime, userName, firstseen, lastseen) VALUES (?, ?, ?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?))");
       $sqlInsert->execute(
         $vcenterID,
@@ -409,18 +553,27 @@ sub sessionage {
         $start
       );
       $sqlInsert->finish();
-    }
-  }
-}
+      
+    } # END if (($rows gt 0) + checks
+    
+  } # END foreach my $session (@$sessionList)
+  
+} # END sub sessionage
 
-sub licenseReport {
+sub licenseReport
+{
+  
   my $licMgr = Vim::get_view(mo_ref => Vim::get_service_content()->licenseManager);
   my $installedLicenses = $licMgr->licenses;
   my $vcentersdk = new URI::URL $licMgr->{'vim'}->{'service_url'};
 
-  foreach my $license (@$installedLicenses) {
+  foreach my $license (@$installedLicenses)
+  {
+    
     # we don't want evaluation license to be stored
-    if ($license->editionKey ne 'eval') {
+    if ($license->editionKey ne 'eval')
+    {
+      
       # get vcenter id from database
       my $vcenterID = dbGetVC($vcentersdk->host);
       my $query = "SELECT * FROM licenses WHERE vcenter = '" . $vcenterID . "' AND licenseKey = '" . $license->licenseKey . "' ORDER BY lastseen DESC LIMIT 1";
@@ -429,6 +582,7 @@ sub licenseReport {
       my $rows = $sth->rows;
       # TODO > generate error and skip if multiple + manage deletion (execute query on lastseen != $start)
       my $ref = $sth->fetchrow_hashref();
+      
       if (($rows gt 0)
         && ($ref->{'vcenter'} eq $vcenterID)
         && ($ref->{'licenseKey'} eq $license->licenseKey)
@@ -436,19 +590,18 @@ sub licenseReport {
         && ($ref->{'used'} eq $license->used)
         && ($ref->{'name'} eq $license->name)
         && ($ref->{'editionKey'} eq $license->editionKey)
-        && ($ref->{'costUnit'} eq $license->costUnit)) {
+        && ($ref->{'costUnit'} eq $license->costUnit))
+      {
+        
         # License already exists, have not changed, updated lastseen property
         my $sqlUpdate = $dbh->prepare("UPDATE licenses set lastseen = FROM_UNIXTIME (?) WHERE id = '" . $ref->{'id'} . "'");
         $sqlUpdate->execute($start);
         $sqlUpdate->finish();
-      } else {
-        # if ($rows gt 0) {
-        #   # License have changed, we must decom old one before create a new one
-        #   my $sqlUpdate = $dbh->prepare("UPDATE licenses set active = 0 WHERE id = '" . $ref->{'id'} . "'");
-        #   $sqlUpdate->execute();
-        #   $sqlUpdate->finish();
-        # }
-
+        
+      }
+      else
+      {
+        
         my $sqlInsert = $dbh->prepare("INSERT INTO licenses (vcenter, licenseKey, total, used, name, editionKey, costUnit, firstseen, lastseen) VALUES (?, ?, ?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?))");
         $sqlInsert->execute(
           $vcenterID,
@@ -462,25 +615,42 @@ sub licenseReport {
           $start
         );
         $sqlInsert->finish();
-      }
-    }
-  }
-}
+        
+      } # END if (($rows gt 0) + checks
+      
+    } # END if ($license->editionKey ne 'eval')
+    
+  } # END foreach my $license (@$installedLicenses)
+  
+} # END sub licenseReport
 
-sub certificatesReport {
+sub certificatesReport
+{
+  
   my $vpxSetting = Vim::get_view(mo_ref => Vim::get_service_content()->setting);
   my $vpxSettings = $vpxSetting->setting;
   my $vcentersdk = new URI::URL $vpxSetting->{'vim'}->{'service_url'};
-  foreach my $vpxSetting (@$vpxSettings) {
+  
+  foreach my $vpxSetting (@$vpxSettings)
+  {
+    
     # Query SDK, WS, SSO uri
-    if($vpxSetting->key eq "VirtualCenter.VimApiUrl" or $vpxSetting->key eq "config.vpxd.sso.admin.uri") {
+    if ($vpxSetting->key eq "VirtualCenter.VimApiUrl" or $vpxSetting->key eq "config.vpxd.sso.admin.uri")
+    {
+      
       my $urlToCheck = new URI::URL $vpxSetting->value;
       my $startDate = '0000-00-00 00:00:00';
       my $endDate = '0000-00-00 00:00:00';
-      if (gethostbyname($urlToCheck->host) && $urlToCheck->host ne 'localhost') {
+      
+      if (gethostbyname($urlToCheck->host) && $urlToCheck->host ne 'localhost')
+      {
+        
         $urlToCheck = $urlToCheck->host . ":" . $urlToCheck->port;
         my $command = `echo "QUIT" | timeout 3 openssl s_client -connect $urlToCheck 2>/dev/null | openssl x509 -noout -dates`;
-        if (defined($command)) {
+        
+        if (defined($command))
+        {
+          
           $command =~ /notBefore=(.*)/;
           $startDate = `date --date="$1" --iso-8601`;
           my $normalizedStartDate = $1;
@@ -495,8 +665,11 @@ sub certificatesReport {
           my $endTime = (split(/ /, $normalizedEndDate))[2];
           $endDate =~ s/\r|\n//g;
           $endDate = $endDate . " " . $endTime;
-        }
-      }
+          
+        } # END if (defined($command))
+        
+      } # END if (gethostbyname($urlToCheck->host) && $urlToCheck->host ne 'localhost')
+      
       # get vcenter id from database
       my $vcenterID = dbGetVC($vcentersdk->host);
       my $certificateUrl = $vpxSetting->value;
@@ -506,23 +679,23 @@ sub certificatesReport {
       my $rows = $sth->rows;
       # TODO > generate error and skip if multiple + manage deletion (execute query on lastseen != $start)
       my $ref = $sth->fetchrow_hashref();
+      
       if (($rows gt 0)
         && ($ref->{'vcenter'} eq $vcenterID)
         && ($ref->{'url'} eq $vpxSetting->value)
         && ($ref->{'type'} eq $vpxSetting->key)
         && ($ref->{'start'} eq $startDate)
-        && ($ref->{'end'} eq $endDate)) {
+        && ($ref->{'end'} eq $endDate))
+      {
+          
         # certificate already exists, have not changed, updated lastseen property
         my $sqlUpdate = $dbh->prepare("UPDATE certificates set lastseen = FROM_UNIXTIME (?) WHERE id = '" . $ref->{'id'} . "'");
         $sqlUpdate->execute($start);
         $sqlUpdate->finish();
-      } else {
-        # if ($rows gt 0) {
-        #   # certificate have changed, we must decom old one before create a new one
-        #   my $sqlUpdate = $dbh->prepare("UPDATE certificates set active = 0 WHERE id = '" . $ref->{'id'} . "'");
-        #   $sqlUpdate->execute();
-        #   $sqlUpdate->finish();
-        # }
+        
+      }
+      else
+      {
 
         my $sqlInsert = $dbh->prepare("INSERT INTO certificates (vcenter, url, type, start, end, firstseen, lastseen) VALUES (?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?))");
         $sqlInsert->execute(
@@ -535,10 +708,14 @@ sub certificatesReport {
           $start
         );
         $sqlInsert->finish();
-      }
-    }
-  }
-}
+        
+      } # END if (($rows gt 0) + checks
+      
+    } # END if ($vpxSetting->key eq "VirtualCenter.VimApiUrl" or $vpxSetting->key eq "config.vpxd.sso.admin.uri")
+    
+  } # END foreach my $vpxSetting (@$vpxSettings)
+  
+} # END sub certificatesReport
 
 sub inventory
 {
@@ -687,8 +864,8 @@ sub vminventory
     my $datastore = (split /\[/, (split /\]/, $vm_view->{'summary.config.vmPathName'})[0])[1];
     $datastore = dbGetDatastore($datastore, $vcenterID);
     my $consolidationNeeded = (defined($vm_view->runtime->consolidationNeeded) ? $vm_view->runtime->consolidationNeeded : 0);
-    my $cpuHotAddEnabled = (defined($vm_view->{'config.cpuHotAddEnabled'}) ? $vm_view->{'config.cpuHotAddEnabled'} : 0);
-    my $memHotAddEnabled = (defined($vm_view->{'config.memoryHotAddEnabled'}) ? $vm_view->{'config.memoryHotAddEnabled'} : 0);
+    my $cpuHotAddEnabled = (defined($vm_view->{'config.cpuHotAddEnabled'}) ? $boolHash{$vm_view->{'config.cpuHotAddEnabled'}} : 0);
+    my $memHotAddEnabled = (defined($vm_view->{'config.memoryHotAddEnabled'}) ? $boolHash{$vm_view->{'config.memoryHotAddEnabled'}} : 0);
     # TODO > generate error and skip if multiple + manage deletion (execute query on lastseen != $start)
     my $refVM = dbGetVM($moRef,$vcenterID);
     my $insertVM = 0;
@@ -711,7 +888,7 @@ sub vminventory
       && ($refVM->{'provisionned'} eq $provisionned)
       && ($refVM->{'mac'} eq join(',', @vm_mac))
       && ($refVM->{'multiwriter'} eq $multiwriter)
-      && ($refVM->{'memHotAddEnabled'} eq $boolHash{$memHotAddEnabled})
+      && ($refVM->{'memHotAddEnabled'} eq $memHotAddEnabled)
       && ($refVM->{'guestOS'} eq $vm_guestfullname)
       && ($refVM->{'removable'} eq $removableExist)
       && ($refVM->{'datastore'} eq $datastore->{'id'})
@@ -720,7 +897,7 @@ sub vminventory
       && ($refVM->{'memLimit'} eq $vm_view->resourceConfig->memoryAllocation->limit)
       && ($refVM->{'vmxpath'} eq $vm_view->{'summary.config.vmPathName'})
       && ($refVM->{'connectionState'} eq $vm_view->runtime->connectionState->val)
-      && ($refVM->{'cpuHotAddEnabled'} eq $boolHash{$cpuHotAddEnabled})
+      && ($refVM->{'cpuHotAddEnabled'} eq $cpuHotAddEnabled)
       && ($refVM->{'powerState'} eq $vm_view->runtime->powerState->val)
       && ($refVM->{'guestId'} eq $vm_guestId)
       && ($refVM->{'configGuestId'} eq $vm_configGuestId)
@@ -758,7 +935,7 @@ sub vminventory
         compareAndLog($refVM->{'provisionned'}, $provisionned);
         compareAndLog($refVM->{'mac'}, join(',', @vm_mac));
         compareAndLog($refVM->{'multiwriter'}, $multiwriter);
-        compareAndLog($refVM->{'memHotAddEnabled'}, $boolHash{$memHotAddEnabled});
+        compareAndLog($refVM->{'memHotAddEnabled'}, $memHotAddEnabled);
         compareAndLog($refVM->{'guestOS'}, $vm_guestfullname);
         compareAndLog($refVM->{'removable'}, $removableExist);
         compareAndLog($refVM->{'datastore'}, $datastore->{'id'});
@@ -767,15 +944,12 @@ sub vminventory
         compareAndLog($refVM->{'memLimit'}, $vm_view->resourceConfig->memoryAllocation->limit);
         compareAndLog($refVM->{'vmxpath'}, $vm_view->{'summary.config.vmPathName'});
         compareAndLog($refVM->{'connectionState'}, $vm_view->runtime->connectionState->val);
-        compareAndLog($refVM->{'cpuHotAddEnabled'}, $boolHash{$cpuHotAddEnabled});
+        compareAndLog($refVM->{'cpuHotAddEnabled'}, $cpuHotAddEnabled);
         compareAndLog($refVM->{'powerState'}, $vm_view->runtime->powerState->val);
         compareAndLog($refVM->{'guestId'}, $vm_guestId);
         compareAndLog($refVM->{'configGuestId'}, $vm_configGuestId);
         compareAndLog($refVM->{'vmpath'}, $vmPath);
         $logger->info("[DEBUG][VM-INVENTORY] VM $moRef on host " . $host->{'id'} . " have changed since last check, sending old entry " . $refVM->{'id'} . " it into oblivion") if $showDebug;
-        # my $sqlUpdate = $dbh->prepare("UPDATE vms set active = 0 WHERE id = '" . $refVM->{'id'} . "'");
-        # $sqlUpdate->execute();
-        # $sqlUpdate->finish();
         
       } # END if ($refVM != 0)
       
@@ -801,7 +975,7 @@ sub vminventory
         $provisionned,
         join(',', @vm_mac),
         $multiwriter,
-        $boolHash{$memHotAddEnabled},
+        $memHotAddEnabled,
         $vm_guestfullname,
         $removableExist,
         $datastore->{'id'},
@@ -810,7 +984,7 @@ sub vminventory
         $vm_view->resourceConfig->memoryAllocation->limit,
         $vm_view->{'summary.config.vmPathName'},
         $vm_view->runtime->connectionState->val,
-        $boolHash{$cpuHotAddEnabled},
+        $cpuHotAddEnabled,
         $vm_view->runtime->powerState->val,
         $vm_guestId,
         $vm_configGuestId,
@@ -882,27 +1056,28 @@ sub hostinventory
   
   foreach my $host_view (@$view_HostSystem)
   {
-    
-    my $service_ssh = 'off';
-    my $service_shell = 'off';
+
+    my $service_ssh = 'n/a';
+    my $service_shell = 'n/a';
     my $dnsservers = [];
-    my $esxHostName;
-    
-    # If host not available, we must create some dummy values for mandatory fields
-    if ($host_view->{'runtime.connectionState'}->val ne "connected")
+    my $services = [];
+    my $esxHostName = 'n/a';
+    my $lunpathcount = 0;
+    my $lundeadpathcount = 0;
+    my $syslog_target = '';
+
+    # We should call get_view subroutine only if host is connected to avoid error
+    if ($host_view->{'runtime.connectionState'}->val eq "connected")
     {
-      
-      $service_ssh = 'n/a';
-      $service_shell = 'n/a';
-      $esxHostName = 'n/a';
-      
-    }
-    else
-    {
-      
-      my $serviceSys = Vim::get_view(mo_ref => $host_view->{'configManager.serviceSystem'}, properties => ['serviceInfo']);
-      my $services = $serviceSys->serviceInfo->service;
-    
+
+      if (defined($host_view->{'configManager.serviceSystem'}))
+      {
+        
+        my $serviceSys = Vim::get_view(mo_ref => $host_view->{'configManager.serviceSystem'}, properties => ['serviceInfo']);
+        $services = $serviceSys->serviceInfo->service;
+        
+      } # END if (defined($host_view->{'configManager.serviceSystem'}))
+
       foreach(@$services)
       {
         
@@ -923,41 +1098,37 @@ sub hostinventory
     
       $dnsservers = $host_view->{'config.network.dnsConfig'}->address;
       $esxHostName = $host_view->{'config.network.dnsConfig'}->hostName;
+      my $storageSys = Vim::get_view(mo_ref => $host_view->{'configManager.storageSystem'}, properties => ['storageDeviceInfo.multipathInfo']);
+      my $luns = eval{$storageSys->{'storageDeviceInfo.multipathInfo'}->lun || []};
       
-    } # END if ($host_view->{'runtime.connectionState'}->val ne "connected")
-    
-    my @sorted_dnsservers = map { $_->[1] } sort { $a->[0] <=> $b->[0] } map {[ unpack('N',inet_aton($_)), $_ ]} @$dnsservers;
-    my $ntpservers = $host_view->{'config.dateTimeInfo.ntpConfig.server'} || [];
-    my $storageSys = Vim::get_view(mo_ref => $host_view->{'configManager.storageSystem'}, properties => ['storageDeviceInfo.multipathInfo']);
-    my $lunpathcount = 0;
-    my $lundeadpathcount = 0;
-    my $luns = eval{$storageSys->{'storageDeviceInfo.multipathInfo'}->lun || []};
-    
-    foreach my $lun (@$luns)
-    {
-      
-      $lunpathcount += (0+@{$lun->path});
-      
-      foreach my $path (@{$lun->path})
+      foreach my $lun (@$luns)
       {
         
-        if ($path->{pathState} eq "dead") { $lundeadpathcount++; }
+        $lunpathcount += (0+@{$lun->path});
         
-      } # END foreach my $path (@{$lun->path})
+        foreach my $path (@{$lun->path})
+        {
+          
+          if ($path->{pathState} eq "dead") { $lundeadpathcount++; }
+          
+        } # END foreach my $path (@{$lun->path})
+        
+      } # END foreach my $lun (@$luns)
       
-    } # END foreach my $lun (@$luns)
-    
-    my $advOpt = Vim::get_view(mo_ref => $host_view->{'configManager.advancedOption'}, properties => ['setting']);
-    my $syslog_target = '';
-    
-    eval
-    {
+      my $advOpt = Vim::get_view(mo_ref => $host_view->{'configManager.advancedOption'}, properties => ['setting']);
       
-      $syslog_target = $advOpt->QueryOptions(name => 'Syslog.global.logHost');
-      $syslog_target = @$syslog_target[0]->value;
+      eval
+      {
+        
+        $syslog_target = $advOpt->QueryOptions(name => 'Syslog.global.logHost');
+        $syslog_target = @$syslog_target[0]->value;
+        
+      }; # END eval
       
-    }; # END eval
-    
+    } # END if ($host_view->{'runtime.connectionState'}->val eq "connected")
+
+    my @sorted_dnsservers = map { $_->[1] } sort { $a->[0] <=> $b->[0] } map {[ unpack('N',inet_aton($_)), $_ ]} @$dnsservers;
+    my $ntpservers = $host_view->{'config.dateTimeInfo.ntpConfig.server'} || [];
     my $datastorecount = 0+@{$host_view->{'datastore'}};
     my $memoryShared = QuickQueryPerf($host_view, 'mem', 'shared', 'average', '*');
     $memoryShared = (defined($memoryShared)) ? 0+$memoryShared : 0;
@@ -1034,9 +1205,6 @@ sub hostinventory
         compareAndLog($refHost->{'ssh_policy'}, $service_ssh);
         compareAndLog($refHost->{'shell_policy'}, $service_shell);
         $logger->info("[DEBUG][HOST-INVENTORY] Host $moRef have changed since last check, sending old entry it into oblivion") if $showDebug;
-        # my $sqlUpdate = $dbh->prepare("UPDATE hosts set active = 0 WHERE id = '" . $refHost->{'id'} . "'");
-        # $sqlUpdate->execute();
-        # $sqlUpdate->finish();
         
       } # END if ($refHost != 0)
       
@@ -1222,9 +1390,6 @@ sub clusterinventory
         compareAndLog($refCluster->{'admissionValue'}, $admissionValue);
         compareAndLog($refCluster->{'lastconfigissue'}, $lastconfigissue);
         $logger->info("[DEBUG][CLUSTER-INVENTORY] Cluster $moRef have changed since last check, sending old entry it into oblivion") if $showDebug;
-        # my $sqlUpdate = $dbh->prepare("UPDATE clusters set active = 0 WHERE id = '" . $refCluster->{'id'} . "'");
-        # $sqlUpdate->execute();
-        # $sqlUpdate->finish();
         
       } # END if ($refCluster != 0)
       
@@ -1308,7 +1473,7 @@ sub datastoreinventory
     my $vcenterID = dbGetVC($vcentersdk->host);
     my $refDatastore = dbGetDatastore($datastore_view->name,$vcenterID);
     my $insertDatastore = 0;
-    
+
     if ( ($refDatastore != 0)
       && ($refDatastore->{'datastore_name'} eq $datastore_view->name)
       && ($refDatastore->{'type'} eq $datastore_view->summary->type)
@@ -1717,10 +1882,6 @@ sub VSANHealthCheck
           compareAndLog($refClusterVSAN->{'diskbalance'}, $diskbalance);
           compareAndLog($refClusterVSAN->{'upgradesoftware'}, $upgradesoftware);
           compareAndLog($refClusterVSAN->{'upgradelowerhosts'}, $upgradelowerhosts);
-          # $logger->info("[DEBUG][CLUSTERVSAN-INVENTORY] Cluster VSAN $moRef have changed since last check, sending old entry it into oblivion") if $showDebug;
-          # my $sqlUpdate = $dbh->prepare("UPDATE clustersVSAN set active = 0 WHERE id = '" . $refClusterVSAN->{'id'} . "'");
-          # $sqlUpdate->execute();
-          # $sqlUpdate->finish();
           
         } # END if ($refClusterVSAN != 0)
         
@@ -1765,7 +1926,8 @@ sub getHardwareStatus
   
   foreach my $host_view (@$view_HostSystem)
   {
-    
+
+    next if (!defined($host_view->{'configManager.healthStatusSystem'}));
     my $healthStatusSystem = Vim::get_view(mo_ref => $host_view->{'configManager.healthStatusSystem'});
     my $vcentersdk = new URI::URL $host_view->{'vim'}->{'service_url'};
     my @h_hwissues = ();
@@ -1979,7 +2141,7 @@ sub getAlarms
     
     foreach my $triggeredAlarm (@{$datacenter_view->triggeredAlarmState})
     {
-      
+
       my $entity = Vim::get_view(mo_ref => $triggeredAlarm->entity, properties => [ 'name' ]);
       my $alarm = Vim::get_view(mo_ref => $triggeredAlarm->alarm, properties => [ 'info.name' ]);
       my $vcentersdk = new URI::URL $datacenter_view->{'vim'}->{'service_url'};
@@ -2077,9 +2239,6 @@ sub snapshotInventory
       compareAndLog($refSnapshot->{'quiesced'}, $snapshotTree->quiesced);
       compareAndLog($refSnapshot->{'state'}, $snapshotTree->state->val);
       $logger->info("[DEBUG][SNAPSHOT-INVENTORY] Snapshot $moRef have changed since last check, sending old entry it into oblivion") if $showDebug;
-      # my $sqlUpdate = $dbh->prepare("UPDATE snapshots set active = 0 WHERE id = '" . $refSnapshot->{'id'} . "'");
-      # $sqlUpdate->execute();
-      # $sqlUpdate->finish();
       
     } # END if ($refSnapshot != 0)
     
@@ -2179,7 +2338,7 @@ sub getConfigurationIssue
 
 sub getPermissions
 {
-  
+
   my $authorizationMgr = Vim::get_view(mo_ref => Vim::get_service_content()->authorizationManager);
   my $roleList = $authorizationMgr->roleList;
   my %h_role = ();
@@ -2309,6 +2468,7 @@ sub datastoreOrphanedVMFilesreport
       
       my $layoutFiles = eval {$vm_view->{'layoutEx.file'}} || [];
       my $swapFile = eval {$vm_view->{'layout.swapFile'}} || [];
+      
       foreach my $layoutFile (@$layoutFiles)
       {
         
@@ -2318,7 +2478,7 @@ sub datastoreOrphanedVMFilesreport
           $h_layoutFiles{ $layoutFile->name } = '1';
           
         } # END if ($layoutFile->type ne "log")
-      
+        
       } # END foreach my $layoutFile (@$layoutFiles)
       
       if ($swapFile)
@@ -2893,7 +3053,7 @@ sub compareAndLog
 
 sub terminateSession
 {
-  
+
   my $sessionMgr = Vim::get_view(mo_ref => Vim::get_service_content()->sessionManager);
   my $sessionList = eval {$sessionMgr->sessionList || []};
   my $thresholdSession = dbGetConfig('vcSessionAge');
@@ -2963,12 +3123,12 @@ sub bundleBackup
   
   foreach my $host_view (@$view_HostSystem)
   {
-    
+
     # We want to backup only connected ESX to avoid error
-    if ($host_view->{'runtime.connectionState'}->val ne 'connected') { next; }
+    if ($host_view->{'runtime.connectionState'}->val ne 'connected' || !defined($host_view->{'configManager.firmwareSystem'})) { next; }
     my $firmwareSys = Vim::get_view(mo_ref => $host_view->{'configManager.firmwareSystem'});
     my $downloadUrl;
-    
+
     eval
     {
       
@@ -2986,19 +3146,33 @@ sub bundleBackup
     
     if ($downloadUrl =~ m@http.*//\*//?(.*)@)
     {
-    
+
       my $esxName = $host_view->name;
       $downloadUrl =~ s/\/\*\//\/$esxName\//g;
+      my $ua = LWP::UserAgent->new;
+      $ua->timeout(3);
+      my $response = $ua->get($downloadUrl); 
+      
+      # check if URL is available with small timeout to avoid time consumption
+      if (!$response->is_success())
+      {
+        
+        $logger->info("[DEBUG][BUNDLEBACKUP] Downloading bundle failed for host " . $host_view->name . " " . $response->status_line) if $showDebug;
+        next;
+        
+      } # END if ($response->is_success())
+      
       my $ff = File::Fetch->new(uri => $downloadUrl);
       
       eval
       {
-      
+        
+        $logger->info("[DEBUG][BUNDLEBACKUP] Downloading bundle $downloadUrl for host " . $host_view->name) if $showDebug;
         my $where = $ff->fetch( to => $esxBundlePath );
         $command = `chown -R www-data:www-data /var/www/admin/esxbundle/`;
         
       }; # END eval
-      
+
       if ($@)
       {
       
