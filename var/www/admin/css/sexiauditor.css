@@ -608,4 +608,4 @@ input[readonly] {
   color: white;
   text-decoration: none;
 }
-.navbar-brand a:hover { font-size: 1.1em; }
+.navbar-brand a:hover { text-shadow: 0 0 5px white; }
