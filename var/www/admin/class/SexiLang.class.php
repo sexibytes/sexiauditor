@@ -58,10 +58,18 @@ class SexiLang
   
   public function getLocaleText($textId)
   {
-    
+    // var_dump($textId);
+    // var_dump($this->langDef);
     return (array_key_exists($textId, $this->langDef) ? $this->langDef[$textId] : "$textId-undefined");
     
   } # END private function getLocaleText($textId)
+  
+  public function getAllLocaleText()
+  {
+    
+    return $this->langDef;
+    
+  } # END public function getAllLocaleText()
 
 } # END class SexiLang
 

@@ -19,8 +19,8 @@ class SexiCheck
   private $graph;
   private $achievementFile;
   private $selectedDate;
-  private $lang;
-  private $langDef;
+  // private $lang;
+  // private $langDef;
   private $db;
 
   public function __construct()
@@ -31,26 +31,29 @@ class SexiCheck
     # database instanciation so we can use $db object in this class methods
     require("dbconnection.php");
     $this->db = $db;
-    $this->lang = (defined($this->getConfig('lang'))) ? $this->getConfig('lang') : 'en';
-    
-    switch ($this->lang)
-    {
-      
-      case 'en':
-        $lang_file = 'lang.en.php';
-      break; # END case 'en':
-      
-      case 'fr':
-        $lang_file = 'lang.fr.php';
-      break; # END case 'fr':
-      
-      default:
-      $lang_file = 'lang.en.php';
-      
-    } # END switch ($this->lang)
+    // $this->lang = (defined($this->getConfig('lang'))) ? $this->getConfig('lang') : 'en';
+    // 
+    // switch ($this->lang)
+    // {
+    //   
+    //   case 'en':
+    //     $lang_file = 'lang.en.php';
+    //   break; # END case 'en':
+    //   
+    //   case 'fr':
+    //     $lang_file = 'lang.fr.php';
+    //   break; # END case 'fr':
+    //   
+    //   default:
+    //   $lang_file = 'lang.en.php';
+    //   
+    // } # END switch ($this->lang)
 
-    include_once 'locales/'.$lang_file;
-    $this->langDef = $lang;
+    // include_once 'locales/'.$lang_file;
+    // require_once("class/SexiLang.class.php");
+    // $classLang = new SexiLang();
+    global $classLang;
+    $this->langDef = $classLang->getAllLocaleText();
     global $powerChoice;
     global $alarmStatus;
     global $servicePolicyChoice;
@@ -129,7 +132,7 @@ class SexiCheck
     
     if ($this->db->count > 0)
     {
-      
+    
       $this->header .= '    <h2 class="text-danger anchor" id="' . $this->id . '"><i class="glyphicon glyphicon-exclamation-sign"></i> ' . $this->langDef[$this->id]["title"] . '</h2>'."\n";
       $this->header .= '    <div class="alert alert-warning" role="alert"><i>' . $this->langDef[$this->id]["description"] . '</i></div>'."\n";
       
