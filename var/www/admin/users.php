@@ -190,7 +190,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST')
   {
     
     echo '      <div class="alert alert-success" role="alert"><span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span><span class="sr-only">Success:</span> ' . $okMessage . '</div>';
-    echo "      <script type=\"text/javascript\">$(window).load(function(){ setTimeout(function(){ $('.alert').fadeOut() }, 3000); });</script>";
+    echo "      <script type=\"text/javascript\">$(window).on('load', function(){ setTimeout(function(){ $('.alert').fadeOut() }, 3000); });</script>";
     
   } # END if ($issue)
   
