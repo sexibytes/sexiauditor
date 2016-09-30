@@ -133,6 +133,7 @@ else
                 <ul class="multi-column-dropdown">
 <?php if (isset($_SESSION['role']) && $_SESSION['role'] == '1'): ?>
                   <li><a href="config.php"><i class="glyphicon glyphicon-pencil glyphicon-custom"></i> <?php echo $classLang->getLocaleText('MODULESETTINGS'); ?></a></li>
+                  <li><a href="cpgroup.php"><i class="glyphicon glyphicon-th-list glyphicon-custom"></i> <?php echo $classLang->getLocaleText('CAPACITYPLANNINGGROUP'); ?></a></li>
                   <li><a href="users.php"><i class="glyphicon glyphicon-user glyphicon-custom"></i> <?php echo $classLang->getLocaleText('USERSMANAGEMENT'); ?></a></li>
                   <li><a href="import-export.php"><i class="glyphicon glyphicon-transfer glyphicon-custom"></i> <?php echo $classLang->getLocaleText('IMPORTEXPORT'); ?></a></li>
 <?php endif; ?>
