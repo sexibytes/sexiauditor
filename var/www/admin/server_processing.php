@@ -1,7 +1,7 @@
 <?php
 require("session.php");
 require("helper.php");
-$check = new SexiCheck();
+$check = new SexiLang();
 # SQL server connection information
 # TODO: put these info in external file
 $sql_details = array(

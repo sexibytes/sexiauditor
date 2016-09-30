@@ -14,7 +14,7 @@ try
 {
   
   # Main class loading
-  $check = new SexiCheck();
+  $sexiclass = new SexiClass();
   
 }
 catch (Exception $e)
@@ -28,12 +28,12 @@ catch (Exception $e)
 
 } # END try
 
-if (!is_array($datastore = $check->getDatastoreInfos($_GET['dsid'])))
+if (!is_array($datastore = $sexiclass->getDatastoreInfos($_GET['dsid'])))
 {
   
   exit('  <div class="alert alert-danger" role="alert"><span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span><span class="sr-only">Error:</span> ' . $datastore . '</div>');
   
-} # END if (!is_array($datastore = $check->getHostInfos($_GET['hostid'])))
+} # END if (!is_array($datastore = $sexiclass->getHostInfos($_GET['hostid'])))
 
 ?>
 

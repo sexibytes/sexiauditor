@@ -13,7 +13,7 @@ try
 {
   
   # Main class loading
-  $check = new SexiCheck();
+  $sexiclass = new SexiClass();
   
 }
 catch (Exception $e)
@@ -24,12 +24,12 @@ catch (Exception $e)
   
 } # END try
 
-if (!is_array($vm = $check->getVMInfos($_GET['vmid'])))
+if (!is_array($vm = $sexiclass->getVMInfos($_GET['vmid'])))
 {
   
   exit('  <div class="alert alert-danger" role="alert"><span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span><span class="sr-only">Error:</span> ' . $vm . '</div>');
   
-} # END if (!is_array($vm = $check->getVMInfos($_GET['vmid'])))
+} # END if (!is_array($vm = $sexiclass->getVMInfos($_GET['vmid'])))
 
 ?>
 
@@ -105,7 +105,7 @@ if (!is_array($vm = $check->getVMInfos($_GET['vmid'])))
           <tr><td class="table-title text-right">Guest OS</td><td style="padding-left: 10px;"><?php echo (string)$vm["guestOS"]; ?></td></tr>
 <?php
 
-if (is_array($datastore = $check->getDatastoreInfos($vm["datastore"], $vm["vcenterID"])))
+if (is_array($datastore = $sexiclass->getDatastoreInfos($vm["datastore"], $vm["vcenterID"])))
 {
   
   $datastoreName = $datastore["datastore_name"];
@@ -138,7 +138,7 @@ else
   $datastoreName = "Undefined";
   $additionalDatastoreInfos = " <span class=\"label label-default\">Unknow infos</span>";
   
-} # END if (is_array($datastore = $check->getDatastoreInfos($vm["datastore"], $vm["vcenterID"])))
+} # END if (is_array($datastore = $sexiclass->getDatastoreInfos($vm["datastore"], $vm["vcenterID"])))
 
 ?>
           <tr><td class="table-title text-right">Datastore</td><td style="padding-left: 10px;"><a href="showdatastore.php?dsid=<?php echo $vm["datastore"]; ?>&amp;vmidsource=<?php echo $vm["id"]; ?>" rel="modal"><?php echo $datastoreName; ?> <i class="glyphicon glyphicon-share"></i> <?php echo $additionalDatastoreInfos; ?></a></td></tr>
