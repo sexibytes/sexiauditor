@@ -14,7 +14,7 @@ USE `sexiauditor`;
 DELETE FROM `clusters`;
 /*!40000 ALTER TABLE `clusters` DISABLE KEYS */;
 INSERT INTO `clusters` (`id`, `vcenter`, `moref`, `cluster_name`, `dasenabled`, `lastconfigissuetime`, `lastconfigissue`, `isAdmissionEnable`, `admissionModel`, `admissionThreshold`, `admissionValue`, `firstseen`, `lastseen`) VALUES
-	(1, 0, '', 'Standalone', 0, '0000-00-00 00:00:00', NULL, 0, '', '', '', '0000-00-00 00:00:00', '2016-09-08 11:00:06');
+	(1, 0, '', 'Standalone', 0, '0000-00-00 00:00:00', NULL, 0, '', '', '', '0000-00-00 00:00:00', '2099-01-01 00:00:01');
 /*!40000 ALTER TABLE `clusters` ENABLE KEYS */;
 
 -- Dumping data for table sexiauditor.config: ~26 rows (approximately)
