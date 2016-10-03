@@ -100,37 +100,38 @@ if ($sexihelper->getConfig('anonymousROInventory') == 'disable')
         </tbody>
       </table>
     </div>
+  </div>
 
-    <script type="text/javascript">
-      $(document).ready( function () {
-        var table = $('#inventory').DataTable( {
-          "language": { "infoFiltered": "" },
-          "processing": true,
-          "serverSide": true,
-          "ajax": "server_processing.php?c=ROVMINVENTORY&t=<?php echo strtotime(now); ?>",
-          "deferRender": true,
-          "search": {
-            "smart": false,
-            "regex": true
-          },
-          "columnDefs": [ { "targets": [ 0, 5, 6, 7, 8, 9, 10, 11, 13, 14 ], "visible": false } ],
-          "lengthMenu": [ [10, 25, 50, -1], [10, 25, 50, "All"] ]
-        } );
-        new $.fn.dataTable.Buttons( table, { buttons: [ 'csv', 'excel' ] } );
-        table.buttons().container().appendTo( '#inventory_wrapper .col-sm-6:eq(0)' );
-        $('button.toggle-vis').on( 'click', function (e) {
-          e.preventDefault();
-          var column = table.column( $(this).attr('data-column') );
-          column.visible( ! column.visible() );
-          var nodeList = document.getElementsByName( $(this).attr('data-column') );
-          var regexMatch = new RegExp("btn-success","g");
-          if (nodeList[0].className.match(regexMatch)) {
-            nodeList[0].className = "btn btn-danger btn-xs toggle-vis btn-no-outline";
-          } else {
-            nodeList[0].className = "btn btn-success btn-xs toggle-vis btn-no-outline";
-          }
-        } );
-      });
-    </script>
-  </body>
-  </html>
+  <script type="text/javascript">
+    $(document).ready( function () {
+      var table = $('#inventory').DataTable( {
+        "language": { "infoFiltered": "" },
+        "processing": true,
+        "serverSide": true,
+        "ajax": "server_processing.php?c=ROVMINVENTORY&t=<?php echo strtotime(now); ?>",
+        "deferRender": true,
+        "search": {
+          "smart": false,
+          "regex": true
+        },
+        "columnDefs": [ { "targets": [ 0, 5, 6, 7, 8, 9, 10, 11, 13, 14 ], "visible": false } ],
+        "lengthMenu": [ [10, 25, 50, -1], [10, 25, 50, "All"] ]
+      } );
+      new $.fn.dataTable.Buttons( table, { buttons: [ 'csv', 'excel' ] } );
+      table.buttons().container().appendTo( '#inventory_wrapper .col-sm-6:eq(0)' );
+      $('button.toggle-vis').on( 'click', function (e) {
+        e.preventDefault();
+        var column = table.column( $(this).attr('data-column') );
+        column.visible( ! column.visible() );
+        var nodeList = document.getElementsByName( $(this).attr('data-column') );
+        var regexMatch = new RegExp("btn-success","g");
+        if (nodeList[0].className.match(regexMatch)) {
+          nodeList[0].className = "btn btn-danger btn-xs toggle-vis btn-no-outline";
+        } else {
+          nodeList[0].className = "btn btn-success btn-xs toggle-vis btn-no-outline";
+        }
+      } );
+    });
+  </script>
+</body>
+</html>
