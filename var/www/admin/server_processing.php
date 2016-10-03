@@ -1,19 +1,25 @@
 <?php
-require("session.php");
-require("helper.php");
-$check = new SexiLang();
-# SQL server connection information
-# TODO: put these info in external file
-$sql_details = array(
-  'user' => 'sexiauditor',
-  'pass' => 'Sex!@ud1t0r',
-  'db'   => 'sexiauditor',
-  'host' => 'localhost'
-);
 
 if (isset($_GET['c']))
 {
+
+  if ($_GET['c'] != "ROVMINVENTORY")
+  {
+    
+    require("session.php");
+    
+  } # END if ($_GET['c'] != "VMINVENTORY")
   
+  require("helper.php");
+  $sexihelper = new SexiHelper();
+  # SQL server connection information
+  # TODO: put these info in external file
+  $sql_details = array(
+    'user' => 'sexiauditor',
+    'pass' => 'Sex!@ud1t0r',
+    'db'   => 'sexiauditor',
+    'host' => 'localhost'
+  );
   $joinQuery = "";
   $extraCondition = "";
   
@@ -156,13 +162,13 @@ if (isset($_GET['c']))
       $columns = array(
         array( 'db' => 'h.host_name', 'dt' => 0, 'field' => 'host_name' ),
         array( 'db' => 'h.ssh_policy', 'dt' => 1, 'field' => 'ssh_policy', 'formatter' => function( $d, $row ) { global $servicePolicyChoice; return $servicePolicyChoice[$d]; } ),
-        array( 'db' => 'h.ssh_policy', 'dt' => 2, 'field' => 'ssh_policy', 'formatter' => function( $d, $row ) { global $servicePolicyChoice; global $check; return $servicePolicyChoice[$check->getConfig('hostSSHPolicy')]; } ),
+        array( 'db' => 'h.ssh_policy', 'dt' => 2, 'field' => 'ssh_policy', 'formatter' => function( $d, $row ) { global $servicePolicyChoice; global $sexihelper; return $servicePolicyChoice[$sexihelper->getConfig('hostSSHPolicy')]; } ),
         array( 'db' => 'h.shell_policy', 'dt' => 3, 'field' => 'shell_policy', 'formatter' => function( $d, $row ) { global $servicePolicyChoice; return $servicePolicyChoice[$d]; } ),
-        array( 'db' => 'h.shell_policy', 'dt' => 4, 'field' => 'shell_policy', 'formatter' => function( $d, $row ) { global $servicePolicyChoice; global $check;  return $servicePolicyChoice[$check->getConfig('hostShellPolicy')]; } ),
+        array( 'db' => 'h.shell_policy', 'dt' => 4, 'field' => 'shell_policy', 'formatter' => function( $d, $row ) { global $servicePolicyChoice; global $sexihelper;  return $servicePolicyChoice[$sexihelper->getConfig('hostShellPolicy')]; } ),
         array( 'db' => 'v.vcname', 'dt' => 5, 'field' => 'vcname' )
       );
       $joinQuery = "FROM {$table} h INNER JOIN vcenters AS v ON (h.vcenter = v.id)";
-      $extraCondition = "h.firstseen < '" . $dateStart . "' AND h.lastseen > '" . $dateEnd . "' AND h.ssh_policy <> '". $check->getConfig('hostSSHPolicy') . "' OR h.shell_policy <> '" . $check->getConfig('hostSSHPolicy'). "' GROUP BY h.host_name";
+      $extraCondition = "h.firstseen < '" . $dateStart . "' AND h.lastseen > '" . $dateEnd . "' AND h.ssh_policy <> '". $sexihelper->getConfig('hostSSHPolicy') . "' OR h.shell_policy <> '" . $sexihelper->getConfig('hostSSHPolicy'). "' GROUP BY h.host_name";
       
     break; # END case 'HOSTSSHSHELL':
     
@@ -173,11 +179,11 @@ if (isset($_GET['c']))
       $columns = array(
         array( 'db' => 'h.host_name', 'dt' => 0, 'field' => 'host_name' ),
         array( 'db' => 'h.powerpolicy', 'dt' => 1, 'field' => 'powerpolicy', 'formatter' => function( $d, $row ) { global $powerChoice; return $powerChoice[$d]; } ),
-        array( 'db' => 'h.ssh_policy', 'dt' => 2, 'field' => 'ssh_policy', 'formatter' => function( $d, $row ) { global $powerChoice; global $check; return $powerChoice[$check->getConfig('powerSystemInfo')]; } ),
+        array( 'db' => 'h.ssh_policy', 'dt' => 2, 'field' => 'ssh_policy', 'formatter' => function( $d, $row ) { global $powerChoice; global $sexihelper; return $powerChoice[$sexihelper->getConfig('powerSystemInfo')]; } ),
         array( 'db' => 'v.vcname', 'dt' => 3, 'field' => 'vcname' )
       );
       $joinQuery = "FROM {$table} h INNER JOIN vcenters AS v ON (h.vcenter = v.id)";
-      $extraCondition = "h.firstseen < '" . $dateStart . "' AND h.lastseen > '" . $dateEnd . "' AND h.powerpolicy <> '". $check->getConfig('powerSystemInfo') . "'";
+      $extraCondition = "h.firstseen < '" . $dateStart . "' AND h.lastseen > '" . $dateEnd . "' AND h.powerpolicy <> '". $sexihelper->getConfig('powerSystemInfo') . "'";
       
     break; # END case 'HOSTPOWERMANAGEMENTPOLICY':
     
@@ -193,7 +199,7 @@ if (isset($_GET['c']))
         array( 'db' => 'v.vcname', 'dt' => 4, 'field' => 'vcname' )
       );
       $joinQuery = "FROM {$table} d INNER JOIN datastoreMetrics AS dm ON (d.id = dm.datastore_id) INNER JOIN vcenters AS v ON (d.vcenter = v.id)";
-      $extraCondition = $timeCondition . "d.firstseen < '" . $dateStart . "' AND d.lastseen > '" . $dateEnd . "' AND dm.id IN (SELECT MAX(id) FROM datastoreMetrics WHERE firstseen < '" . $dateStart . "' AND lastseen > '" . $dateEnd . "' GROUP BY datastore_id) AND ROUND(100*(dm.freespace/dm.size)) < " . $check->getConfig('datastoreFreeSpaceThreshold') . " GROUP BY d.datastore_name, d.vcenter";
+      $extraCondition = $timeCondition . "d.firstseen < '" . $dateStart . "' AND d.lastseen > '" . $dateEnd . "' AND dm.id IN (SELECT MAX(id) FROM datastoreMetrics WHERE firstseen < '" . $dateStart . "' AND lastseen > '" . $dateEnd . "' GROUP BY datastore_id) AND ROUND(100*(dm.freespace/dm.size)) < " . $sexihelper->getConfig('datastoreFreeSpaceThreshold') . " GROUP BY d.datastore_name, d.vcenter";
       
     break; # END case 'DATASTORESPACEREPORT':  
     
@@ -225,7 +231,7 @@ if (isset($_GET['c']))
         array( 'db' => 'v.vcname', 'dt' => 5, 'field' => 'vcname' )
       );
       $joinQuery = "FROM {$table} d INNER JOIN datastoreMetrics dm ON (d.id = dm.datastore_id) INNER JOIN vcenters AS v ON (d.vcenter = v.id)";
-      $extraCondition = "d.firstseen < '" . $dateStart . "' AND d.lastseen > '" . $dateEnd . "' AND dm.id IN (SELECT MAX(id) FROM datastoreMetrics WHERE firstseen < '" . $dateStart . "' AND lastseen > '" . $dateEnd . "' GROUP BY datastore_id) AND ROUND(100*((dm.size-dm.freespace+dm.uncommitted)/dm.size)) > ". $check->getConfig('datastoreOverallocation');
+      $extraCondition = "d.firstseen < '" . $dateStart . "' AND d.lastseen > '" . $dateEnd . "' AND dm.id IN (SELECT MAX(id) FROM datastoreMetrics WHERE firstseen < '" . $dateStart . "' AND lastseen > '" . $dateEnd . "' GROUP BY datastore_id) AND ROUND(100*((dm.size-dm.freespace+dm.uncommitted)/dm.size)) > ". $sexihelper->getConfig('datastoreOverallocation');
       
     break; # END case 'DATASTOREOVERALLOCATION':
     
@@ -244,7 +250,7 @@ if (isset($_GET['c']))
         array( 'db' => 's.quiesced', 'dt' => 7, 'field' => 'quiesced' )
       );
       $joinQuery = "FROM {$table} s INNER JOIN vms ON (s.vm = vms.id) INNER JOIN hosts h ON (vms.host = h.id) INNER JOIN vcenters v ON (h.vcenter = v.id)";
-      $extraCondition = "s.firstseen < '" . $dateStart . "' AND s.lastseen > '" . $dateEnd . "' AND DATEDIFF('" . $dateToSearch . "', s.createTime) > " . $check->getConfig('vmSnapshotAge');
+      $extraCondition = "s.firstseen < '" . $dateStart . "' AND s.lastseen > '" . $dateEnd . "' AND DATEDIFF('" . $dateToSearch . "', s.createTime) > " . $sexihelper->getConfig('vmSnapshotAge');
       
     break; # END case 'VMSNAPSHOTSAGE':
     
@@ -488,6 +494,33 @@ if (isset($_GET['c']))
       $extraCondition = "vms.firstseen < '" . $dateStart . "' AND vms.lastseen > '" . $dateEnd . "' AND vmm.id IN (SELECT MAX(id) FROM vmMetrics WHERE firstseen < '" . $dateStart . "' AND lastseen > '" . $dateEnd . "' GROUP BY vm_id) GROUP BY vms.moref, v.id";
       
     break; # END case 'VMINVENTORY':
+    
+    case 'ROVMINVENTORY':
+    
+      $table = 'vms';
+      $primaryKey = 'id';
+      $columns = array(
+        array( 'db' => 'vms.id', 'dt' => 0, 'field' => 'id'),
+        array( 'db' => 'vms.name', 'dt' => 1, 'field' => 'name' ),
+        array( 'db' => 'v.vcname', 'dt' => 2, 'field' => 'vcname' ),
+        array( 'db' => 'c.cluster_name', 'dt' => 3, 'field' => 'cluster_name' ),
+        array( 'db' => 'h.host_name', 'dt' => 4, 'field' => 'host_name'),
+        array( 'db' => 'vms.vmxpath', 'dt' => 5, 'field' => 'vmxpath' ),
+        array( 'db' => 'vms.portgroup', 'dt' => 6, 'field' => 'portgroup', 'formatter' => function( $d, $row ) { return str_ireplace(',','<br/>',$d); } ),
+        array( 'db' => 'vms.ip', 'dt' => 7, 'field' => 'ip', 'formatter' => function( $d, $row ) { return str_ireplace(',','<br/>',$d); } ),
+        array( 'db' => 'vms.numcpu', 'dt' => 8, 'field' => 'numcpu' ),
+        array( 'db' => 'vms.memory', 'dt' => 9, 'field' => 'memory' ),
+        array( 'db' => 'vmm.commited', 'dt' => 10, 'field' => 'commited' ),
+        array( 'db' => 'vms.provisionned', 'dt' => 11, 'field' => 'provisionned' ),
+        array( 'db' => 'd.datastore_name', 'dt' => 12, 'field' => 'datastore_name' ),
+        array( 'db' => 'vms.vmpath', 'dt' => 13, 'field' => 'vmpath' ),
+        array( 'db' => 'vms.mac', 'dt' => 14, 'field' => 'mac', 'formatter' => function( $d, $row ) { return str_ireplace(',','<br/>',$d); } ),
+        array( 'db' => 'vms.host', 'dt' => 15, 'field' => 'host' )
+      );
+      $joinQuery = "FROM {$table} INNER JOIN vmMetrics AS vmm ON (vms.id = vmm.vm_id) INNER JOIN hosts AS h ON (vms.host = h.id) INNER JOIN clusters c ON h.cluster = c.id INNER JOIN vcenters AS v ON (h.vcenter = v.id) INNER JOIN datastores AS d ON (vms.datastore = d.id)";
+      $extraCondition = "vms.firstseen < '" . $dateStart . "' AND vms.lastseen > '" . $dateEnd . "' AND vmm.id IN (SELECT MAX(id) FROM vmMetrics WHERE firstseen < '" . $dateStart . "' AND lastseen > '" . $dateEnd . "' GROUP BY vm_id) GROUP BY vms.moref, v.id";
+      
+    break; # END case 'ROVMINVENTORY':
     
     case 'HOSTINVENTORY':
     

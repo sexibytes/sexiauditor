@@ -68,7 +68,7 @@
     
     $("#modal").on("shown.bs.modal",function(){
        $(this).hide().show(); 
-    })
+    });
       
     $(function() {
       $(".toclink").click(function() {
