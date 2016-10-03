@@ -47,7 +47,7 @@ INSERT INTO `config` (`id`, `configid`, `type`, `label`, `value`) VALUES
 	(24, 'capacityPlanningDays', 4, 'Number of days Capacity Planning will used for computationcalculation of \'Days Left\' value', '7'),
 	(25, 'showInfinite', 1, 'Does Capacity Planning display clusters with \'Infinite\' days left ?', 'enable'),
 	(26, 'showDebug', 1, 'Display debug log in log files (careful, it is really verbose)', 'disable'),
-	(27, 'anonymousROInventory', 1, 'Will allow anonymous access to a read-only inventory', 'disable');
+	(27, 'anonymousROInventory', 1, 'Will allow anonymous access to a read-only inventory (on URL /roinv.php)', 'disable');
 /*!40000 ALTER TABLE `config` ENABLE KEYS */;
 
 -- Dumping data for table sexiauditor.configtype: ~2 rows (approximately)
