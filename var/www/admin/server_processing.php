@@ -488,7 +488,7 @@ if (isset($_GET['c']))
         array( 'db' => 'd.datastore_name', 'dt' => 12, 'field' => 'datastore_name' ),
         array( 'db' => 'vms.vmpath', 'dt' => 13, 'field' => 'vmpath' ),
         array( 'db' => 'vms.mac', 'dt' => 14, 'field' => 'mac', 'formatter' => function( $d, $row ) { return str_ireplace(',','<br/>',$d); } ),
-        array( 'db' => 'vms.host', 'dt' => 15, 'field' => 'host' )
+        array( 'db' => 'vms.powerState', 'dt' => 15, 'field' => 'powerState' )
       );
       $joinQuery = "FROM {$table} INNER JOIN vmMetrics AS vmm ON (vms.id = vmm.vm_id) INNER JOIN hosts AS h ON (vms.host = h.id) INNER JOIN clusters c ON h.cluster = c.id INNER JOIN vcenters AS v ON (h.vcenter = v.id) INNER JOIN datastores AS d ON (vms.datastore = d.id)";
       $extraCondition = "vms.firstseen < '" . $dateStart . "' AND vms.lastseen > '" . $dateEnd . "' AND vmm.id IN (SELECT MAX(id) FROM vmMetrics WHERE firstseen < '" . $dateStart . "' AND lastseen > '" . $dateEnd . "' GROUP BY vm_id) GROUP BY vms.moref, v.id";
@@ -515,7 +515,7 @@ if (isset($_GET['c']))
         array( 'db' => 'd.datastore_name', 'dt' => 12, 'field' => 'datastore_name' ),
         array( 'db' => 'vms.vmpath', 'dt' => 13, 'field' => 'vmpath' ),
         array( 'db' => 'vms.mac', 'dt' => 14, 'field' => 'mac', 'formatter' => function( $d, $row ) { return str_ireplace(',','<br/>',$d); } ),
-        array( 'db' => 'vms.host', 'dt' => 15, 'field' => 'host' )
+        array( 'db' => 'vms.powerState', 'dt' => 15, 'field' => 'powerState' )
       );
       $joinQuery = "FROM {$table} INNER JOIN vmMetrics AS vmm ON (vms.id = vmm.vm_id) INNER JOIN hosts AS h ON (vms.host = h.id) INNER JOIN clusters c ON h.cluster = c.id INNER JOIN vcenters AS v ON (h.vcenter = v.id) INNER JOIN datastores AS d ON (vms.datastore = d.id)";
       $extraCondition = "vms.firstseen < '" . $dateStart . "' AND vms.lastseen > '" . $dateEnd . "' AND vmm.id IN (SELECT MAX(id) FROM vmMetrics WHERE firstseen < '" . $dateStart . "' AND lastseen > '" . $dateEnd . "' GROUP BY vm_id) GROUP BY vms.moref, v.id";
