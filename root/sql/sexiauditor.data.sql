@@ -146,7 +146,8 @@ INSERT INTO `modules` (`id`, `module`, `type`, `displayName`, `version`, `descri
 	(61, 'VSANHealthCheck', 'report', 'VSAN Health Check', 0, 'Display VSAN information about Health Check.', 1, 'off'),
 	(62, 'alarms', 'report', 'Alarms', 1, 'Will display triggered alarms on objects level with status and time of creation.', 8, 'off'),
 	(63, 'hostBuildPivot', 'report', 'Host ESXBuild Pivot Table', 1, 'Will display a list of all ESX build group by count.', 7, 'off'),
-	(99, 'mailAlert', 'action', 'Mail Alert', 0, 'Will send an email with all defective checks', 8, 'daily');
+	(64, 'capacityPlanningReport', 'action', 'Capacity Planning Report', 0, 'Send Capacity Planning Report by mail', 8, 'off'),
+	(999, 'mailAlert', 'action', 'Mail Alert', 0, 'Will send an email with all defective checks', 8, 'daily');
 /*!40000 ALTER TABLE `modules` ENABLE KEYS */;
 
 -- Dumping data for table sexiauditor.roles: ~2 rows (approximately)
