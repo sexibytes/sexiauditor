@@ -17,13 +17,16 @@ $additionalScript = array(  'js/highcharts.js',
                             'js/file-size.js',
                             'js/moment.js',
                             'js/bootstrap-datetimepicker.js');
+require("dbconnection.php");
 require("header.php");
 require("helper.php");
 
-try {
+try
+{
+  
   # Main class loading
-  $check = new SexiCheck();
-  $sexigrafNode = $check->getConfig('sexigrafNode');
+  $sexihelper = new SexiHelper();
+  $sexigrafNode = $sexihelper->getConfig('sexigrafNode');
 
   try
   {
@@ -47,18 +50,20 @@ try {
     exit;
     
   } # END try
+
+}
+catch (Exception $e)
+{
   
-  # Header generation
-  $check->displayHeader($_SERVER['SCRIPT_NAME'], false);
-} catch (Exception $e) {
   # Any exception will be ending the script, we want exception-free run
   # CSS hack for navbar margin removal
   echo '  <style>#wrapper { margin-bottom: 0px !important; }</style>'."\n";
   require("exception.php");
   exit;
-}
-?>
+  
+} # END try
 
+?>
     <style>
     .highcharts-tooltip>span {
       background: white;
@@ -68,38 +73,89 @@ try {
       padding: 8px;
     }
     </style>
-
-    <div class="col-lg-12 alert alert-warning"><i><small>This capacity planning was computed based on the statistics of the last <?php echo $check->getConfig('capacityPlanningDays'); ?> days, you can change it in the <a href="/config.php">settings</a> of the appliance.</small></i></div>
-
+    
+  <div style="padding-top: 10px; padding-bottom: 10px;" class="container" id="wrapper-container">
+    <div class="row">
+      <div class="col-lg-12 alert alert-info" style="padding: 6px; margin-top: 20px; text-align: center;">
+        <h1 style="margin-top: 10px;">Capacity Planning <small>on <?php echo date("F j Y"); ?></small></h1>
+      </div>
+    </div>
+    <div class="col-lg-12 alert alert-warning"><i><small>This capacity planning was computed based on the statistics of the last <?php echo $sexihelper->getConfig('capacityPlanningDays'); ?> days, administrators can change it in the settings of the appliance.</small></i></div>
     <table id="table-sparkline" class="display table" cellspacing="0" width="100%">
       <thead>
-        <th>Cluster</th>
-        <th>vCenter</th>
+        <th>Entity</th>
+        <!-- <th>vCenter</th> -->
+        <th>Average VM stats</th>
         <th>VM Left</th>
         <th>Days Left</th>
-        <th>Trend</th>
+        <th>Trend (last <?php echo $sexihelper->getConfig('capacityPlanningDays'); ?> days)</th>
       </thead>
       <tbody id="tbody-sparkline">
 <?php
-$capacityPlanningDays = (int)$check->getConfig('capacityPlanningDays');
-$showInfinite = $check->getConfig('showInfinite');
-$jsonVC = json_decode(file_get_contents("http://$sexigrafNode:8080/metrics/find?query=vmw.*"), TRUE);
-$javascriptCode = "";
-foreach ($jsonVC as $entryVC) {
-  $vcenter = $entryVC['text'];
-  $vcenterID = $entryVC['id'];
-  $jsonDC = json_decode(file_get_contents("http://$sexigrafNode:8080/metrics/find?query=$vcenterID.*"), TRUE);
-  foreach ($jsonDC as $entryDC) {
-    $datacenter = $entryDC['text'];
-    $datacenterID = $entryDC['id'];
-    $jsonCluster = json_decode(file_get_contents("http://$sexigrafNode:8080/metrics/find?query=$datacenterID.*"), TRUE);
-    foreach ($jsonCluster as $entryCluster) {
-      $cluster = $entryCluster['text'];
-      $clusterID = $entryCluster['id'];
+$capacityPlanningGroups = $db->get("capacityPlanningGroups", NULL, "group_name, members");
+# build members array to speed later query
+$capacityPlanningGroupMembers = array();
+$graphiteClusterIDs = array();
+foreach ($capacityPlanningGroups as $capacityPlanningGroup) {
+  $capacityPlanningGroupVCMembers = array();
+  $capacityPlanningGroupDCMembers = array();
+  $capacityPlanningGroupCLMembers = array();
+  foreach (explode(";", $capacityPlanningGroup["members"]) as $member) {
+    array_push($capacityPlanningGroupMembers, "vmw.$member");
+    if (!in_array(explode(".", $member)[0], $capacityPlanningGroupVCMembers)) { array_push($capacityPlanningGroupVCMembers, explode(".", $member)[0]); }
+    if (!in_array(explode(".", $member)[1], $capacityPlanningGroupDCMembers)) { array_push($capacityPlanningGroupDCMembers, explode(".", $member)[1]); }
+    if (!in_array(explode(".", $member)[2], $capacityPlanningGroupCLMembers)) { array_push($capacityPlanningGroupCLMembers, explode(".", $member)[2]); }
+  }
+  // var_dump($capacityPlanningGroupVCMembers);
+  // var_dump($capacityPlanningGroupDCMembers);
+  // var_dump($capacityPlanningGroupCLMembers);
+  $graphiteClusterIDs[] = array("group_name" => $capacityPlanningGroup["group_name"], "graphiteID" => "vmw.{".join(",", $capacityPlanningGroupVCMembers)."}.{".join(",", $capacityPlanningGroupDCMembers)."}.{".join(",", $capacityPlanningGroupCLMembers)."}");
+}
+// var_dump($graphiteClusterIDs);
+// var_dump($capacityPlanningGroups);
+// var_dump($capacityPlanningGroupMembers);
+// exit;
+// var_dump($capacityPlanningGroupMembers);
+$capacityPlanningDays = (int)$sexihelper->getConfig('capacityPlanningDays');
+$showInfinite = $sexihelper->getConfig('showInfinite');
+// $jsonVC = json_decode(file_get_contents("http://$sexigrafNode:8080/metrics/find?query=vmw.*"), TRUE);
+// $javascriptCode = "";
+// $clusterIDs = array();
+// foreach ($jsonVC as $entryVC) {
+//   $vcenter = $entryVC['text'];
+//   $vcenterID = $entryVC['id'];
+//   $jsonDC = json_decode(file_get_contents("http://$sexigrafNode:8080/metrics/find?query=$vcenterID.*"), TRUE);
+//   foreach ($jsonDC as $entryDC) {
+//     $datacenter = $entryDC['text'];
+//     $datacenterID = $entryDC['id'];
+//     $jsonCluster = json_decode(file_get_contents("http://$sexigrafNode:8080/metrics/find?query=$datacenterID.*"), TRUE);
+//     foreach ($jsonCluster as $entryCluster) {
+//       $cluster = $entryCluster['text'];
+//       if (!in_array($entryCluster['id'], $capacityPlanningGroupMembers)) {
+//         array_push($clusterIDs, $entryCluster['id']);
+//         $graphiteClusterIDs[] = array("group_name" => $cluster, "graphiteID" => $entryCluster['id']);
+//       }
+//     }
+//   }
+// }
+// var_dump($graphiteClusterIDs);
+// exit;
+
+# graph generation
+foreach ($graphiteClusterIDs as $graphiteClusterID) {
+      $clusterID = $graphiteClusterID['graphiteID'];
       $urlCapaPlan = "http://$sexigrafNode:8080/render?target=minSeries(scale(diffSeries(divideSeries(scale(sumSeries($clusterID.runtime.vm.on),100),asPercent(diffSeries(sumSeries($clusterID.datastore.*.summary.capacity),sumSeries($clusterID.datastore.*.summary.freeSpace)),sumSeries($clusterID.datastore.*.summary.capacity))),sumSeries($clusterID.runtime.vm.on)),1),scale(diffSeries(divideSeries(scale(sumSeries($clusterID.runtime.vm.on),100),maxSeries(asPercent(sumSeries($clusterID.quickstats.cpu.usage),sumSeries($clusterID.quickstats.cpu.effective)),asPercent(sumSeries($clusterID.quickstats.mem.usage),sumSeries($clusterID.quickstats.mem.effective)))),sumSeries($clusterID.runtime.vm.on)),1))";
+      // var_dump($urlCapaPlan);
+      $urlResourceUsage = "http://$sexigrafNode:8080/render?target=divideSeries(sumSeries($clusterID.quickstats.cpu.usage),sumSeries($clusterID.runtime.vm.on))&target=divideSeries(sumSeries($clusterID.quickstats.mem.usage),sumSeries($clusterID.runtime.vm.on))&target=divideSeries(diffSeries(sumSeries($clusterID.datastore.*.summary.capacity),sumSeries($clusterID.datastore.*.summary.freeSpace)),sumSeries($clusterID.runtime.vm.on))&from=-1hours&format=json";
+      // $urlMemUsage = "http://$sexigrafNode:8080/render?target=divideSeries(sumSeries($clusterID.quickstats.mem.usage),sumSeries($clusterID.runtime.vm.on))&from=-1hours&format=json";
+      // $urlStorageUsage = "http://$sexigrafNode:8080/render?target=divideSeries(diffSeries(sumSeries($clusterID.datastore.*.summary.capacity),sumSeries($clusterID.datastore.*.summary.freeSpace)),sumSeries($clusterID.runtime.vm.on))&from=-1hours&format=json";
+      // var_dump($urlCpuUsage);
+      // var_dump($urlMemUsage);
+      // var_dump($urlStorageUsage);
 
       $optionsJson = "&from=-".$capacityPlanningDays."days&format=json";
       $dataCapaPlan = json_decode(file_get_contents($urlCapaPlan.$optionsJson), TRUE)[0]["datapoints"];
+      $dataResourceUsage = json_decode(file_get_contents($urlResourceUsage), TRUE);
       
       $dataCapaPlanInversed = array();
       foreach ($dataCapaPlan as $tmpDataCapaPlan) {
@@ -127,25 +183,26 @@ foreach ($jsonVC as $entryVC) {
         $daysLeft = "<i class=\"icon-infinityalt\"></i>";
         $colorLine = "green";
       }
-      if ($check->getSelectedDate() != date("Y/m/d")) {
-        $from = str_replace("/", "", $check->getSelectedDate());
-        $until = (string)DateTime::createFromFormat('Y/m/d', $check->getSelectedDate())->sub(new DateInterval('P'.$capacityPlanningDays.'D'))->format('Ymd');
+      if ($sexihelper->getSelectedDate() != date("Y/m/d")) {
+        $from = str_replace("/", "", $sexihelper->getSelectedDate());
+        $until = (string)DateTime::createFromFormat('Y/m/d', $sexihelper->getSelectedDate())->sub(new DateInterval('P'.$capacityPlanningDays.'D'))->format('Ymd');
         $optionsTime = "&from=$from&until=$until";
       } else {
         $optionsTime = "&from=-".$capacityPlanningDays."days";
       }
       if ($coefficientCapaPlan < 0 || $showInfinite == 'enable') {
         echo "      <tr>\n";
-        echo "        <th>$cluster</th>\n";
-        echo "        <td>$vcenter</td>\n";
+        echo "        <th>".$graphiteClusterID['group_name']."</th>\n";
+        // echo "        <td>$vcenter</td>\n";
+        echo "        <td><i class='glyphicon icon-cpu-processor'></i> " .  human_filesize($dataResourceUsage[0]["datapoints"][0][0]*1024*1024,0,'Hz') . "<br><i class='glyphicon icon-ram'></i> " .  human_filesize($dataResourceUsage[1]["datapoints"][0][0]*1024*1024,0) . "<br><i class='glyphicon icon-database'></i> " .  human_filesize($dataResourceUsage[2]["datapoints"][0][0],0) . "</td>\n";
         echo "        <td>$vmLeftT1</td>\n";
         echo "        <td>$daysLeft</td>\n";
         echo '        <td data-sparkline="' . implode(", ", $newDataCapaPlanInversed) . '" data-sparkline-color="'. $colorLine . '"/>'."\n";
         echo "      </tr>\n";
       }
-    }
-  }
 }
+// var_dump($capacityPlanningGroups);
+// var_dump($clusterIDs);
 ?>
       <tbody>
     </table>
@@ -285,5 +342,5 @@ foreach ($jsonVC as $entryVC) {
       document.getElementById("wrapper-container").style.display = "block";
       document.getElementById("purgeLoading").style.display = "none";
     </script>
-
+  </div>
 <?php require("footer.php"); ?>
