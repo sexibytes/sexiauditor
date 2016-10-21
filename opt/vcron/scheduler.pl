@@ -3541,7 +3541,7 @@ sub capacityPlanningReport
     my $msg = MIME::Lite::TT::HTML->new(
       From        =>  $senderMail,
       To          =>  $recipientMail,
-      Subject     =>  'Terminate vCenter Sessions Report',
+      Subject     =>  '['.uc($HOSTNAME).'] Capacity Planning Report',
       Template    =>  { html => 'capacityplanning.html' },
       TmplOptions =>  \%options,
       TmplParams  =>  $params,
