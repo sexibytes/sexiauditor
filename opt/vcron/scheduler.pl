@@ -729,7 +729,6 @@ sub inventory
   datastoreinventory( );
   dvpginventory( );
   vminventory( );
-  capacityPlanningInventory( );
   
 } # END sub inventory
 
@@ -3558,23 +3557,3 @@ sub mailAlert
   # code
   
 } # END sub mailAlert
-
-sub capacityPlanningInventory
-{
-  
-  # code
-  # foreach cluster > compute:
-  # - vm on
-  # - datastore capacity
-  # - datastore freespace
-  # - memory usage
-  # - memory available
-  # - cpu usage
-  # - cpu available
-  # http://$sexigrafNode:8080/render?target=minSeries(scale(diffSeries(divideSeries(scale(sumSeries($clusterID.runtime.vm.on),100),asPercent(diffSeries(sumSeries($clusterID.datastore.*.summary.capacity),sumSeries($clusterID.datastore.*.summary.freeSpace)),sumSeries($clusterID.datastore.*.summary.capacity))),sumSeries($clusterID.runtime.vm.on)),1),scale(diffSeries(divideSeries(scale(sumSeries($clusterID.runtime.vm.on),100),maxSeries(asPercent(sumSeries($clusterID.quickstats.cpu.usage),sumSeries($clusterID.quickstats.cpu.effective)),asPercent(sumSeries($clusterID.quickstats.mem.usage),sumSeries($clusterID.quickstats.mem.effective)))),sumSeries($clusterID.runtime.vm.on)),1))";
-  # URL build for Graphite HTTP API retrieving average VM consumption, using multiple target to decrease time
-  # $urlResourceUsage = "http://$sexigrafNode:8080/render?target=divideSeries(sumSeries($clusterID.quickstats.cpu.usage),sumSeries($clusterID.runtime.vm.on))&target=divideSeries(sumSeries($clusterID.quickstats.mem.usage),sumSeries($clusterID.runtime.vm.on))&target=divideSeries(diffSeries(sumSeries($clusterID.datastore.*.summary.capacity),sumSeries($clusterID.datastore.*.summary.freeSpace)),sumSeries($clusterID.runtime.vm.on))&from=-1hours&format=json
-  
-  
-  
-} # END sub capacityPlanningInventory
