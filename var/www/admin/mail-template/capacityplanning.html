@@ -1,0 +1,19 @@
+<!DOCTYPE html><html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Capacity Planning</title></head><body><table>
+<tr>
+[% FOREACH member IN groups %]
+  <td>
+    <table style="text-align:center;background-color:[% member.color %];width:100%">
+      <tr><td style="color:#EEEEEE; font-family: Calibri; font-size: 28px; font-weight: bold;">[% member.title %]</td></tr>
+      <tr><td style="color:#EEEEEE; font-family: Calibri; font-size: 32px; font-weight: bold;">[% member.daysLeft %] <small>days left</small></td></tr>
+      <tr><td style="color:#EEEEEE; font-family: Calibri; font-size: 32px; font-weight: bold;">[% member.vmLeft %] <small>VM left</small></td></tr>
+      <tr><td style="color:#EEEEEE; font-family: Calibri; font-size: 14px;">Based on maximum consumption threshold: [% member.maxpct %]%</td></tr>
+      <tr><td style="color:#EEEEEE; font-family: Calibri; font-size: 14px;">Avg. consumption: CPU:[% member.cpu %] MEM:[% member.mem %] HDD:[% member.hdd %]</td></tr>
+    </table>
+  </td>
+  <td>&nbsp;</td>
+[% NEXT IF loop.count mod 3 != 0 or loop.count == loop.size %]
+</tr>
+<tr>
+[% END %]
+</tr>
+</table></body></html>
