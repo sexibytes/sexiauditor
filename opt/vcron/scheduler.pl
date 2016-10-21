@@ -13,11 +13,12 @@ use File::Find;
 use File::Path qw( make_path remove_tree );
 use Getopt::Long;
 use JSON;
+use List::Util qw( min max );
 use Log::Log4perl qw(:easy);
 use LWP::UserAgent;
 use MIME::Lite::TT::HTML;
 use Number::Bytes::Human qw(format_bytes);
-use POSIX qw(strftime);
+use POSIX qw(strftime ceil);
 use Socket;
 use Switch;
 use Time::Piece;
@@ -57,6 +58,7 @@ my $activeVC;
 my %boolHash = (true => "1", false => "0");
 my $perfMgr;
 my %perfCntr;
+my $capacityPlanningExecuted = 0;
 
 # Using --force switch will bypass scheduler and run every subroutine
 my $force;
@@ -184,6 +186,7 @@ my %actions = ( inventory => \&inventory,
                 datastoreSIOCdisabled => \&dummy,
                 datastoremaintenancemode => \&dummy,
                 datastoreAccessible => \&dummy,
+                capacityPlanningReport => \&capacityPlanningReport,
                 mailAlert => \&mailAlert
               );
 
@@ -316,7 +319,7 @@ foreach $s_item (@server_list)
   $view_ClusterComputeResource = Vim::find_entity_views(view_type => 'ClusterComputeResource', properties => ['name', 'host', 'summary', 'configIssue', 'configuration.dasConfig.admissionControlPolicy', 'configuration.dasConfig.admissionControlEnabled', 'configurationEx']);
   $logger->info("[INFO][OBJECTS] End retrieving ClusterComputeResource objects");
   $logger->info("[INFO][OBJECTS] Start retrieving HostSystem objects");
-  $view_HostSystem = Vim::find_entity_views(view_type => 'HostSystem', properties => ['name', 'config.dateTimeInfo.ntpConfig.server', 'config.network.dnsConfig', 'config.powerSystemInfo.currentPolicy.shortName', 'configIssue', 'configManager.advancedOption', 'configManager.firmwareSystem', 'configManager.healthStatusSystem', 'configManager.storageSystem', 'configManager.serviceSystem', 'datastore', 'runtime.inMaintenanceMode', 'runtime.connectionState', 'summary.config.product.fullName', 'summary.hardware.cpuMhz', 'summary.hardware.cpuModel', 'summary.hardware.memorySize', 'summary.hardware.model', 'summary.hardware.numCpuCores', 'summary.hardware.numCpuPkgs', 'summary.rebootRequired', 'summary.runtime.connectionState']);
+  $view_HostSystem = Vim::find_entity_views(view_type => 'HostSystem', properties => ['name', 'config.dateTimeInfo.ntpConfig.server', 'config.network.dnsConfig', 'config.powerSystemInfo.currentPolicy.shortName', 'configIssue', 'configManager.advancedOption', 'configManager.firmwareSystem', 'configManager.healthStatusSystem', 'configManager.storageSystem', 'configManager.serviceSystem', 'datastore', 'runtime.inMaintenanceMode', 'runtime.connectionState', 'summary.config.product.fullName', 'summary.hardware.cpuMhz', 'summary.hardware.cpuModel', 'summary.hardware.memorySize', 'summary.hardware.model', 'summary.hardware.numCpuCores', 'summary.hardware.numCpuPkgs', 'summary.rebootRequired', 'summary.runtime.connectionState', 'summary.quickStats']);
   $logger->info("[INFO][OBJECTS] End retrieving HostSystem objects");
   $logger->info("[INFO][OBJECTS] Start retrieving DistributedVirtualPortgroup objects");
   $view_DistributedVirtualPortgroup = Vim::find_entity_views(view_type => 'DistributedVirtualPortgroup', properties => ['name', 'vm', 'config.numPorts', 'config.autoExpand', 'tag']);
@@ -726,6 +729,7 @@ sub inventory
   datastoreinventory( );
   dvpginventory( );
   vminventory( );
+  capacityPlanningInventory( );
   
 } # END sub inventory
 
@@ -1129,9 +1133,12 @@ sub hostinventory
 
     my @sorted_dnsservers = map { $_->[1] } sort { $a->[0] <=> $b->[0] } map {[ unpack('N',inet_aton($_)), $_ ]} @$dnsservers;
     my $ntpservers = $host_view->{'config.dateTimeInfo.ntpConfig.server'} || [];
+    my $datastores = $host_view->{'datastore'} || [];
     my $datastorecount = 0+@{$host_view->{'datastore'}};
     my $memoryShared = QuickQueryPerf($host_view, 'mem', 'shared', 'average', '*');
     $memoryShared = (defined($memoryShared)) ? 0+$memoryShared : 0;
+    my $cpuUsage = (defined $host_view->{'summary.quickStats'}->overallCpuUsage) ? $host_view->{'summary.quickStats'}->overallCpuUsage : 0;
+    my $memoryUsage = (defined $host_view->{'summary.quickStats'}->overallMemoryUsage) ? $host_view->{'summary.quickStats'}->overallMemoryUsage : 0;
     my $vcentersdk = new URI::URL $host_view->{'vim'}->{'service_url'};
     my $moRef = $host_view->{'mo_ref'}->{'type'}."-".$host_view->{'mo_ref'}->{'value'};
     my $vcenterID = dbGetVC($vcentersdk->host);
@@ -1257,16 +1264,20 @@ sub hostinventory
     # One host metadata have been handled, we must check metrics
     if ($insertHost) { $refHost = dbGetHost($moRef,$vcenterID); }
     my $hostMetrics = dbGetHostMetrics($refHost->{'id'});
-    
+
     # Check for metrics existence and similarity
     if ( ($hostMetrics eq "0")
-      || ($memoryShared != $hostMetrics->{'sharedmemory'}) )
+      || ($memoryShared != $hostMetrics->{'sharedmemory'})
+      || ($cpuUsage != $hostMetrics->{'cpuUsage'})
+      || ($memoryUsage != $hostMetrics->{'memoryUsage'}) )
     {
       
-      my $sqlInsert = $dbh->prepare("INSERT INTO hostMetrics (host_id, sharedmemory, firstseen, lastseen) VALUES (?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?))");
+      my $sqlInsert = $dbh->prepare("INSERT INTO hostMetrics (host_id, sharedmemory, cpuUsage, memoryUsage, firstseen, lastseen) VALUES (?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?))");
       $sqlInsert->execute(
         $refHost->{'id'},
         $memoryShared,
+        $cpuUsage,
+        $memoryUsage,
         $start,
         $start
       );
@@ -1282,6 +1293,39 @@ sub hostinventory
       $sqlUpdate->finish();
       
     } # END Check for metrics existence and similarity
+
+    
+    foreach my $datastore (@$datastores)
+    {
+      
+      my $datastoreMoRef = $datastore->{'type'}."-".$datastore->{'value'};
+      my $datastoreID = dbGetDatastoreID($datastoreMoRef, $vcenterID);
+      my $datastoreMapping = dbGetDatastoreMapping($datastoreID,$refHost->{'id'});
+      
+      if ($datastoreMapping eq "0")
+      {
+        
+        my $sqlInsert = $dbh->prepare("INSERT INTO datastoreMappings (datastore_id, host_id, firstseen, lastseen) VALUES (?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?))");
+        $sqlInsert->execute(
+          $datastoreID,
+          $refHost->{'id'},
+          $start,
+          $start
+        );
+        $sqlInsert->finish();
+        
+      }
+      else
+      {
+        
+        # Host metrics already exists, have not changed, updated lastseen property
+        my $sqlUpdate = $dbh->prepare("UPDATE datastoreMappings set lastseen = FROM_UNIXTIME (?) WHERE id = '" . $datastoreMapping->{'id'} . "'");
+        $sqlUpdate->execute($start);
+        $sqlUpdate->finish();
+        
+      } # END if ($datastoreMapping eq "0")
+      
+    } # END foreach my $datastore @($host_view->{'datastore'})
     
   } # END foreach my $host_view (@$view_HostSystem)
   
@@ -2809,7 +2853,7 @@ sub dbGetHostMetrics
   
   # This subroutine will return host metrics
   my ($hostID) = @_;
-  my $query = "SELECT sharedmemory FROM hostMetrics WHERE host_id = '" . $hostID . "' ORDER BY id DESC LIMIT 1";
+  my $query = "SELECT sharedmemory, cpuUsage, memoryUsage FROM hostMetrics WHERE host_id = '" . $hostID . "' ORDER BY id DESC LIMIT 1";
   my $sth = $dbh->prepare($query);
   $sth->execute();
   my $rows = $sth->rows;
@@ -2825,7 +2869,7 @@ sub dbGetHostMetrics
   {
     
     $ref = $sth->fetchrow_hashref();
-    $logger->info("[DEBUG][GETHOST] Host sharedmemory for cluster $hostID is " . encode_json $ref) if $showDebug;
+    $logger->info("[DEBUG][GETHOST] Host sharedmemory, cpuUsage, memoryUsage for host $hostID is " . encode_json $ref) if $showDebug;
     
   } # END if ($rows eq 0)
   
@@ -2862,7 +2906,68 @@ sub dbGetDatastore
   $sth->finish();
   return $ref;
   
-}
+} # END sub dbGetDatastore
+
+sub dbGetDatastoreMapping
+{
+  
+  # This subroutine will return datastore mapping object if it exists or 0 if not
+  my ($datastoreID,$hostID) = @_;
+  my $query = "SELECT * FROM datastoreMappings WHERE datastore_id = '" . $datastoreID . "' AND host_id = '" . $hostID . "' ORDER BY lastseen DESC LIMIT 1";
+  my $sth = $dbh->prepare($query);
+  $sth->execute();
+  my $rows = $sth->rows;
+  my $ref = 0;
+  
+  if ($rows eq 0)
+  {
+    
+    $logger->info("[DEBUG][GETDATASTOREMAPPING] Datastore mapping between datastore $datastoreID and host $hostID doesn't exist") if $showDebug;
+    
+  }
+  else
+  {
+    
+    $ref = $sth->fetchrow_hashref();
+    $logger->info("[DEBUG][GETDATASTOREMAPPING] Datastore mapping ID for datastore $datastoreID and host $hostID is ".$ref->{'id'}) if $showDebug;
+    
+  } # END if ($rows eq 0)
+  
+  $sth->finish();
+  return $ref;
+  
+} # END sub dbGetDatastoreMapping
+
+sub dbGetDatastoreID
+{
+  
+  # This subroutine will return datastore ID if it exists or 0 if not
+  my ($datastoreMoRef,$vcenterID) = @_;
+  my $query = "SELECT id FROM datastores WHERE moref = '" . $datastoreMoRef . "' AND vcenter = '" . $vcenterID . "' ORDER BY lastseen DESC LIMIT 1";
+  my $sth = $dbh->prepare($query);
+  $sth->execute();
+  my $rows = $sth->rows;
+  my $datastoreID = 0;
+  
+  if ($rows eq 0)
+  {
+    
+    $logger->info("[DEBUG][GETDATASTOREID] Datastore $datastoreMoRef on vCenter $vcenterID doesn't exist") if $showDebug;
+    
+  }
+  else
+  {
+    
+    $datastoreID = $sth->fetchrow_hashref();
+    $logger->info("[DEBUG][GETDATASTOREID] DatastoreID for datastore $datastoreMoRef on vCenter $vcenterID is ".$datastoreID->{'id'}) if $showDebug;
+    $datastoreID = $datastoreID->{'id'};
+    
+  } # END if ($rows eq 0)
+  
+  $sth->finish();
+  return $datastoreID;
+  
+} # END sub dbGetDatastoreID
 
 sub dbGetDatastoreMetrics
 {
@@ -3241,9 +3346,235 @@ sub QuickQueryPerf
 
 } # END sub QuickQueryPerf
 
+sub buildSqlQueryCPGroup
+{
+  
+  my ($CPGroupMembers) = @_;
+  my $sqlQuery = " (";
+  my $firstMember = '1';
+
+  if ($CPGroupMembers eq 0)
+  {
+    
+    return "$sqlQuery TRUE )";
+    
+  } # END if ($CPGroupMembers eq 0)
+  
+  foreach my $CPGroupMember (split(/;/, $CPGroupMembers))
+  {
+    
+    if ($firstMember eq '1')
+    {
+      
+      $firstMember = '0';
+      $sqlQuery = $sqlQuery . "c.cluster_name LIKE '" . $CPGroupMember . "'";
+      
+    }
+    else
+    {
+      
+      $sqlQuery = $sqlQuery . " OR c.cluster_name LIKE '" . $CPGroupMember . "'";
+      
+    } # END if ($firstMember eq '1')
+    
+  } # END foreach my $CPGroupMember (split(/;/, $CPGroupMembers))
+  
+  return $sqlQuery . ")";
+  
+} # END sub buildSqlQueryCPGroup
+
+sub capacityPlanningReport
+{
+  
+  # As this check is cross vcenter (to be able to define cross-vcenter capacity planning groups),
+  # we must only execute it once, thus we have to trigger the already-ran flag
+  if ($capacityPlanningExecuted == 0)
+  {
+    
+    # TO ADD TO GLOBAL OPTIONS
+    my $vmLeftThreshold = 50;
+    my $daysLeftThreshold = 180;
+    # END TO ADD TO GLOBAL OPTIONS
+
+    # We switch the already-ran flag so that it will not be executed anymore during this execution
+    $capacityPlanningExecuted = 1;
+    my $senderMail = dbGetConfig('senderMail');
+    my $recipientMail = dbGetConfig('recipientMail');
+    my $smtpAddress = dbGetConfig('smtpAddress');
+    my $capacityPlanningDays = dbGetConfig('capacityPlanningDays');
+    my @groups;
+    my %options;
+    # We want to take a little safety percentage before dropping huge numbers :)
+    my $safetyPct = 10;
+    my $sthCPG = $dbh->prepare("SELECT group_name, members, percentageThreshold FROM capacityPlanningGroups");
+    $sthCPG->execute();
+    
+    while (my $CPGroup = $sthCPG->fetchrow_hashref)
+    {
+
+      # Retrieve current number of VM powered on
+      my $CPquery = buildSqlQueryCPGroup($CPGroup->{'members'});
+      my $query = "SELECT COUNT(v.id) AS NUMVMON FROM vms AS v INNER JOIN hosts AS h ON (h.id = v.host) INNER JOIN clusters AS c ON (c.id = h.cluster) WHERE $CPquery AND v.firstseen < '" . time2str("%Y-%m-%d", $start - (24 * 60 * 60)) . "' AND v.lastseen > '" . time2str("%Y-%m-%d", $start - (24 * 60 * 60)) . "'";
+      # print(Dumper($query));
+      my $sth = $dbh->prepare($query);
+      $sth->execute();
+      my $ref = $sth->fetchrow_hashref;
+      my $currentVmOn = int($ref->{'NUMVMON'});
+      # print(Dumper("currentVmOn: $currentVmOn"));
+      # Retrieve current statistices for compute (cpu and memory)
+      $query = "SELECT ROUND(SUM(h.memory)/1024/1024,0) AS MEMCAPA, SUM(h.cpumhz * h.numcpucore) AS CPUCAPA, SUM(hm.cpuUsage) AS CPUUSAGE, SUM(hm.memoryUsage) AS MEMUSAGE FROM hosts AS h INNER JOIN clusters AS c ON (h.cluster = c.id) INNER JOIN hostMetrics AS hm ON (hm.host_id = h.id) WHERE $CPquery AND h.firstseen < '" . time2str("%Y-%m-%d", $start - (24 * 60 * 60)) . "' AND h.lastseen > '" . time2str("%Y-%m-%d", $start - (24 * 60 * 60)) . "' AND hm.id IN (SELECT MAX(id) FROM hostMetrics WHERE lastseen < '" . time2str("%Y-%m-%d", $start - (24 * 60 * 60)) . " 23:59:59' GROUP BY host_id)";
+      $sth = $dbh->prepare($query);
+      $sth->execute();
+      $ref = $sth->fetchrow_hashref;
+      my $currentMemCapacity = $ref->{'MEMCAPA'};
+      my $currentCpuCapacity = $ref->{'CPUCAPA'};
+      my $currentMemUsage = $ref->{'MEMUSAGE'};
+      my $currentCpuUsage = $ref->{'CPUUSAGE'};
+      my $currentMemUsagePct = int(100 * ($currentMemUsage / $currentMemCapacity) + 0.5);
+      my $currentCpuUsagePct = int(100 * ($currentCpuUsage / $currentCpuCapacity) + 0.5);
+      # print(Dumper("currentMemCapacity: $currentMemCapacity"));
+      # print(Dumper("currentCpuCapacity: $currentCpuCapacity"));
+      # print(Dumper("currentMemUsage: $currentMemUsage"));
+      # print(Dumper("currentCpuUsage: $currentCpuUsage"));
+      # print(Dumper("currentMemUsagePct: $currentMemUsagePct"));
+      # print(Dumper("currentCpuUsagePct: $currentCpuUsagePct"));
+      # Retrieve current statistices for storage
+      $query = "SELECT SUM(size) AS STORAGECAPA, SUM(freespace) AS STORAGEFREE FROM (SELECT DISTINCT c.cluster_name, d.datastore_name, dm.size, dm.freespace FROM clusters AS c INNER JOIN hosts AS h ON c.id = h.cluster INNER JOIN datastoreMappings AS dma ON h.id = dma.host_id INNER JOIN datastores AS d ON dma.datastore_id = d.id INNER JOIN datastoreMetrics AS dm ON dm.datastore_id = d.id WHERE $CPquery AND d.firstseen < '" . time2str("%Y-%m-%d", $start - (24 * 60 * 60)) . "' AND d.lastseen > '" . time2str("%Y-%m-%d", $start - (24 * 60 * 60)) . "' AND dm.id IN (SELECT MAX(id) FROM datastoreMetrics WHERE lastseen < '" . time2str("%Y-%m-%d", $start - (24 * 60 * 60)) . "' GROUP BY datastore_id) ) AS T1";
+      $sth = $dbh->prepare($query);
+      $sth->execute();
+      $ref = $sth->fetchrow_hashref;
+      my $currentStorageCapacity = $ref->{'STORAGECAPA'};
+      my $currentStorageUsage = $currentStorageCapacity - $ref->{'STORAGEFREE'};
+      my $currentStorageUsagePct = int(100 * ($currentStorageUsage / $currentStorageCapacity) + 0.5);
+      my $currentMaxUsagePct = max ($currentMemUsagePct, $currentCpuUsagePct);
+      my $currentVmLeft = int(min(((($CPGroup->{'percentageThreshold'} - $safetyPct) * $currentVmOn / $currentMaxUsagePct) - $currentVmOn),((90 * $currentVmOn / $currentStorageUsagePct) - $currentVmOn))+ 0.5);
+      my $currentVmMemUsage = int($currentMemUsage / $currentVmOn + 0.5);
+      my $currentVmCpuUsage = int($currentCpuUsage / $currentVmOn + 0.5);
+      my $currentVmStorageUsage = int($currentStorageUsage / $currentVmOn + 0.5);
+      # print(Dumper("vmleftcompute:".((($CPGroup->{'percentageThreshold'} - $safetyPct) * $currentVmOn / $currentMaxUsagePct) - $currentVmOn)));
+      # print(Dumper("vmleftstorage:".((90 * $currentVmOn / $currentStorageUsagePct) - $currentVmOn)));
+      # print(Dumper("currentStorageCapacity: $currentStorageCapacity"));
+      # print(Dumper("currentStorageUsage: $currentStorageUsage"));
+      # print(Dumper("currentStorageUsagePct: $currentStorageUsagePct"));
+      # print(Dumper("currentMaxUsagePct: $currentMaxUsagePct"));
+      # print(Dumper("currentVmLeft: $currentVmLeft"));
+      # print(Dumper("currentVmMemUsage: $currentVmMemUsage"));
+      # print(Dumper("currentVmCpuUsage: $currentVmCpuUsage"));
+      # print(Dumper("currentVmStorageUsage: $currentVmStorageUsage"));
+      # Retrieve previous statistices based on $capacityPlanningDays for compute (cpu and memory)
+      $query = "SELECT COUNT(v.id) AS NUMVMON FROM vms AS v INNER JOIN hosts AS h ON (h.id = v.host) INNER JOIN clusters AS c ON (c.id = h.cluster) WHERE $CPquery AND v.firstseen < '" . time2str("%Y-%m-%d", $start - ($capacityPlanningDays * 24 * 60 * 60)) . "' AND v.lastseen > '" . time2str("%Y-%m-%d", $start - ($capacityPlanningDays * 24 * 60 * 60)) . "'";
+      $sth = $dbh->prepare($query);
+      $sth->execute();
+      $ref = $sth->fetchrow_hashref;
+      my $previousVmOn = int($ref->{'NUMVMON'});
+      # print(Dumper("previousVmOn: $previousVmOn"));
+      $query = "SELECT ROUND(SUM(h.memory)/1024/1024,0) AS MEMCAPA, SUM(h.cpumhz * h.numcpucore) AS CPUCAPA, SUM(hm.cpuUsage) AS CPUUSAGE, SUM(hm.memoryUsage) AS MEMUSAGE FROM hosts AS h INNER JOIN clusters AS c ON (h.cluster = c.id) INNER JOIN hostMetrics AS hm ON (hm.host_id = h.id) WHERE $CPquery AND h.firstseen < '" . time2str("%Y-%m-%d", $start - ($capacityPlanningDays * 24 * 60 * 60)) . "' AND h.lastseen > '" . time2str("%Y-%m-%d", $start - ($capacityPlanningDays * 24 * 60 * 60)) . "' AND hm.id IN (SELECT MAX(id) FROM hostMetrics WHERE lastseen < '" . time2str("%Y-%m-%d", $start - ($capacityPlanningDays * 24 * 60 * 60)) . " 23:59:59' GROUP BY host_id)";
+      $sth = $dbh->prepare($query);
+      $sth->execute();
+      $ref = $sth->fetchrow_hashref;
+      my $previousMemCapacity = $ref->{'MEMCAPA'};
+      my $previousCpuCapacity = $ref->{'CPUCAPA'};
+      my $previousMemUsage = $ref->{'MEMUSAGE'};
+      my $previousCpuUsage = $ref->{'CPUUSAGE'};
+      my $previousMemUsagePct = int(100 * ($previousMemUsage / $previousMemCapacity) + 0.5);
+      my $previousCpuUsagePct = int(100 * ($previousCpuUsage / $previousCpuCapacity) + 0.5);
+      # print(Dumper("previousMemCapacity: $previousMemCapacity"));
+      # print(Dumper("previousCpuCapacity: $previousCpuCapacity"));
+      # print(Dumper("previousMemUsage: $previousMemUsage"));
+      # print(Dumper("previousCpuUsage: $previousCpuUsage"));
+      # print(Dumper("previousMemUsagePct: $previousMemUsagePct"));
+      # print(Dumper("previousCpuUsagePct: $previousCpuUsagePct"));
+      # Retrieve previous statistices for storage
+      $query = "SELECT SUM(size) AS STORAGECAPA, SUM(freespace) AS STORAGEFREE FROM (SELECT DISTINCT c.cluster_name, d.datastore_name, dm.size, dm.freespace FROM clusters AS c INNER JOIN hosts AS h ON c.id = h.cluster INNER JOIN datastoreMappings AS dma ON h.id = dma.host_id INNER JOIN datastores AS d ON dma.datastore_id = d.id INNER JOIN datastoreMetrics AS dm ON dm.datastore_id = d.id WHERE $CPquery AND d.firstseen < '" . time2str("%Y-%m-%d", $start - ($capacityPlanningDays * 24 * 60 * 60)) . "' AND d.lastseen > '" . time2str("%Y-%m-%d", $start - ($capacityPlanningDays * 24 * 60 * 60)) . "' AND dm.id IN (SELECT MAX(id) FROM datastoreMetrics WHERE lastseen < '" . time2str("%Y-%m-%d", $start - ($capacityPlanningDays * 24 * 60 * 60)) . "' GROUP BY datastore_id) ) AS T1";
+      $sth = $dbh->prepare($query);
+      $sth->execute();
+      $ref = $sth->fetchrow_hashref;
+      my $previousStorageCapacity = $ref->{'STORAGECAPA'};
+      my $previousStorageUsage = $previousStorageCapacity - $ref->{'STORAGEFREE'};
+      my $previousStorageUsagePct = int(100 * ($previousStorageUsage / $previousStorageCapacity) + 0.5);
+      if ($previousStorageUsagePct == 0) { $previousStorageUsagePct = 1; }
+      my $previousMaxUsagePct = max ($previousMemUsagePct, $previousCpuUsagePct);
+      if ($previousMaxUsagePct == 0) { $previousMaxUsagePct = 1; }
+      # print(Dumper("previousStorageCapacity: $previousStorageCapacity"));
+      # print(Dumper("previousStorageUsage: $previousStorageUsage"));
+      # print(Dumper("previousStorageUsagePct: $previousStorageUsagePct"));
+      # print(Dumper("previousMaxUsagePct: $previousMaxUsagePct"));
+      my $previousVmLeft = int(min(((($CPGroup->{'percentageThreshold'} - $safetyPct) * $previousVmOn / $previousMaxUsagePct) - $previousVmOn),((90 * $previousVmOn / $previousStorageUsagePct) - $previousVmOn)) + 0.5);
+      my $coefficientCapaPlan = ($currentVmLeft-$previousVmLeft)/$capacityPlanningDays;
+      # print(Dumper("previousMemUsage: $previousMemUsage"));
+      # print(Dumper("previousMemCapacity: $previousMemCapacity"));
+      my $daysLeft = "Infinite";
+      
+      # if VM left count trend is negative, there will an exhaustion, we will compute the days based on this trend, if not we will display 'infinite' icon
+      if ($coefficientCapaPlan < 0)
+      {
+        
+        $daysLeft = int(abs($currentVmLeft/$coefficientCapaPlan) + 0.5);
+        
+      } # END if ($coefficientCapaPlan < 0)
+      
+      # print(Dumper("daysLeft: $daysLeft"));
+      
+      my $colorCP = "#5cb85c";
+          
+      if ($currentVmLeft < $vmLeftThreshold)
+      {
+        
+        $colorCP = "#ffbb33";
+        
+      } # END if ($currentVmLeft < $vmLeftThreshold)
+      
+      if ($daysLeft ne "Infinite" && $daysLeft < $daysLeftThreshold)
+      {
+        
+        $colorCP = "#d9534f";
+        
+      } # END if ($daysLeft < $daysLeftThreshold)
+
+      push @groups, { title => $CPGroup->{'group_name'}, daysLeft => $daysLeft, vmLeft => $currentVmLeft, cpu => format_bytes($currentVmCpuUsage*1000*1000)."Hz", mem => format_bytes($currentVmMemUsage*1024*1024)."B", hdd => format_bytes($currentVmStorageUsage)."B", maxpct =>  $CPGroup->{'percentageThreshold'}, color => $colorCP };
+      
+    } # END while (my $CPGroup = $sthCPG->fetchrow_hashref)
+    
+    # Once we retrieved data, we send the report by mail using responsive template
+    my $params = { 'groups' => \@groups };
+    $options{INCLUDE_PATH} = '/var/www/admin/mail-template';
+    my $msg = MIME::Lite::TT::HTML->new(
+      From        =>  $senderMail,
+      To          =>  $recipientMail,
+      Subject     =>  'Terminate vCenter Sessions Report',
+      Template    =>  { html => 'capacityplanning.html' },
+      TmplOptions =>  \%options,
+      TmplParams  =>  $params,
+    );
+    $msg->send('smtp', $smtpAddress, Timeout => 60 );
+
+  } # END if ($capacityPlanningExecuted == 0)
+  
+} # END sub capacityPlanningReport
+
 sub mailAlert
 {
   
   # code
   
 } # END sub mailAlert
+
+sub capacityPlanningInventory
+{
+  
+  # code
+  # foreach cluster > compute:
+  # - vm on
+  # - datastore capacity
+  # - datastore freespace
+  # - memory usage
+  # - memory available
+  # - cpu usage
+  # - cpu available
+  # http://$sexigrafNode:8080/render?target=minSeries(scale(diffSeries(divideSeries(scale(sumSeries($clusterID.runtime.vm.on),100),asPercent(diffSeries(sumSeries($clusterID.datastore.*.summary.capacity),sumSeries($clusterID.datastore.*.summary.freeSpace)),sumSeries($clusterID.datastore.*.summary.capacity))),sumSeries($clusterID.runtime.vm.on)),1),scale(diffSeries(divideSeries(scale(sumSeries($clusterID.runtime.vm.on),100),maxSeries(asPercent(sumSeries($clusterID.quickstats.cpu.usage),sumSeries($clusterID.quickstats.cpu.effective)),asPercent(sumSeries($clusterID.quickstats.mem.usage),sumSeries($clusterID.quickstats.mem.effective)))),sumSeries($clusterID.runtime.vm.on)),1))";
+  # URL build for Graphite HTTP API retrieving average VM consumption, using multiple target to decrease time
+  # $urlResourceUsage = "http://$sexigrafNode:8080/render?target=divideSeries(sumSeries($clusterID.quickstats.cpu.usage),sumSeries($clusterID.runtime.vm.on))&target=divideSeries(sumSeries($clusterID.quickstats.mem.usage),sumSeries($clusterID.runtime.vm.on))&target=divideSeries(diffSeries(sumSeries($clusterID.datastore.*.summary.capacity),sumSeries($clusterID.datastore.*.summary.freeSpace)),sumSeries($clusterID.runtime.vm.on))&from=-1hours&format=json
+  
+  
+  
+} # END sub capacityPlanningInventory
