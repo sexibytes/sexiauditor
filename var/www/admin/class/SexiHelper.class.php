@@ -215,6 +215,42 @@ class SexiHelper
     return $resultDate;
     
   } # END private function dbGetDate()
+  
+  public function buildSqlQueryCPGroup($CPGroupMembers)
+  {
+    
+    $sqlQuery = " (";
+    $firstMember = true;
+
+    if (count($CPGroupMembers) == 0)
+    {
+      
+      return "$sqlQuery TRUE )";
+      
+    } # END if (count($CPGroupMembers) == 0)
+    
+    foreach (explode (";", $CPGroupMembers) as $CPGroupMember)
+    {
+      
+      if ($firstMember)
+      {
+        
+        $firstMember = false;
+        $sqlQuery = $sqlQuery . "c.cluster_name LIKE '" . $CPGroupMember . "'";
+        
+      }
+      else
+      {
+        
+        $sqlQuery = $sqlQuery . " OR c.cluster_name LIKE '" . $CPGroupMember . "'";
+        
+      } # END if ($firstMember)
+      
+    } # END foreach (explode (";", $CPGroupMembers) as $CPGroupMember)
+    
+    return $sqlQuery . ")";
+    
+  } # END public function buildSqlQueryCPGroup()
 
 } # END class SexiHelper
 
