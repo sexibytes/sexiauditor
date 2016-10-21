@@ -1,0 +1,121 @@
+/**** Isotope CSS3 transitions ****/
+
+.isotope,
+.isotope .isotope-item {
+  -webkit-transition-duration: 0.8s;
+     -moz-transition-duration: 0.8s;
+      -ms-transition-duration: 0.8s;
+       -o-transition-duration: 0.8s;
+          transition-duration: 0.8s;
+}
+
+.isotope {
+  -webkit-transition-property: height, width;
+     -moz-transition-property: height, width;
+      -ms-transition-property: height, width;
+       -o-transition-property: height, width;
+          transition-property: height, width;
+}
+
+.isotope .isotope-item {
+  -webkit-transition-property: -webkit-transform, opacity;
+     -moz-transition-property:    -moz-transform, opacity;
+      -ms-transition-property:     -ms-transform, opacity;
+       -o-transition-property:      -o-transform, opacity;
+          transition-property:         transform, opacity;
+}
+
+/**** disabling Isotope CSS3 transitions ****/
+
+.isotope.no-transition,
+.isotope.no-transition .isotope-item,
+.isotope .isotope-item.no-transition {
+  -webkit-transition-duration: 0s;
+     -moz-transition-duration: 0s;
+      -ms-transition-duration: 0s;
+       -o-transition-duration: 0s;
+          transition-duration: 0s;
+}
+#statsgrid{
+  width: 100%;
+}
+.stat {
+  width: 178px;
+  height: 230px;
+  margin: 5px;
+  display: table;
+  float: left;
+  overflow: hidden;
+  position: relative;
+}
+.wide2 {
+  width: 366px;
+  font-size: 65px;
+}
+.name {
+  left: 0.5em;
+  bottom: 1.6em;
+  font-size: 1.05em;
+}
+.scope {
+  font-size: 1.25em;
+  font-weight: bold;
+  color: hsla(0,0%,0%,.5);
+}
+.title {
+    color:#EEEEEE;
+    font-size: 28px;
+    font-weight: bold;
+    position: absolute;
+    top: 20px;
+    left: 0;
+    right: 0;
+}
+
+.text {
+    color: #EEEEEE;
+}
+.value {
+  color: #EEEEEE;
+  font-size: 44px;
+  font-weight: bold;
+  position: absolute;
+  top: 70px;
+  left: 0;
+  right: 0;
+}
+.value small { font-size: 16px; }
+.more-info {
+  color:#EEEEEE;
+  font-size: 14px;
+  position: absolute;
+  bottom: 10px;
+  left: 0;
+  right: 0;
+}
+.widget {
+  padding-top:0px;
+  padding-bottom: 30px;
+  padding-right:12px;
+  padding-left:12px;
+  text-align: center;
+  display: table-cell;
+  margin: 0 auto;
+  width: 100%;
+  vertical-align: middle;
+}
+.widget-ok {
+  background-color: #5cb85c;
+  vertical-align: middle;
+}
+.widget-vmleft {
+  background-color: #ffbb33;
+  vertical-align: middle;
+}
+.widget-vmleft div {
+  color: #333;
+}
+.widget-daysleft {
+  background-color: #d9534f;
+  vertical-align: middle;
+}
