@@ -11,6 +11,7 @@
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 
 -- Dumping database structure for sexiauditor
+DROP DATABASE IF EXISTS `sexiauditor`;
 CREATE DATABASE IF NOT EXISTS `sexiauditor` /*!40100 DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci */;
 USE `sexiauditor`;
 
@@ -31,6 +32,19 @@ CREATE TABLE IF NOT EXISTS `alarms` (
   KEY `vcenter` (`vcenter`),
   KEY `moref` (`moref`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+-- Data exporting was unselected.
+
+
+-- Dumping structure for table sexiauditor.capacityPlanningGroups
+DROP TABLE IF EXISTS `capacityPlanningGroups`;
+CREATE TABLE IF NOT EXISTS `capacityPlanningGroups` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `group_name` varchar(255) COLLATE utf8_unicode_ci NOT NULL DEFAULT '0',
+  `members` text COLLATE utf8_unicode_ci NOT NULL,
+  `percentageThreshold` tinyint(3) unsigned NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci ROW_FORMAT=COMPACT;
 
 -- Data exporting was unselected.
 
@@ -168,6 +182,21 @@ CREATE TABLE IF NOT EXISTS `configurationissues` (
 -- Data exporting was unselected.
 
 
+-- Dumping structure for table sexiauditor.datastoreMappings
+DROP TABLE IF EXISTS `datastoreMappings`;
+CREATE TABLE IF NOT EXISTS `datastoreMappings` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `host_id` int(11) NOT NULL,
+  `datastore_id` int(11) NOT NULL,
+  `firstseen` datetime NOT NULL,
+  `lastseen` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `host_id_datastore_id` (`host_id`,`datastore_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+-- Data exporting was unselected.
+
+
 -- Dumping structure for table sexiauditor.datastoreMetrics
 DROP TABLE IF EXISTS `datastoreMetrics`;
 CREATE TABLE IF NOT EXISTS `datastoreMetrics` (
@@ -261,6 +290,8 @@ CREATE TABLE IF NOT EXISTS `hostMetrics` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `host_id` int(11) NOT NULL,
   `sharedmemory` bigint(20) NOT NULL,
+  `cpuUsage` bigint(20) NOT NULL,
+  `memoryUsage` bigint(20) NOT NULL,
   `firstseen` datetime NOT NULL,
   `lastseen` datetime NOT NULL,
   PRIMARY KEY (`id`),
@@ -436,7 +467,7 @@ CREATE TABLE IF NOT EXISTS `snapshots` (
   `name` varchar(100) CHARACTER SET utf8 NOT NULL,
   `createTime` datetime NOT NULL,
   `snapid` int(11) NOT NULL,
-  `description` varchar(255) CHARACTER SET latin1 NOT NULL,
+  `description` text CHARACTER SET utf8 NOT NULL,
   `quiesced` tinyint(1) NOT NULL,
   `state` varchar(50) CHARACTER SET utf8 NOT NULL,
   `firstseen` datetime NOT NULL,
