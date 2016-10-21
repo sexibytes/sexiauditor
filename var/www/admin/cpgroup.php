@@ -18,11 +18,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST')
     for ($i = 0; $i < count($_POST['groups']); $i++)
     {
       
-      if (!empty($_POST['groups'][$i]) && !empty($_POST['members'][$i]))
+      if (!empty($_POST['groups'][$i]) && !empty($_POST['members'][$i]) && !empty($_POST['pct'][$i]))
       {
         
         # Values are OK, so we add them to hash to be inserted
-        array_push($data, array("group_name" => $_POST['groups'][$i], "members" => $_POST['members'][$i]));
+        array_push($data, array("group_name" => $_POST['groups'][$i], "members" => $_POST['members'][$i], "percentageThreshold" => $_POST['pct'][$i]));
         
       }
       
@@ -53,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST')
 
 } # END if ($_SERVER['REQUEST_METHOD'] == 'POST')
 
-$capacityPlanningGroups = $db->get("capacityPlanningGroups", NULL, "group_name, members");
+$capacityPlanningGroups = $db->get("capacityPlanningGroups", NULL, "group_name, members, percentageThreshold");
 ?>
   <div class="container"><br/>
     <div class="panel panel-primary">
@@ -75,7 +75,11 @@ $capacityPlanningGroups = $db->get("capacityPlanningGroups", NULL, "group_name, 
           </div>&nbsp;
           <div class="form-group">
             <label>Clusters <small>(separated by semi-colon)</small></label>
-            <input type="text" class="form-control" name="members[]" size="50" value="<?php echo $capacityPlanningGroup["members"]; ?>">
+            <input type="text" class="form-control" name="members[]" size="40" value="<?php echo $capacityPlanningGroup["members"]; ?>">
+          </div>&nbsp;
+          <div class="form-group">
+            <label>Usable <small>(in %)</small></label>
+            <input type="number" class="form-control" name="pct[]" style="width: 70px;" value="<?php echo $capacityPlanningGroup["percentageThreshold"]; ?>">
           </div>
           <button class="btn btn-danger remove_field">Remove</button>
         </div>
@@ -96,7 +100,7 @@ $capacityPlanningGroups = $db->get("capacityPlanningGroups", NULL, "group_name, 
         e.preventDefault();
         // if(x < max_fields){ //max input box allowed
         //   x++; //text box increment
-          $(wrapper).append('        <div style="padding-bottom:10px;">\n                     <div class="form-group">\n                      <label>Group Name</label>\n                      <input type="text" class="form-control" name="groups[]" placeholder="GOLD-PROD">\n                    </div>&nbsp;\n                    <div class="form-group">\n                      <label>Clusters <small>(separated by semi-colon)</small></label>\n                      <input type="text" class="form-control" name="members[]" size="50" placeholder="cluster01.sexibyt.es;cluster02.sexibyt.es">\n                    </div>\n                    <button class="btn btn-danger remove_field">Remove</button>\n                  </div>'); //add input box
+          $(wrapper).append('        <div style="padding-bottom:10px;">\n                     <div class="form-group">\n                      <label>Group Name</label>\n                      <input type="text" class="form-control" name="groups[]" placeholder="GOLD-PROD">\n                    </div>&nbsp;\n                    <div class="form-group">\n                      <label>Clusters <small>(separated by semi-colon)</small></label>\n                      <input type="text" class="form-control" name="members[]" size="40" placeholder="cluster01.sexibyt.es;cluster02.sexibyt.es">\n                    </div>&nbsp;\n          <div class="form-group">\n            <label>Usable <small>(in %)</small></label>\n            <input type="number" class="form-control" name="pct[]" style="width: 70px;" value="100">\n          </div>\n                    <button class="btn btn-danger remove_field">Remove</button>\n                  </div>'); //add input box
         // }
       });
       $(wrapper).on("click",".remove_field", function(e){ //user click on remove text
