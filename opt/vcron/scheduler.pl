@@ -3403,6 +3403,8 @@ sub capacityPlanningReport
     my $capacityPlanningDays = dbGetConfig('capacityPlanningDays');
     my @groups;
     my %options;
+    my $numGroup = 0;
+    chomp(my $HOSTNAME = `hostname -s`);
     # We want to take a little safety percentage before dropping huge numbers :)
     my $safetyPct = 10;
     my $sthCPG = $dbh->prepare("SELECT group_name, members, percentageThreshold FROM capacityPlanningGroups");
@@ -3429,6 +3431,7 @@ sub capacityPlanningReport
       my $currentCpuCapacity = $ref->{'CPUCAPA'};
       my $currentMemUsage = $ref->{'MEMUSAGE'};
       my $currentCpuUsage = $ref->{'CPUUSAGE'};
+      next if (!defined($currentMemCapacity) || !defined($currentCpuCapacity) || !defined($currentMemUsage) || !defined($currentCpuUsage));
       my $currentMemUsagePct = int(100 * ($currentMemUsage / $currentMemCapacity) + 0.5);
       my $currentCpuUsagePct = int(100 * ($currentCpuUsage / $currentCpuCapacity) + 0.5);
       # print(Dumper("currentMemCapacity: $currentMemCapacity"));
@@ -3475,6 +3478,7 @@ sub capacityPlanningReport
       my $previousCpuCapacity = $ref->{'CPUCAPA'};
       my $previousMemUsage = $ref->{'MEMUSAGE'};
       my $previousCpuUsage = $ref->{'CPUUSAGE'};
+      next if (!defined($previousMemCapacity) || !defined($previousCpuCapacity) || !defined($previousMemUsage) || !defined($previousCpuUsage));
       my $previousMemUsagePct = int(100 * ($previousMemUsage / $previousMemCapacity) + 0.5);
       my $previousCpuUsagePct = int(100 * ($previousCpuUsage / $previousCpuCapacity) + 0.5);
       # print(Dumper("previousMemCapacity: $previousMemCapacity"));
@@ -3531,21 +3535,27 @@ sub capacityPlanningReport
       } # END if ($daysLeft < $daysLeftThreshold)
 
       push @groups, { title => $CPGroup->{'group_name'}, daysLeft => $daysLeft, vmLeft => $currentVmLeft, cpu => format_bytes($currentVmCpuUsage*1000*1000)."Hz", mem => format_bytes($currentVmMemUsage*1024*1024)."B", hdd => format_bytes($currentVmStorageUsage)."B", maxpct =>  $CPGroup->{'percentageThreshold'}, color => $colorCP };
+      $numGroup++;
       
     } # END while (my $CPGroup = $sthCPG->fetchrow_hashref)
     
-    # Once we retrieved data, we send the report by mail using responsive template
-    my $params = { 'groups' => \@groups };
-    $options{INCLUDE_PATH} = '/var/www/admin/mail-template';
-    my $msg = MIME::Lite::TT::HTML->new(
-      From        =>  $senderMail,
-      To          =>  $recipientMail,
-      Subject     =>  '['.uc($HOSTNAME).'] Capacity Planning Report',
-      Template    =>  { html => 'capacityplanning.html' },
-      TmplOptions =>  \%options,
-      TmplParams  =>  $params,
-    );
-    $msg->send('smtp', $smtpAddress, Timeout => 60 );
+    if ($numGroup > 0)
+    {
+      
+      # Once we retrieved data, we send the report by mail using responsive template
+      my $params = { 'groups' => \@groups };
+      $options{INCLUDE_PATH} = '/var/www/admin/mail-template';
+      my $msg = MIME::Lite::TT::HTML->new(
+        From        =>  $senderMail,
+        To          =>  $recipientMail,
+        Subject     =>  '['.uc($HOSTNAME).'] Capacity Planning Report',
+        Template    =>  { html => 'capacityplanning.html' },
+        TmplOptions =>  \%options,
+        TmplParams  =>  $params,
+      );
+      $msg->send('smtp', $smtpAddress, Timeout => 60 );
+      
+    } # END if ($numGroup > 0)
 
   } # END if ($capacityPlanningExecuted == 0)
   
