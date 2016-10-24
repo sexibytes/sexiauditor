@@ -4,28 +4,24 @@ $title = "Platform stats";
 $additionalStylesheet = array('css/vopendata.css');
 $additionalScript = array(  'js/vopendata.js',
                             'js/isotope.pkgd.min.js');
+require("dbconnection.php");
 require("header.php");
 require("helper.php");
-require("dbconnection.php");
-$dateToSearch = date("Y-m-d") . " 00:00:01";
+$dateLastSearch = date("Y-m-d") . " 00:00:01";
+$dateFirstSearch = date("Y-m-d") . " 23:59:59";
 # get vcenters info
 $totalVCs = $db->getValue("vcenters", "COUNT(vcenters.id)");
 # get clusters info
-$db->join("vcenters", "clusters.vcenter = vcenters.id", "INNER");
-$db->where('clusters.lastseen', $dateToSearch, ">=");
+$db->where('clusters.lastseen', $dateLastSearch, ">=");
 # We must exclude the 'Standalone' cluster from count
-$totalClusters = $db->getValue("clusters", "COUNT(clusters.id)") - 1;
+$db->where('clusters.id', 1, "<>");
+$totalClusters = $db->getValue("clusters", "COUNT(DISTINCT clusters.id)");
 # get hosts info
-$db->join("clusters", "hosts.cluster = clusters.id", "INNER");
-$db->join("vcenters", "clusters.vcenter = vcenters.id", "INNER");
-$db->where('hosts.lastseen', $dateToSearch, ">=");
-$totalHosts = $db->getValue("hosts", "COUNT(hosts.id)");
+$db->where('hosts.lastseen', $dateLastSearch, ">=");
+$totalHosts = $db->getValue("hosts", "COUNT(DISTINCT hosts.vcenter, hosts.moref)");
 # get vms info
-$db->join("hosts", "vms.host = hosts.id", "INNER");
-$db->join("clusters", "hosts.cluster = clusters.id", "INNER");
-$db->join("vcenters", "hosts.vcenter = vcenters.id", "INNER");
-$db->where('vms.lastseen', $dateToSearch, ">=");
-$totalVMs = $db->getValue("vms", "COUNT(vms.id)");
+$db->where('vms.lastseen', $dateLastSearch, ">=");
+$totalVMs = $db->getValue("vms", "COUNT(DISTINCT vms.vcenter, vms.moref)");
 
 if ($totalVCs == 0 || $totalClusters == 0 || $totalHosts == 0 || $totalVMs == 0)
 {
@@ -96,74 +92,67 @@ else
 {
   
   $introductionLabel = 'This is a selection of statistics from your platform, based on the <a href="http://www.vopendata.org">vOpenData project</a>. These will be updated every time scheduler is running !';
-  $db->join("vms", "vms.id = vmMetrics.vm_id", "INNER");
-  $db->where('vms.lastseen', $dateToSearch, ">=");
-  $totalCommited = $db->getValue("vmMetrics", "SUM(vmMetrics.commited)");
-  $db->join("vms", "vms.id = vmMetrics.vm_id", "INNER");
-  $db->where('vms.lastseen', $dateToSearch, ">=");
-  $totalUncommited = $db->getValue("vmMetrics", "SUM(vmMetrics.uncommited)");
-  $db->where('vms.lastseen', $dateToSearch, ">=");
-  $totalProvisioned = $db->getValue("vms", "SUM(vms.provisionned)");
-  $db->where('vms.lastseen', $dateToSearch, ">=");
-  $totalVMCPU = $db->getValue("vms", "SUM(vms.numcpu)");
-  $db->where('vms.lastseen', $dateToSearch, ">=");
-  $totalVMMemory = $db->getValue("vms", "SUM(vms.memory)");
-  $db->where('datastores.lastseen', $dateToSearch, ">=");
-  $db->where('datastores.shared', 1);
-  $totalVMFS = $db->getValue("datastores", "COUNT(datastores.id)");
-  $db->where('datastores.lastseen', $dateToSearch, ">=");
-  $db->where('datastores.type', 'NFS');
-  $totalNFS = $db->getValue("datastores", "COUNT(datastores.id)");
+  $vmMetricsSubQ = $db->subQuery();
+  $vmMetricsSubQ->where('firstseen', $dateFirstSearch, '<=');
+  $vmMetricsSubQ->where('lastseen', $dateLastSearch, '>=');
+  $vmMetricsSubQ->groupBy("vm_id");
+  $vmMetricsSubQ->get("vmMetrics", null, "MAX(id)");
+  $db->join("vmMetrics", "vms.id = vmMetrics.vm_id", "INNER");
+  $db->where('vmMetrics.id', $vmMetricsSubQ, "IN");
+  $totalCommited = $db->getValue("vms", "SUM(vmMetrics.commited)");
+  $vmMetricsSubQ = $db->subQuery();
+  $vmMetricsSubQ->where('firstseen', $dateFirstSearch, '<=');
+  $vmMetricsSubQ->where('lastseen', $dateLastSearch, '>=');
+  $vmMetricsSubQ->groupBy("vm_id");
+  $vmMetricsSubQ->get("vmMetrics", null, "MAX(id)");
+  $db->join("vmMetrics", "vms.id = vmMetrics.vm_id", "INNER");
+  $db->where('vmMetrics.id', $vmMetricsSubQ, "IN");
+  $totalUncommited = $db->getValue("vms", "SUM(vmMetrics.uncommited)");
+  (int)$totalProvisioned = $db->rawQueryValue("SELECT SUM(provisionned) FROM (SELECT DISTINCT vcenter, moref, provisionned FROM vms WHERE lastseen >= '".$dateLastSearch."') AS T1 LIMIT 1");
+  (int)$totalVMCPU = $db->rawQueryValue("SELECT SUM(numcpu) FROM (SELECT DISTINCT vcenter, moref, numcpu FROM vms WHERE lastseen >= '".$dateLastSearch."') AS T1 LIMIT 1");
+  (int)$totalVMMemory = $db->rawQueryValue("SELECT SUM(memory) FROM (SELECT DISTINCT vcenter, moref, memory FROM vms WHERE lastseen >= '".$dateLastSearch."') AS T1 LIMIT 1");
+  (int)$totalVMFS = $db->rawQueryValue("SELECT COUNT(*) FROM (SELECT DISTINCT vcenter, moref FROM datastores WHERE lastseen >= '".$dateLastSearch."' AND type = 'VMFS') AS T1 LIMIT 1");
+  (int)$totalNFS = $db->rawQueryValue("SELECT COUNT(*) FROM (SELECT DISTINCT vcenter, moref FROM datastores WHERE lastseen >= '".$dateLastSearch."' AND shared = 1 AND type = 'NFS') AS T1 LIMIT 1");
   $totalDatastore = $totalNFS + $totalVMFS;
-  $db->where('hosts.lastseen', $dateToSearch, ">=");
-  $totalHostsCPU = $db->getValue("hosts", "SUM(hosts.numcpu)");
-  $db->where('hosts.lastseen', $dateToSearch, ">=");
-  $totalHostsCPUMhz = $db->getValue("hosts", "SUM(hosts.cpumhz)");
-  $db->where('hosts.lastseen', $dateToSearch, ">=");
-  $totalHostsMemory = $db->getValue("hosts", "SUM(hosts.memory)");
-  $db->join("datastoreMetrics", "datastores.id = datastoreMetrics.datastore_id", "INNER");
-  $db->where('datastores.lastseen', $dateToSearch, ">=");
-  $db->orderBy("datastoreMetrics.id","desc");
-  $totalDatastoreSize = $db->getValue("datastores", "SUM(datastoreMetrics.size)", 1);
-  $db->join("clusters", "clusters.id = clusterMetrics.cluster_id", "INNER");
-  $db->where('clusters.lastseen', $dateToSearch, ">=");
-  $totalvMotion = $db->getValue("clusterMetrics", "SUM(clusterMetrics.vmotion)");
+  (int)$totalHostsCPU = $db->rawQueryValue("SELECT SUM(numcpu) FROM (SELECT DISTINCT vcenter, moref, numcpu FROM hosts WHERE lastseen >= '".$dateLastSearch."') AS T1 LIMIT 1");
+  (int)$totalHostsCPUMhz = $db->rawQueryValue("SELECT SUM(cpumhz) FROM (SELECT DISTINCT vcenter, moref, cpumhz FROM hosts WHERE lastseen >= '".$dateLastSearch."') AS T1 LIMIT 1");
+  (int)$totalHostsMemory = $db->rawQueryValue("SELECT SUM(memory) FROM (SELECT DISTINCT vcenter, moref, memory FROM hosts WHERE lastseen >= '".$dateLastSearch."') AS T1 LIMIT 1");
+  (int)$totalDatastoreSize = $db->rawQueryValue("SELECT SUM(size) FROM (SELECT DISTINCT datastore_id, size FROM datastoreMetrics WHERE lastseen >= '".$dateLastSearch."' GROUP BY datastore_id) AS T1 LIMIT 1");
+  (int)$totalvMotion = $db->rawQueryValue("SELECT SUM(vmotion) FROM (SELECT DISTINCT cluster_id, vmotion FROM clusterMetrics WHERE lastseen >= '".$dateLastSearch."' GROUP BY cluster_id) AS T1 LIMIT 1");
+  (int)$totalTPSSavings = $db->rawQueryValue("SELECT SUM(sharedmemory) FROM (SELECT DISTINCT host_id, sharedmemory FROM hostMetrics WHERE lastseen >= '".$dateLastSearch."' GROUP BY host_id) AS T1 LIMIT 1");
   $totalBandwidth = 0;
-  $db->join("hosts", "hosts.id = hostMetrics.host_id", "INNER");
-  $db->where('hosts.lastseen', $dateToSearch, ">=");
-  $totalTPSSavings = $db->getValue("hostMetrics", "SUM(hostMetrics.sharedmemory)");
   $averageVMPervCenter = round($totalVMs / $totalVCs);
   $averageVMPerCluster = round($totalVMs / $totalClusters);
   $averageVMPerHost = round($totalVMs / $totalHosts);
-  $averageVMDKCommitedSize = round($totalCommited / $totalVMs, 2);
-  $averageVMDKProvisionedSize = round($totalProvisioned / $totalVMs, 2);
-  $averageVMDKUncommitedSize = round($totalUncommited / $totalVMs, 2);
-  $db->where('lastseen', $dateToSearch, ">=");
+  $averageVMDKCommitedSize = round($totalCommited / $totalVMs, 0);
+  $averageVMDKProvisionedSize = round($totalProvisioned / $totalVMs, 0);
+  $averageVMDKUncommitedSize = round($totalUncommited / $totalVMs, 0);
+  $db->where('lastseen', $dateLastSearch, ">=");
   $db->where('guestOS', '', '<>');
   $db->groupBy("guestOS");
   $db->orderBy("total","desc");
   $sortedTabGuestOS = $db->get("vms", 11, "guestOS, COUNT(*) as total");
-  $db->where('hosts.lastseen', $dateToSearch, ">=");
+  $db->where('hosts.lastseen', $dateLastSearch, ">=");
   $db->groupBy("hosts.model");
   $db->orderBy("total","desc");
   $sortedHostModel = $db->get("hosts", 5, "hosts.model, COUNT(*) as total");
-  $db->where('hosts.lastseen', $dateToSearch, ">=");
+  $db->where('hosts.lastseen', $dateLastSearch, ">=");
   $db->groupBy("hosts.cputype");
   $db->orderBy("total","desc");
   $sortedHostCPUType = $db->get("hosts", 5, "hosts.cputype, COUNT(*) as total");
-  $db->where('hosts.lastseen', $dateToSearch, ">=");
+  $db->where('hosts.lastseen', $dateLastSearch, ">=");
   $db->groupBy("hosts.esxbuild");
   $db->orderBy("total","desc");
   $sortedESXBuild = $db->get("hosts", 5, "hosts.esxbuild, COUNT(*) as total");
-  $averageHostPervCenter = round($totalHosts / $totalVCs, 2);
-  $averageClusterPervCenter = round($totalClusters / $totalVCs, 2);
-  $averageHostPerCluster = round($totalHosts / $totalClusters,2);
-  $averageDatastorePerCluster = round($totalDatastore / $totalClusters,2);
-  $averageMemoryPerHost = human_filesize($totalHostsMemory / $totalHosts,2);
-  $averageCPUPerHost = round($totalHostsCPU / $totalHosts,2);
-  $averageDatastoreSize = round($totalDatastoreSize / $totalDatastore,2);
-  $averageVMMemory = human_filesize(1024 * 1024 * $totalVMMemory / $totalVMs,2);
-  $averageVMCPU = round($totalVMCPU / $totalVMs,2);
+  $averageHostPervCenter = round($totalHosts / $totalVCs, 0);
+  $averageClusterPervCenter = round($totalClusters / $totalVCs, 0);
+  $averageHostPerCluster = round($totalHosts / $totalClusters,0);
+  $averageDatastorePerCluster = round($totalDatastore / $totalClusters,0);
+  $averageMemoryPerHost = human_filesize($totalHostsMemory / $totalHosts,0);
+  $averageCPUPerHost = round($totalHostsCPU / $totalHosts,0);
+  $averageDatastoreSize = round($totalDatastoreSize / $totalDatastore,0);
+  $averageVMMemory = human_filesize(1024 * 1024 * $totalVMMemory / $totalVMs,0);
+  $averageVMCPU = round($totalVMCPU / $totalVMs,0);
 
 } # END if ($totalVCs == 0 || $totalClusters == 0 || $totalHosts == 0 || $totalVMs == 0)
 
@@ -176,6 +165,7 @@ else
         <ul class='nav navbar-top-links navbar-left' id='filters'>
           <li><i class="glyphicon glyphicon-th"></i> <b>Please select your view scope:</b></li>
           <li><a data-filter='*' href='#'>All</a></li>
+          <li><a data-filter='.stat-infra' href='#'>Infrastructure</a></li>
           <li><a data-filter='.stat-vcenter' href='#'>vCenter</a></li>
           <li><a data-filter='.stat-cluster' href='#'>Cluster</a></li>
           <li><a data-filter='.stat-host' href='#'>Host</a></li>
@@ -197,10 +187,42 @@ else
                 <div class='updated-at'></div>
               </div>
             </div>
-            <div class='stat stat-vcenter'>
-              <div class='widget widget-vcenter'>
+            <div class='stat stat-vcenter stat-infra'>
+              <div class='widget widget-infrastructure'>
                 <div class='title'>vCenters</div>
                 <div class='value'><?php echo $totalVCs; ?></div>
+                <div class='more-info'>Total</div>
+                <div class='updated-at'></div>
+              </div>
+            </div>
+            <div class='stat stat-cluster stat-infra'>
+              <div class='widget widget-infrastructure'>
+                <div class='title'>Clusters</div>
+                <div class='value'><?php echo $totalClusters; ?></div>
+                <div class='more-info'>Total</div>
+                <div class='updated-at'></div>
+              </div>
+            </div>
+            <div class='stat stat-host stat-infra'>
+              <div class='widget widget-infrastructure'>
+                <div class='title'>Hosts</div>
+                <div class='value'><?php echo $totalHosts; ?></div>
+                <div class='more-info'>Total</div>
+                <div class='updated-at'></div>
+              </div>
+            </div>
+            <div class='stat stat-vm stat-infra'>
+              <div class='widget widget-infrastructure'>
+                <div class='title'>VMs</div>
+                <div class='value'><?php echo $totalVMs; ?></div>
+                <div class='more-info'>Total</div>
+                <div class='updated-at'></div>
+              </div>
+            </div>
+            <div class='stat stat-storage stat-infra'>
+              <div class='widget widget-infrastructure'>
+                <div class='title'>Datastores</div>
+                <div class='value'><?php echo $totalDatastore; ?></div>
                 <div class='more-info'>Total</div>
                 <div class='updated-at'></div>
               </div>
@@ -229,11 +251,11 @@ else
                 <div class='updated-at'></div>
               </div>
             </div>
-            <div class='stat stat-cluster'>
+            <div class='stat stat-cluster stat-vm'>
               <div class='widget widget-cluster'>
-                <div class='title'>Clusters</div>
-                <div class='value'><?php echo $totalClusters; ?></div>
-                <div class='more-info'>Total</div>
+                <div class='title'>VMs</div>
+                <div class='value'><?php echo $averageVMPerCluster; ?></div>
+                <div class='more-info'>Average Per Cluster</div>
                 <div class='updated-at'></div>
               </div>
             </div>
@@ -269,27 +291,11 @@ else
                 <div class='updated-at'></div>
               </div>
             </div>
-            <div class='stat stat-cluster stat-vm'>
-              <div class='widget widget-cluster'>
-                <div class='title'>VMs</div>
-                <div class='value'><?php echo $averageVMPerCluster; ?></div>
-                <div class='more-info'>Average Per Cluster</div>
-                <div class='updated-at'></div>
-              </div>
-            </div>
             <div class='stat stat-cluster stat-storage'>
               <div class='widget widget-cluster'>
                 <div class='title'>Datastores</div>
                 <div class='value'><?php echo $averageDatastorePerCluster; ?></div>
                 <div class='more-info'>Average Per Cluster</div>
-                <div class='updated-at'></div>
-              </div>
-            </div>
-            <div class='stat wide2 stat-host'>
-              <div class='widget widget-host'>
-                <div class='title'>Hosts</div>
-                <div class='value'><?php echo $totalHosts; ?></div>
-                <div class='more-info2'>Total</div>
                 <div class='updated-at'></div>
               </div>
             </div>
@@ -314,6 +320,22 @@ else
                 <div class='title'>Sockets</div>
                 <div class='value'><?php echo $averageCPUPerHost; ?></div>
                 <div class='more-info'>Average Per Host</div>
+                <div class='updated-at'></div>
+              </div>
+            </div>
+            <div class='stat stat-host'>
+              <div class='widget widget-host'>
+                <div class='title'>Host</div>
+                <div class='value'><?php echo human_filesize($totalTPSSavings*1024,0); ?></div>
+                <div class='more-info'>Total TPS Savings</div>
+                <div class='updated-at'></div>
+              </div>
+            </div>
+            <div class='stat stat-host'>
+              <div class='widget widget-host'>
+                <div class='title'>Host</div>
+                <div class='value'><?php echo $totalBandwidth; ?></div>
+                <div class='more-info2'>Total Bandwidth</div>
                 <div class='updated-at'></div>
               </div>
             </div>
@@ -411,66 +433,50 @@ else
                 <div class='updated-at'></div>
               </div>
             </div>
-            <div class='stat stat-vm'>
-              <div class='widget widget-vm'>
-                <div class='title'>VMs</div>
-                <div class='value'><?php echo $totalVMs; ?></div>
-                <div class='more-info2'>Total</div>
+            <div class='stat wide2 stat-storage'>
+              <div class='widget widget-storage'>
+                <div class='title'>Datastores</div>
+                <div class='value'><?php echo human_filesize($averageDatastoreSize, 0); ?></div>
+                <div class='more-info'>Average Size</div>
                 <div class='updated-at'></div>
               </div>
             </div>
             <div class='stat wide2 stat-storage'>
-              <div class='widget widget-datastore'>
-                <div class='title'>Datastores</div>
-                <div class='value'><?php echo human_filesize($averageDatastoreSize, 2); ?></div>
-                <div class='more-info2'>Average Size</div>
-                <div class='updated-at'></div>
-              </div>
-            </div>
-            <div class='stat stat-storage'>
-              <div class='widget widget-datastore'>
-                <div class='title'>Datastores</div>
-                <div class='value'><?php echo $totalDatastore; ?></div>
-                <div class='more-info2'>Total</div>
-                <div class='updated-at'></div>
-              </div>
-            </div>
-            <div class='stat wide2 stat-storage'>
-              <div class='widget widget-datastore'>
+              <div class='widget widget-storage'>
                 <div class='title'>Datastore</div>
-                <div class='value'><?php echo human_filesize($totalDatastoreSize, 2); ?></div>
+                <div class='value'><?php echo human_filesize($totalDatastoreSize, 0); ?></div>
                 <div class='more-info'>Total Storage Size</div>
                 <div class='updated-at'></div>
               </div>
             </div>
             <div class='stat wide2 stat-storage stat-vm'>
-              <div class='widget widget-vmdk'>
+              <div class='widget widget-vm'>
                 <div class='title'>VMDK</div>
                 <div class='value'><?php echo $averageVMDKUncommitedSize; ?> GB</div>
-                <div class='more-info2'>Average Uncommited Size</div>
+                <div class='more-info'>Average Uncommited Size</div>
                 <div class='updated-at'></div>
               </div>
             </div>
             <div class='stat wide2 stat-storage stat-vm'>
-              <div class='widget widget-vmdk'>
+              <div class='widget widget-vm'>
                 <div class='title'>VMDK</div>
                 <div class='value'><?php echo $averageVMDKCommitedSize; ?> GB</div>
-                <div class='more-info2'>Average Commited Size</div>
+                <div class='more-info'>Average Commited Size</div>
                 <div class='updated-at'></div>
               </div>
             </div>
             <div class='stat wide2 stat-storage stat-vm'>
-              <div class='widget widget-vmdk'>
+              <div class='widget widget-vm'>
                 <div class='title'>VMDK</div>
                 <div class='value'><?php echo $averageVMDKProvisionedSize; ?> GB</div>
-                <div class='more-info2'>Average Provisioned Size</div>
+                <div class='more-info'>Average Provisioned Size</div>
                 <div class='updated-at'></div>
               </div>
             </div>
             <div class='stat wide2 stat-host'>
               <div class='widget widget-host'>
                 <div class='title'>Host</div>
-                <div class='value'><?php echo human_filesize($totalHostsCPUMhz * 1024 * 1024, 2, "Hz"); ?></div>
+                <div class='value'><?php echo human_filesize($totalHostsCPUMhz * 1024 * 1024, 0, "Hz"); ?></div>
                 <div class='more-info'>Total CPU</div>
                 <div class='updated-at'></div>
               </div>
@@ -478,7 +484,7 @@ else
             <div class='stat wide2 stat-host'>
               <div class='widget widget-host'>
                 <div class='title'>Host</div>
-                <div class='value'><?php echo human_filesize($totalHostsMemory,2); ?></div>
+                <div class='value'><?php echo human_filesize($totalHostsMemory,0); ?></div>
                 <div class='more-info'>Total Memory</div>
                 <div class='updated-at'></div>
               </div>
@@ -487,31 +493,7 @@ else
               <div class='widget widget-vm'>
                 <div class='title'>VM</div>
                 <div class='value'><?php echo $averageVMMemory; ?></div>
-                <div class='more-info2'>Average VM Memory</div>
-                <div class='updated-at'></div>
-              </div>
-            </div>
-            <div class='stat stat-host'>
-              <div class='widget widget-host'>
-                <div class='title'>Host</div>
-                <div class='value'><?php echo human_filesize($totalTPSSavings*1024,0); ?></div>
-                <div class='more-info2'>Total TPS Savings</div>
-                <div class='updated-at'></div>
-              </div>
-            </div>
-            <div class='stat stat-host'>
-              <div class='widget widget-host'>
-                <div class='title'>Host</div>
-                <div class='value'><?php echo $totalBandwidth; ?></div>
-                <div class='more-info2'>Total Bandwidth</div>
-                <div class='updated-at'></div>
-              </div>
-            </div>
-            <div class='stat stat-cluster'>
-              <div class='widget widget-cluster'>
-                <div class='title'>Cluster</div>
-                <div class='value'><?php echo floor($totalvMotion / 1000); ?>K</div>
-                <div class='more-info2'>Total vMotion</div>
+                <div class='more-info'>Average VM Memory</div>
                 <div class='updated-at'></div>
               </div>
             </div>
@@ -519,7 +501,15 @@ else
               <div class='widget widget-vm'>
                 <div class='title'>VM</div>
                 <div class='value'><?php echo $averageVMCPU; ?></div>
-                <div class='more-info2'>Average VM CPU</div>
+                <div class='more-info'>Average VM CPU</div>
+                <div class='updated-at'></div>
+              </div>
+            </div>
+            <div class='stat stat-cluster'>
+              <div class='widget widget-cluster'>
+                <div class='title'>Cluster</div>
+                <div class='value'><?php echo floor($totalvMotion / 1000); ?>K</div>
+                <div class='more-info'>Total vMotion</div>
                 <div class='updated-at'></div>
               </div>
             </div>
