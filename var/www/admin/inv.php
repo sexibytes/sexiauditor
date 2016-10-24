@@ -81,16 +81,6 @@ catch (Exception $e)
         </tbody>
       </table>
     </div>
-    <div id="modal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="plan-info" aria-hidden="true">
-      <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-          <div class="modal-body"><!-- /# content will goes here after ajax calls --></div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-          </div>
-        </div>
-      </div>
-    </div>
 
     <script type="text/javascript">
       $(document).ready( function () {

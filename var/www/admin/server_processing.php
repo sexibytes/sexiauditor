@@ -477,7 +477,7 @@ if (isset($_GET['c']))
         array( 'db' => 'vms.name', 'dt' => 1, 'field' => 'name', 'formatter' => function( $d, $row ) { return '<a href=\'showvm.php?vmid=' . $row[0] . '\' rel="modal">' . $d . '</a>'; } ),
         array( 'db' => 'v.vcname', 'dt' => 2, 'field' => 'vcname' ),
         array( 'db' => 'c.cluster_name', 'dt' => 3, 'field' => 'cluster_name' ),
-        array( 'db' => 'h.host_name', 'dt' => 4, 'field' => 'host_name', 'formatter' => function( $d, $row ) { return '<a href=\'showhost.php?hostid=' . $row[15] . '\' rel="modal">' . $d . '</a>'; } ),
+        array( 'db' => 'h.host_name', 'dt' => 4, 'field' => 'host_name', 'formatter' => function( $d, $row ) { return '<a href=\'showhost.php?hostid=' . $row[16] . '\' rel="modal">' . $d . '</a>'; } ),
         array( 'db' => 'vms.vmxpath', 'dt' => 5, 'field' => 'vmxpath' ),
         array( 'db' => 'vms.portgroup', 'dt' => 6, 'field' => 'portgroup', 'formatter' => function( $d, $row ) { return str_ireplace(',','<br/>',$d); } ),
         array( 'db' => 'vms.ip', 'dt' => 7, 'field' => 'ip', 'formatter' => function( $d, $row ) { return str_ireplace(',','<br/>',$d); } ),
@@ -488,7 +488,8 @@ if (isset($_GET['c']))
         array( 'db' => 'd.datastore_name', 'dt' => 12, 'field' => 'datastore_name' ),
         array( 'db' => 'vms.vmpath', 'dt' => 13, 'field' => 'vmpath' ),
         array( 'db' => 'vms.mac', 'dt' => 14, 'field' => 'mac', 'formatter' => function( $d, $row ) { return str_ireplace(',','<br/>',$d); } ),
-        array( 'db' => 'vms.powerState', 'dt' => 15, 'field' => 'powerState' )
+        array( 'db' => 'vms.powerState', 'dt' => 15, 'field' => 'powerState' ),
+        array( 'db' => 'h.id', 'dt' => 16, 'field' => 'id' )
       );
       $joinQuery = "FROM {$table} INNER JOIN vmMetrics AS vmm ON (vms.id = vmm.vm_id) INNER JOIN hosts AS h ON (vms.host = h.id) INNER JOIN clusters c ON h.cluster = c.id INNER JOIN vcenters AS v ON (h.vcenter = v.id) INNER JOIN datastores AS d ON (vms.datastore = d.id)";
       $extraCondition = "vms.firstseen < '" . $dateStart . "' AND vms.lastseen > '" . $dateEnd . "' AND vmm.id IN (SELECT MAX(id) FROM vmMetrics WHERE firstseen < '" . $dateStart . "' AND lastseen > '" . $dateEnd . "' GROUP BY vm_id) GROUP BY vms.moref, v.id";
@@ -501,10 +502,10 @@ if (isset($_GET['c']))
       $primaryKey = 'id';
       $columns = array(
         array( 'db' => 'vms.id', 'dt' => 0, 'field' => 'id'),
-        array( 'db' => 'vms.name', 'dt' => 1, 'field' => 'name' ),
+        array( 'db' => 'vms.name', 'dt' => 1, 'field' => 'name', 'formatter' => function( $d, $row ) { return '<a href=\'showvm.php?vmid=' . $row[0] . '\' rel="modal">' . $d . '</a>'; } ),
         array( 'db' => 'v.vcname', 'dt' => 2, 'field' => 'vcname' ),
         array( 'db' => 'c.cluster_name', 'dt' => 3, 'field' => 'cluster_name' ),
-        array( 'db' => 'h.host_name', 'dt' => 4, 'field' => 'host_name'),
+        array( 'db' => 'h.host_name', 'dt' => 4, 'field' => 'host_name', 'formatter' => function( $d, $row ) { return '<a href=\'showhost.php?hostid=' . $row[15] . '\' rel="modal">' . $d . '</a>'; } ),
         array( 'db' => 'vms.vmxpath', 'dt' => 5, 'field' => 'vmxpath' ),
         array( 'db' => 'vms.portgroup', 'dt' => 6, 'field' => 'portgroup', 'formatter' => function( $d, $row ) { return str_ireplace(',','<br/>',$d); } ),
         array( 'db' => 'vms.ip', 'dt' => 7, 'field' => 'ip', 'formatter' => function( $d, $row ) { return str_ireplace(',','<br/>',$d); } ),

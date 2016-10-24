@@ -20,6 +20,9 @@
   <script type="text/javascript" src="js/buttons.colVis.min.js"></script>
   <script type="text/javascript" src="js/buttons.html5.min.js"></script>
   <script type="text/javascript" src="js/file-size.js"></script>
+  <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="96x96" href="images/favicon-96x96.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="images/favicon-16x16.png">
 </head>
 <body>
   <div id="wrapper">
@@ -52,7 +55,8 @@ if ($sexihelper->getConfig('anonymousROInventory') == 'disable')
 
 } # END if ($sexihelper->getConfig('anonymousROInventory') == 'disable')
 
-?>  
+?>
+  
   <div style="padding-top: 10px; padding-bottom: 10px;" class="container" id="wrapper-container">
     <div class="row">
       <div class="col-lg-12 alert alert-info" style="padding: 6px; margin-top: 20px; text-align: center;">
@@ -103,6 +107,17 @@ if ($sexihelper->getConfig('anonymousROInventory') == 'disable')
       </table>
     </div>
   </div>
+  <div id="modal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="plan-info" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-body"><!-- /# content will goes here after ajax calls --></div>
+        <div class="modal-footer">
+          <a href="#" id="modal-previous" rel="modal" style="display:none;" class="btn btn-primary">Go back</a>
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script type="text/javascript">
     $(document).ready( function () {
@@ -110,7 +125,7 @@ if ($sexihelper->getConfig('anonymousROInventory') == 'disable')
         "language": { "infoFiltered": "" },
         "processing": true,
         "serverSide": true,
-        "ajax": "server_processing.php?c=ROVMINVENTORY&t=<?php echo strtotime($sexihelper->getSelectedDate()); ?>",
+        "ajax": "server_processing.php?c=VMINVENTORY&t=<?php echo strtotime($sexihelper->getSelectedDate()); ?>",
         "deferRender": true,
         "search": {
           "smart": false,
@@ -121,6 +136,15 @@ if ($sexihelper->getConfig('anonymousROInventory') == 'disable')
       } );
       new $.fn.dataTable.Buttons( table, { buttons: [ 'csv', 'excel' ] } );
       table.buttons().container().appendTo( '#inventory_wrapper .col-sm-6:eq(0)' );
+      $('#inventory').on('click', 'a[rel=modal]', function(evt) {
+        evt.preventDefault();
+        var modal = $('#modal').modal();
+        modal.find('.modal-body').load($(this).attr('href'), function (responseText, textStatus) {
+          if ( textStatus === 'success' || textStatus === 'notmodified') {
+            modal.show();
+          }
+        });
+      });
       $('button.toggle-vis').on( 'click', function (e) {
         e.preventDefault();
         var column = table.column( $(this).attr('data-column') );
@@ -133,6 +157,21 @@ if ($sexihelper->getConfig('anonymousROInventory') == 'disable')
           nodeList[0].className = "btn btn-success btn-xs toggle-vis btn-no-outline";
         }
       } );
+    });
+    
+    
+    $('#modal').on('click', 'a[rel=modal]', function(evt) {
+      evt.preventDefault();
+      var modal = $('#modal').modal();
+      modal.find('.modal-body').load($(this).attr('href'), function (responseText, textStatus) {
+        if ( textStatus === 'success' || textStatus === 'notmodified') {
+          modal.show();
+        }
+      });
+    });
+    
+    $("#modal").on("shown.bs.modal",function(){
+       $(this).hide().show(); 
     });
   </script>
 </body>
