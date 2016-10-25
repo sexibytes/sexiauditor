@@ -208,7 +208,6 @@ VMware::VICredStore::init (filename => $filename) or $logger->logdie ("[ERROR] U
 foreach $s_item (@server_list)
 {
   
-  # next if ($s_item ne "vmlon03vce2.lon.uk.world.socgen");
   $activeVC = $s_item;
   $logger->info("[INFO][VCENTER] Start processing vCenter $s_item");
   my $normalizedServerName = $s_item;
@@ -484,9 +483,20 @@ foreach $s_item (@server_list)
   
 } # END foreach $s_item (@server_list)
 
-my $sqlInsert = $dbh->prepare("INSERT INTO executiontime (date, seconds) VALUES (FROM_UNIXTIME (?), ?)");
-$sqlInsert->execute($start, time - $start);
-$sqlInsert->finish();
+if (scalar @server_list > 0)
+{
+
+  my $sqlInsert = $dbh->prepare("INSERT INTO executiontime (date, seconds) VALUES (FROM_UNIXTIME (?), ?)");
+  $sqlInsert->execute($start, time - $start);
+  $sqlInsert->finish();
+  
+}
+else
+{
+  
+  $logger->info("[INFO][VCENTER] No vCenter to process, enjoying the rest of the day at the cyber-beach...");
+  
+} # END if (scalar @server_list > 0)
 
 # Disconnect from the database.
 $dbh->disconnect();
