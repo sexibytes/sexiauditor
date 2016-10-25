@@ -46,8 +46,8 @@ if($check->getModuleSchedule('hostLUNPathDead') != 'off' && $check->getModuleSch
                           'tbody' => array('"<td>".$entry["host_name"]."</td>"', '"<td>".$entry["deadlunpathcount"]."</td>"', '"<td>".$entry["lunpathcount"]."</td>"', '"<td>".$entry["cluster"]."</td>"', '"<td>".$entry["vcenter"]."</td>"')]);
 }
 ?>
-    <h2>Host Profile Compliance</h2>
-    <h2>Host LocalSwapDatastore Compliance</h2>
+    <h2 class="not-available"><i class="glyphicon glyphicon-remove-sign"></i> Host Profile Compliance <small>(Soon)</small></h2>
+    <h2 class="not-available"><i class="glyphicon glyphicon-remove-sign"></i> Host LocalSwapDatastore Compliance <small>(Soon)</small></h2>
 <?php
 
 if ($check->getModuleSchedule('hostSshShell') != 'off' && $check->getModuleSchedule('inventory') != 'off')
@@ -161,6 +161,6 @@ if ($check->getModuleSchedule('hostBuildPivot') != 'off' && $check->getModuleSch
 } # END if ($check->getModuleSchedule('hostBuildPivot') != 'off' && $check->getModuleSchedule('inventory') != 'off')
 
   ?>
-    <h2>Host ballooning/zip/swap ==> perfManager?</h2>
+    <h2 class="not-available"><i class="glyphicon glyphicon-remove-sign"></i> Host ballooning/zip/swap <small>(Soon)</small></h2>
   </div>
 <?php require("footer.php"); ?>
