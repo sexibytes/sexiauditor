@@ -25,7 +25,7 @@ class SexiHelper
     $this->servicePolicyChoice = $servicePolicyChoice;
     $dateAvailable = $this->dbGetDate();
     
-    if ($_SERVER['REQUEST_METHOD'] == 'POST')
+    if ($_SERVER['REQUEST_METHOD'] == 'POST' && !empty($_POST["selectedDate"]))
     {
       
       $this->selectedDate = $_POST["selectedDate"];
