@@ -3095,7 +3095,7 @@ sub dbGetSchedule
   
   # This subroutine will return config value
   my ($moduleID) = @_;
-  my $query = "SELECT schedule FROM moduleSchedule WHERE id = '" . $moduleID . "'";
+  my $query = "SELECT schedule FROM modules WHERE module = '" . $moduleID . "'";
   my $sth = $dbh->prepare($query);
   $sth->execute();
   my $rows = $sth->rows;
@@ -3569,26 +3569,32 @@ sub mailAlert
     ##################
     # vCenter Checks #
     ##################
-    my $vcSessionAge = dbGetConfig('vcSessionAge');
-    $sth = $dbh->prepare("SELECT DATEDIFF('" . $dateSqlQuery . "', lastActiveTime) as age, lastActiveTime, userName, ipAddress, userAgent, vcname FROM sessions INNER JOIN vcenters ON vcenters.id = vcenter WHERE lastActiveTime < '" . $dateSqlQuery . "' - INTERVAL $vcSessionAge DAY AND userName NOT LIKE '%vpxd-extension%' AND userName NOT LIKE '%vsphere-webclient%' AND sessions.firstseen < '" . $dateSqlQuery . " 23:59:59' AND sessions.lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY vcenter, sessionKey");
-    $sth->execute();
-
-    if ($sth->rows > 0)
+    
+    if (dbGetSchedule('vcSessionAge') ne 'off')
     {
       
-      $alertCount += $sth->rows;
-      my $htmlContent = "<table style='$styleTable'><thead><tr style='$styleLineHead'><th style='$styleHead'>vcenter</th><th style='$styleHead'>age</th><th style='$styleHead'>lastActiveTime</th><th style='$styleHead'>userName</th><th style='$styleHead'>ipAddress</th><th style='$styleHead'>userAgent</th></tr></thead>";
-      
-      while ($ref = $sth->fetchrow_hashref)
+      my $vcSessionAge = dbGetConfig('vcSessionAge');
+      $sth = $dbh->prepare("SELECT DATEDIFF('" . $dateSqlQuery . "', lastActiveTime) as age, lastActiveTime, userName, ipAddress, userAgent, vcname FROM sessions INNER JOIN vcenters ON vcenters.id = vcenter WHERE lastActiveTime < '" . $dateSqlQuery . "' - INTERVAL $vcSessionAge DAY AND userName NOT LIKE '%vpxd-extension%' AND userName NOT LIKE '%vsphere-webclient%' AND sessions.firstseen < '" . $dateSqlQuery . " 23:59:59' AND sessions.lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY vcenter, sessionKey");
+      $sth->execute();
+
+      if ($sth->rows > 0)
       {
         
-        $htmlContent = $htmlContent . "<tr style='$styleLine'><td style='$styleCell'>" . $ref->{'vcname'} . "</td><td style='$styleCell'>" . $ref->{'age'} . "</td><td style='$styleCell'>" . $ref->{'lastActiveTime'} . "</td><td style='$styleCell'>" . $ref->{'userName'} . "</td><td style='$styleCell'>" . $ref->{'ipAddress'} . "</td><td style='$styleCell'>" . $ref->{'userAgent'} . "</td></tr>";
+        $alertCount += $sth->rows;
+        my $htmlContent = "<table style='$styleTable'><thead><tr style='$styleLineHead'><th style='$styleHead'>vcenter</th><th style='$styleHead'>age</th><th style='$styleHead'>lastActiveTime</th><th style='$styleHead'>userName</th><th style='$styleHead'>ipAddress</th><th style='$styleHead'>userAgent</th></tr></thead>";
         
-      } # END while ($ref = $sth->fetchrow_hashref)
+        while ($ref = $sth->fetchrow_hashref)
+        {
+          
+          $htmlContent = $htmlContent . "<tr style='$styleLine'><td style='$styleCell'>" . $ref->{'vcname'} . "</td><td style='$styleCell'>" . $ref->{'age'} . "</td><td style='$styleCell'>" . $ref->{'lastActiveTime'} . "</td><td style='$styleCell'>" . $ref->{'userName'} . "</td><td style='$styleCell'>" . $ref->{'ipAddress'} . "</td><td style='$styleCell'>" . $ref->{'userAgent'} . "</td></tr>";
+          
+        } # END while ($ref = $sth->fetchrow_hashref)
+        
+        push @htmlModuleContent, { title => 'vCenter Session Age', body => "$htmlContent</table>" };
+        
+      } # END if ($sth->rows > 0)
       
-      push @htmlModuleContent, { title => 'vCenter Session Age', body => "$htmlContent</table>" };
-      
-    } # END if ($sth->rows > 0)
+    } # END if (dbGetSchedule('vcSessionAge') != 'off')
 
     ######################
     # END vCenter Checks #
@@ -3597,69 +3603,106 @@ sub mailAlert
     ##################
     # Cluster Checks #
     ##################
-    $sth = $dbh->prepare("SELECT cluster_name, dasenabled, lastconfigissue, lastconfigissuetime, v.vcname FROM clusters INNER JOIN vcenters v ON vcenter = v.id WHERE lastconfigissue NOT LIKE '0' AND clusters.firstseen < '" . $dateSqlQuery . " 23:59:59' AND clusters.lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY vcenter, moref");
-    $sth->execute();
-
-    if ($sth->rows > 0)
+    
+    if (dbGetSchedule('clusterConfigurationIssues') ne 'off')
     {
       
-      $alertCount += $sth->rows;
-      my $htmlContent = "<table style='$styleTable'><thead><tr style='$styleLineHead'><th style='$styleHead'>cluster_name</th><th style='$styleHead'>dasenabled</th><th style='$styleHead'>lastconfigissue</th><th style='$styleHead'>lastconfigissuetime</th><th style='$styleHead'>vcname</th></tr></thead>";
-      
-      while ($ref = $sth->fetchrow_hashref)
-      {
-        
-        $htmlContent = $htmlContent . "<tr style='$styleLine'><td style='$styleCell'>" . $ref->{'cluster_name'} . "</td><td style='$styleCell'>" . $ref->{'dasenabled'} . "</td><td style='$styleCell'>" . $ref->{'lastconfigissue'} . "</td><td style='$styleCell'>" . $ref->{'lastconfigissuetime'} . "</td><td style='$styleCell'>" . $ref->{'vcname'} . "</td></tr>";
-        
-      } # END while ($ref = $sth->fetchrow_hashref)
-      
-      push @htmlModuleContent, { title => 'Cluster with Configuration Issues', body => "$htmlContent</table>" };
-      
-    } # END if ($sth->rows > 0)
-    
-    
-    $sth = $dbh->prepare("SELECT alarm_name, status, time, entityMoRef, v.vcname, c.cluster_name as entity FROM alarms INNER JOIN vcenters v ON vcenter = v.id INNER JOIN clusters c ON entityMoRef = c.moref WHERE entityMoRef LIKE 'ClusterComputeResource%' AND alarms.firstseen < '" . $dateSqlQuery . " 23:59:59' AND alarms.lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY alarms.vcenter, alarms.moref");
-    $sth->execute();
+      $sth = $dbh->prepare("SELECT cluster_name, dasenabled, lastconfigissue, lastconfigissuetime, v.vcname FROM clusters INNER JOIN vcenters v ON vcenter = v.id WHERE lastconfigissue NOT LIKE '0' AND clusters.firstseen < '" . $dateSqlQuery . " 23:59:59' AND clusters.lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY vcenter, moref");
+      $sth->execute();
 
-    if ($sth->rows > 0)
-    {
-      
-      $alertCount += $sth->rows;
-      my $htmlContent = "<table style='$styleTable'><thead><tr style='$styleLineHead'><th style='$styleHead'>alarm_name</th><th style='$styleHead'>status</th><th style='$styleHead'>time</th><th style='$styleHead'>entityMoRef</th><th style='$styleHead'>vcname</th><th style='$styleHead'>entity</th></tr></thead>";
-      
-      while ($ref = $sth->fetchrow_hashref)
+      if ($sth->rows > 0)
       {
         
-        $htmlContent = $htmlContent . "<tr style='$styleLine'><td style='$styleCell'>" . $ref->{'alarm_name'} . "</td><td style='$styleCell'>" . $ref->{'status'} . "</td><td style='$styleCell'>" . $ref->{'time'} . "</td><td style='$styleCell'>" . $ref->{'entityMoRef'} . "</td><td style='$styleCell'>" . $ref->{'vcname'} . "</td><td style='$styleCell'>" . $ref->{'entity'} . "</td></tr>";
+        $alertCount += $sth->rows;
+        my $htmlContent = "<table style='$styleTable'><thead><tr style='$styleLineHead'><th style='$styleHead'>cluster_name</th><th style='$styleHead'>dasenabled</th><th style='$styleHead'>lastconfigissue</th><th style='$styleHead'>lastconfigissuetime</th><th style='$styleHead'>vcname</th></tr></thead>";
         
-      } # END while ($ref = $sth->fetchrow_hashref)
-      
-      push @htmlModuleContent, { title => 'Cluster Alarms', body => "$htmlContent</table>" };
-      
-    } # END if ($sth->rows > 0)
+        while ($ref = $sth->fetchrow_hashref)
+        {
+          
+          $htmlContent = $htmlContent . "<tr style='$styleLine'><td style='$styleCell'>" . $ref->{'cluster_name'} . "</td><td style='$styleCell'>" . $ref->{'dasenabled'} . "</td><td style='$styleCell'>" . $ref->{'lastconfigissue'} . "</td><td style='$styleCell'>" . $ref->{'lastconfigissuetime'} . "</td><td style='$styleCell'>" . $ref->{'vcname'} . "</td></tr>";
+          
+        } # END while ($ref = $sth->fetchrow_hashref)
+        
+        push @htmlModuleContent, { title => 'Cluster with Configuration Issues', body => "$htmlContent</table>" };
+        
+      } # END if ($sth->rows > 0)
     
+    } # END if (dbGetSchedule('clusterConfigurationIssues') ne 'off')
     
-    $sth = $dbh->prepare("SELECT cluster_name, v.vcname FROM clusters INNER JOIN vcenters v ON vcenter = v.id WHERE dasenabled NOT LIKE '1' AND clusters.firstseen < '" . $dateSqlQuery . " 23:59:59' AND clusters.lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY vcenter, moref");
-    $sth->execute();
+    if (dbGetSchedule('alarms') ne 'off')
+    {
+    
+      $sth = $dbh->prepare("SELECT alarm_name, status, time, entityMoRef, v.vcname, c.cluster_name as entity FROM alarms INNER JOIN vcenters v ON vcenter = v.id INNER JOIN clusters c ON entityMoRef = c.moref WHERE entityMoRef LIKE 'ClusterComputeResource%' AND alarms.firstseen < '" . $dateSqlQuery . " 23:59:59' AND alarms.lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY alarms.vcenter, alarms.moref");
+      $sth->execute();
 
-    if ($sth->rows > 0)
-    {
-      
-      $alertCount += $sth->rows;
-      my $htmlContent = "<table style='$styleTable'><thead><tr style='$styleLineHead'><th style='$styleHead'>cluster_name</th><th style='$styleHead'>vcname</th></tr></thead>";
-      
-      while ($ref = $sth->fetchrow_hashref)
+      if ($sth->rows > 0)
       {
         
-        $htmlContent = $htmlContent . "<tr style='$styleLine'><td style='$styleCell'>" . $ref->{'cluster_name'} . "</td><td style='$styleCell'>" . $ref->{'vcname'} . "</td></tr>";
+        $alertCount += $sth->rows;
+        my $htmlContent = "<table style='$styleTable'><thead><tr style='$styleLineHead'><th style='$styleHead'>alarm_name</th><th style='$styleHead'>status</th><th style='$styleHead'>time</th><th style='$styleHead'>entityMoRef</th><th style='$styleHead'>vcname</th><th style='$styleHead'>entity</th></tr></thead>";
         
-      } # END while ($ref = $sth->fetchrow_hashref)
-      
-      push @htmlModuleContent, { title => 'Cluster Without HA', body => "$htmlContent</table>" };
-      
-    } # END if ($sth->rows > 0)
+        while ($ref = $sth->fetchrow_hashref)
+        {
+          
+          $htmlContent = $htmlContent . "<tr style='$styleLine'><td style='$styleCell'>" . $ref->{'alarm_name'} . "</td><td style='$styleCell'>" . $ref->{'status'} . "</td><td style='$styleCell'>" . $ref->{'time'} . "</td><td style='$styleCell'>" . $ref->{'entityMoRef'} . "</td><td style='$styleCell'>" . $ref->{'vcname'} . "</td><td style='$styleCell'>" . $ref->{'entity'} . "</td></tr>";
+          
+        } # END while ($ref = $sth->fetchrow_hashref)
+        
+        push @htmlModuleContent, { title => 'Cluster Alarms', body => "$htmlContent</table>" };
+        
+      } # END if ($sth->rows > 0)
     
+    } # END if (dbGetSchedule('alarms') ne 'off')
     
+    if (dbGetSchedule('clusterHAStatus') ne 'off')
+    {
+    
+      $sth = $dbh->prepare("SELECT cluster_name, v.vcname FROM clusters INNER JOIN vcenters v ON vcenter = v.id WHERE dasenabled NOT LIKE '1' AND clusters.firstseen < '" . $dateSqlQuery . " 23:59:59' AND clusters.lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY vcenter, moref");
+      $sth->execute();
+
+      if ($sth->rows > 0)
+      {
+        
+        $alertCount += $sth->rows;
+        my $htmlContent = "<table style='$styleTable'><thead><tr style='$styleLineHead'><th style='$styleHead'>cluster_name</th><th style='$styleHead'>vcname</th></tr></thead>";
+        
+        while ($ref = $sth->fetchrow_hashref)
+        {
+          
+          $htmlContent = $htmlContent . "<tr style='$styleLine'><td style='$styleCell'>" . $ref->{'cluster_name'} . "</td><td style='$styleCell'>" . $ref->{'vcname'} . "</td></tr>";
+          
+        } # END while ($ref = $sth->fetchrow_hashref)
+        
+        push @htmlModuleContent, { title => 'Cluster Without HA', body => "$htmlContent</table>" };
+        
+      } # END if ($sth->rows > 0)
+    
+    } # END if (dbGetSchedule('clusterHAStatus') ne 'off')
+    
+    if (dbGetSchedule('clusterAdmissionControl') ne 'off')
+    {
+    
+      $sth = $dbh->prepare("SELECT cluster_name, isAdmissionEnable, admissionThreshold, admissionValue, vcname FROM clusters INNER JOIN vcenters v ON vcenter = v.id WHERE isAdmissionEnable = 0 OR (isAdmissionEnable = 1 AND admissionValue <= admissionThreshold) AND clusters.firstseen < '" . $dateSqlQuery . " 23:59:59' AND clusters.lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY vcenter, moref");
+      $sth->execute();
+
+      if ($sth->rows > 0)
+      {
+        
+        $alertCount += $sth->rows;
+        my $htmlContent = "<table style='$styleTable'><thead><tr style='$styleLineHead'><th style='$styleHead'>cluster_name</th><th style='$styleHead'>isAdmissionEnable</th><th style='$styleHead'>admissionThreshold</th><th style='$styleHead'>admissionValue</th><th style='$styleHead'>vcname</th></tr></thead>";
+        
+        while ($ref = $sth->fetchrow_hashref)
+        {
+          
+          $htmlContent = $htmlContent . "<tr style='$styleLine'><td style='$styleCell'>" . $ref->{'cluster_name'} . "</td><td style='$styleCell'>" . $ref->{'isAdmissionEnable'} . "</td><td style='$styleCell'>" . $ref->{'admissionThreshold'} . "</td><td style='$styleCell'>" . $ref->{'admissionValue'} . "</td><td style='$styleCell'>" . $ref->{'vcname'} . "</td></tr>";
+          
+        } # END while ($ref = $sth->fetchrow_hashref)
+        
+        push @htmlModuleContent, { title => 'Admission Control Overtake', body => "$htmlContent</table>" };
+        
+      } # END if ($sth->rows > 0)
+      
+    } # END if (dbGetSchedule('clusterAdmissionControl') ne 'off')
     
     ######################
     # END Cluster Checks #
