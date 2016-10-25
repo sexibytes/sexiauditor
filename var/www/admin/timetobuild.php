@@ -6,24 +6,39 @@ $title = "Time To Build";
 $additionalScript = array( 'js/echarts-all-english-v2.js' );
 require("header.php");
 require("helper.php");
-
 $data = array();
 $db->where('configid', "timeToBuildCount");
 $timeToBuildCount = $db->getOne('config', "value");
-if ($timeToBuildCount['value'] > 0) {
+
+if ($timeToBuildCount['value'] > 0)
+{
+  
   $limit = $timeToBuildCount['value'];
-} else {
-  $limit = NULL;
+  
 }
+else
+{
+  
+  $limit = NULL;
+  
+} # END if ($timeToBuildCount['value'] > 0)
+
 $db->orderBy("date","Desc");
 $resultExecutionTime = $db->get('executiontime', $limit);
-if ($db->count > 0) :
-  foreach ($resultExecutionTime as $exectime) {
+
+# For display purpose, we want only to show graph if there is at least 2 entries
+if ($db->count > 1) :
+  
+  foreach ($resultExecutionTime as $exectime)
+  {
+    
     $dataTemp = null;
     $dataTemp[] = 1000 * DateTime::createFromFormat('Y-m-d H:i:s', $exectime['date'])->getTimestamp();
     $dataTemp[] = (int) $exectime['seconds'];
     $data[] = $dataTemp;
-  }
+    
+  } # END foreach ($resultExecutionTime as $exectime)
+  
 ?>
   <div class="container">
     <h2>Execution Time <small>(last <?php echo $timeToBuildCount['value']; ?> builds)</small></h2>
@@ -49,7 +64,9 @@ if ($db->count > 0) :
         saveAsImage : {show: true}
       }
     },
+<?php if ($db->count > 10) : ?>
     dataZoom: { show: true, start : 70 },
+<?php endif; ?>
     grid: { y2: 80 },
     xAxis : [ { type : 'time' } ],
     yAxis : [ { min : 0, axisLabel : { formatter: '{value}s'} } ],
@@ -67,7 +84,7 @@ if ($db->count > 0) :
   ttbChart.setOption(option);
   </script>
 <?php else : ?>
-    <div class="alert alert-warning" role="alert"><span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span><span class="sr-only">Warning:</span> The scheduler have not been executed yet, add some server and module and come back.</div>
+    <div class="alert alert-warning" role="alert"><span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span><span class="sr-only">Warning:</span> The scheduler have not been executed yet, add some server and module first.</div>
   </div>
 <?php endif; ?>
 <?php require("footer.php"); ?>
