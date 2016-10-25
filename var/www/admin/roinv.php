@@ -125,7 +125,7 @@ if ($sexihelper->getConfig('anonymousROInventory') == 'disable')
         "language": { "infoFiltered": "" },
         "processing": true,
         "serverSide": true,
-        "ajax": "server_processing.php?c=VMINVENTORY&t=<?php echo strtotime($sexihelper->getSelectedDate()); ?>",
+        "ajax": "server_processing.php?c=ROVMINVENTORY",
         "deferRender": true,
         "search": {
           "smart": false,
