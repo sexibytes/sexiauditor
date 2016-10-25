@@ -34,7 +34,18 @@ class SexiHelper
     else
     {
       
-      $this->selectedDate = DateTime::createFromFormat('Y-m-d H:i:s', $dateAvailable[0]['date'])->format('Y/m/d');
+      if (count($dateAvailable) > 0)
+      {
+      
+        $this->selectedDate = DateTime::createFromFormat('Y-m-d H:i:s', $dateAvailable[0]['date'])->format('Y/m/d');
+        
+      }
+      else
+      {
+        
+        $this->selectedDate = NULL;
+        
+      }
       
     } # END if ($_SERVER['REQUEST_METHOD'] == 'POST')
     
