@@ -59,6 +59,8 @@ my %boolHash = (true => "1", false => "0");
 my $perfMgr;
 my %perfCntr;
 my $capacityPlanningExecuted = 0;
+my $mailAlertExecuted = 0;
+chomp(my $HOSTNAME = `hostname -s`);
 
 # Using --force switch will bypass scheduler and run every subroutine
 my $force;
@@ -208,6 +210,7 @@ VMware::VICredStore::init (filename => $filename) or $logger->logdie ("[ERROR] U
 foreach $s_item (@server_list)
 {
   
+  # next if ($s_item ne "vmlon03vce2.lon.uk.world.socgen");
   $activeVC = $s_item;
   $logger->info("[INFO][VCENTER] Start processing vCenter $s_item");
   my $normalizedServerName = $s_item;
@@ -483,20 +486,9 @@ foreach $s_item (@server_list)
   
 } # END foreach $s_item (@server_list)
 
-if (scalar @server_list > 0)
-{
-
-  my $sqlInsert = $dbh->prepare("INSERT INTO executiontime (date, seconds) VALUES (FROM_UNIXTIME (?), ?)");
-  $sqlInsert->execute($start, time - $start);
-  $sqlInsert->finish();
-  
-}
-else
-{
-  
-  $logger->info("[INFO][VCENTER] No vCenter to process, enjoying the rest of the day at the cyber-beach...");
-  
-} # END if (scalar @server_list > 0)
+my $sqlInsert = $dbh->prepare("INSERT INTO executiontime (date, seconds) VALUES (FROM_UNIXTIME (?), ?)");
+$sqlInsert->execute($start, time - $start);
+$sqlInsert->finish();
 
 # Disconnect from the database.
 $dbh->disconnect();
@@ -3177,14 +3169,15 @@ sub terminateSession
   my $killedSession = 0;
   my %options;
   $options{INCLUDE_PATH} = '/var/www/admin/mail-template';
-  chomp(my $HOSTNAME = `hostname -s`);
+  # chomp(my $HOSTNAME = `hostname -s`);
   my $sessionBody = "";
   
   foreach my $session (@$sessionList)
   {
     
-    # We decide to exclude idle session from VSPHERE.LOCAL\vpxd-extension-### as they should be system related, we only want to deal with end-user ones
-    if (((abs(str2time($session->lastActiveTime) - $start) / 86400) > $thresholdSession) && ($session->userName !~ /vpxd-extension/))
+    # We decide to exclude idle session from VSPHERE.LOCAL\vpxd-extension-### or VSPHERE.LOCAL\vsphere-webclient-### 
+    # as they should be system related, we only want to deal with end-user ones
+    if (((abs(str2time($session->lastActiveTime) - $start) / 86400) > $thresholdSession) && ($session->userName !~ /vpxd-extension/) && ($session->userName !~ /vsphere-webclient/))
     {
       
       $sessionBody = $sessionBody . "<tr style='font-size:16px;'><td style='border:1px solid #CCC'>" . $session->userName . "</td><td style='border:1px solid #CCC'>" . $session->lastActiveTime . "</td></tr>";
@@ -3414,7 +3407,7 @@ sub capacityPlanningReport
     my @groups;
     my %options;
     my $numGroup = 0;
-    chomp(my $HOSTNAME = `hostname -s`);
+    # chomp(my $HOSTNAME = `hostname -s`);
     # We want to take a little safety percentage before dropping huge numbers :)
     my $safetyPct = 10;
     my $sthCPG = $dbh->prepare("SELECT group_name, members, percentageThreshold FROM capacityPlanningGroups");
@@ -3426,12 +3419,10 @@ sub capacityPlanningReport
       # Retrieve current number of VM powered on
       my $CPquery = buildSqlQueryCPGroup($CPGroup->{'members'});
       my $query = "SELECT COUNT(v.id) AS NUMVMON FROM vms AS v INNER JOIN hosts AS h ON (h.id = v.host) INNER JOIN clusters AS c ON (c.id = h.cluster) WHERE $CPquery AND v.firstseen < '" . time2str("%Y-%m-%d", $start - (24 * 60 * 60)) . "' AND v.lastseen > '" . time2str("%Y-%m-%d", $start - (24 * 60 * 60)) . "'";
-      # print(Dumper($query));
       my $sth = $dbh->prepare($query);
       $sth->execute();
       my $ref = $sth->fetchrow_hashref;
       my $currentVmOn = int($ref->{'NUMVMON'});
-      # print(Dumper("currentVmOn: $currentVmOn"));
       # Retrieve current statistices for compute (cpu and memory)
       $query = "SELECT ROUND(SUM(h.memory)/1024/1024,0) AS MEMCAPA, SUM(h.cpumhz * h.numcpucore) AS CPUCAPA, SUM(hm.cpuUsage) AS CPUUSAGE, SUM(hm.memoryUsage) AS MEMUSAGE FROM hosts AS h INNER JOIN clusters AS c ON (h.cluster = c.id) INNER JOIN hostMetrics AS hm ON (hm.host_id = h.id) WHERE $CPquery AND h.firstseen < '" . time2str("%Y-%m-%d", $start - (24 * 60 * 60)) . "' AND h.lastseen > '" . time2str("%Y-%m-%d", $start - (24 * 60 * 60)) . "' AND hm.id IN (SELECT MAX(id) FROM hostMetrics WHERE lastseen < '" . time2str("%Y-%m-%d", $start - (24 * 60 * 60)) . " 23:59:59' GROUP BY host_id)";
       $sth = $dbh->prepare($query);
@@ -3444,12 +3435,6 @@ sub capacityPlanningReport
       next if (!defined($currentMemCapacity) || !defined($currentCpuCapacity) || !defined($currentMemUsage) || !defined($currentCpuUsage));
       my $currentMemUsagePct = int(100 * ($currentMemUsage / $currentMemCapacity) + 0.5);
       my $currentCpuUsagePct = int(100 * ($currentCpuUsage / $currentCpuCapacity) + 0.5);
-      # print(Dumper("currentMemCapacity: $currentMemCapacity"));
-      # print(Dumper("currentCpuCapacity: $currentCpuCapacity"));
-      # print(Dumper("currentMemUsage: $currentMemUsage"));
-      # print(Dumper("currentCpuUsage: $currentCpuUsage"));
-      # print(Dumper("currentMemUsagePct: $currentMemUsagePct"));
-      # print(Dumper("currentCpuUsagePct: $currentCpuUsagePct"));
       # Retrieve current statistices for storage
       $query = "SELECT SUM(size) AS STORAGECAPA, SUM(freespace) AS STORAGEFREE FROM (SELECT DISTINCT c.cluster_name, d.datastore_name, dm.size, dm.freespace FROM clusters AS c INNER JOIN hosts AS h ON c.id = h.cluster INNER JOIN datastoreMappings AS dma ON h.id = dma.host_id INNER JOIN datastores AS d ON dma.datastore_id = d.id INNER JOIN datastoreMetrics AS dm ON dm.datastore_id = d.id WHERE $CPquery AND d.firstseen < '" . time2str("%Y-%m-%d", $start - (24 * 60 * 60)) . "' AND d.lastseen > '" . time2str("%Y-%m-%d", $start - (24 * 60 * 60)) . "' AND dm.id IN (SELECT MAX(id) FROM datastoreMetrics WHERE lastseen < '" . time2str("%Y-%m-%d", $start - (24 * 60 * 60)) . "' GROUP BY datastore_id) ) AS T1";
       $sth = $dbh->prepare($query);
@@ -3458,28 +3443,19 @@ sub capacityPlanningReport
       my $currentStorageCapacity = $ref->{'STORAGECAPA'};
       my $currentStorageUsage = $currentStorageCapacity - $ref->{'STORAGEFREE'};
       my $currentStorageUsagePct = int(100 * ($currentStorageUsage / $currentStorageCapacity) + 0.5);
-      my $currentMaxUsagePct = max ($currentMemUsagePct, $currentCpuUsagePct);
+      if ($currentStorageUsagePct == 0) { $currentStorageUsagePct = 1; }
+      my $currentMaxUsagePct = max($currentMemUsagePct, $currentCpuUsagePct);
+      if ($currentMaxUsagePct == 0) { $currentMaxUsagePct = 1; }
       my $currentVmLeft = int(min(((($CPGroup->{'percentageThreshold'} - $safetyPct) * $currentVmOn / $currentMaxUsagePct) - $currentVmOn),((90 * $currentVmOn / $currentStorageUsagePct) - $currentVmOn))+ 0.5);
       my $currentVmMemUsage = int($currentMemUsage / $currentVmOn + 0.5);
       my $currentVmCpuUsage = int($currentCpuUsage / $currentVmOn + 0.5);
       my $currentVmStorageUsage = int($currentStorageUsage / $currentVmOn + 0.5);
-      # print(Dumper("vmleftcompute:".((($CPGroup->{'percentageThreshold'} - $safetyPct) * $currentVmOn / $currentMaxUsagePct) - $currentVmOn)));
-      # print(Dumper("vmleftstorage:".((90 * $currentVmOn / $currentStorageUsagePct) - $currentVmOn)));
-      # print(Dumper("currentStorageCapacity: $currentStorageCapacity"));
-      # print(Dumper("currentStorageUsage: $currentStorageUsage"));
-      # print(Dumper("currentStorageUsagePct: $currentStorageUsagePct"));
-      # print(Dumper("currentMaxUsagePct: $currentMaxUsagePct"));
-      # print(Dumper("currentVmLeft: $currentVmLeft"));
-      # print(Dumper("currentVmMemUsage: $currentVmMemUsage"));
-      # print(Dumper("currentVmCpuUsage: $currentVmCpuUsage"));
-      # print(Dumper("currentVmStorageUsage: $currentVmStorageUsage"));
       # Retrieve previous statistices based on $capacityPlanningDays for compute (cpu and memory)
       $query = "SELECT COUNT(v.id) AS NUMVMON FROM vms AS v INNER JOIN hosts AS h ON (h.id = v.host) INNER JOIN clusters AS c ON (c.id = h.cluster) WHERE $CPquery AND v.firstseen < '" . time2str("%Y-%m-%d", $start - ($capacityPlanningDays * 24 * 60 * 60)) . "' AND v.lastseen > '" . time2str("%Y-%m-%d", $start - ($capacityPlanningDays * 24 * 60 * 60)) . "'";
       $sth = $dbh->prepare($query);
       $sth->execute();
       $ref = $sth->fetchrow_hashref;
       my $previousVmOn = int($ref->{'NUMVMON'});
-      # print(Dumper("previousVmOn: $previousVmOn"));
       $query = "SELECT ROUND(SUM(h.memory)/1024/1024,0) AS MEMCAPA, SUM(h.cpumhz * h.numcpucore) AS CPUCAPA, SUM(hm.cpuUsage) AS CPUUSAGE, SUM(hm.memoryUsage) AS MEMUSAGE FROM hosts AS h INNER JOIN clusters AS c ON (h.cluster = c.id) INNER JOIN hostMetrics AS hm ON (hm.host_id = h.id) WHERE $CPquery AND h.firstseen < '" . time2str("%Y-%m-%d", $start - ($capacityPlanningDays * 24 * 60 * 60)) . "' AND h.lastseen > '" . time2str("%Y-%m-%d", $start - ($capacityPlanningDays * 24 * 60 * 60)) . "' AND hm.id IN (SELECT MAX(id) FROM hostMetrics WHERE lastseen < '" . time2str("%Y-%m-%d", $start - ($capacityPlanningDays * 24 * 60 * 60)) . " 23:59:59' GROUP BY host_id)";
       $sth = $dbh->prepare($query);
       $sth->execute();
@@ -3491,12 +3467,6 @@ sub capacityPlanningReport
       next if (!defined($previousMemCapacity) || !defined($previousCpuCapacity) || !defined($previousMemUsage) || !defined($previousCpuUsage));
       my $previousMemUsagePct = int(100 * ($previousMemUsage / $previousMemCapacity) + 0.5);
       my $previousCpuUsagePct = int(100 * ($previousCpuUsage / $previousCpuCapacity) + 0.5);
-      # print(Dumper("previousMemCapacity: $previousMemCapacity"));
-      # print(Dumper("previousCpuCapacity: $previousCpuCapacity"));
-      # print(Dumper("previousMemUsage: $previousMemUsage"));
-      # print(Dumper("previousCpuUsage: $previousCpuUsage"));
-      # print(Dumper("previousMemUsagePct: $previousMemUsagePct"));
-      # print(Dumper("previousCpuUsagePct: $previousCpuUsagePct"));
       # Retrieve previous statistices for storage
       $query = "SELECT SUM(size) AS STORAGECAPA, SUM(freespace) AS STORAGEFREE FROM (SELECT DISTINCT c.cluster_name, d.datastore_name, dm.size, dm.freespace FROM clusters AS c INNER JOIN hosts AS h ON c.id = h.cluster INNER JOIN datastoreMappings AS dma ON h.id = dma.host_id INNER JOIN datastores AS d ON dma.datastore_id = d.id INNER JOIN datastoreMetrics AS dm ON dm.datastore_id = d.id WHERE $CPquery AND d.firstseen < '" . time2str("%Y-%m-%d", $start - ($capacityPlanningDays * 24 * 60 * 60)) . "' AND d.lastseen > '" . time2str("%Y-%m-%d", $start - ($capacityPlanningDays * 24 * 60 * 60)) . "' AND dm.id IN (SELECT MAX(id) FROM datastoreMetrics WHERE lastseen < '" . time2str("%Y-%m-%d", $start - ($capacityPlanningDays * 24 * 60 * 60)) . "' GROUP BY datastore_id) ) AS T1";
       $sth = $dbh->prepare($query);
@@ -3508,14 +3478,8 @@ sub capacityPlanningReport
       if ($previousStorageUsagePct == 0) { $previousStorageUsagePct = 1; }
       my $previousMaxUsagePct = max ($previousMemUsagePct, $previousCpuUsagePct);
       if ($previousMaxUsagePct == 0) { $previousMaxUsagePct = 1; }
-      # print(Dumper("previousStorageCapacity: $previousStorageCapacity"));
-      # print(Dumper("previousStorageUsage: $previousStorageUsage"));
-      # print(Dumper("previousStorageUsagePct: $previousStorageUsagePct"));
-      # print(Dumper("previousMaxUsagePct: $previousMaxUsagePct"));
       my $previousVmLeft = int(min(((($CPGroup->{'percentageThreshold'} - $safetyPct) * $previousVmOn / $previousMaxUsagePct) - $previousVmOn),((90 * $previousVmOn / $previousStorageUsagePct) - $previousVmOn)) + 0.5);
       my $coefficientCapaPlan = ($currentVmLeft-$previousVmLeft)/$capacityPlanningDays;
-      # print(Dumper("previousMemUsage: $previousMemUsage"));
-      # print(Dumper("previousMemCapacity: $previousMemCapacity"));
       my $daysLeft = "Infinite";
       
       # if VM left count trend is negative, there will an exhaustion, we will compute the days based on this trend, if not we will display 'infinite' icon
@@ -3563,7 +3527,7 @@ sub capacityPlanningReport
         TmplOptions =>  \%options,
         TmplParams  =>  $params,
       );
-      $msg->send('smtp', $smtpAddress, Timeout => 60 );
+      # $msg->send('smtp', $smtpAddress, Timeout => 60 );
       
     } # END if ($numGroup > 0)
 
@@ -3571,9 +3535,182 @@ sub capacityPlanningReport
   
 } # END sub capacityPlanningReport
 
+sub generateHtmlCode
+{
+  
+  
+  
+} # END sub generateHtmlCode
+
 sub mailAlert
 {
   
-  # code
-  
+  # As this check is cross vcenter we must only execute it once, thus we have to trigger the already-ran flag
+  if ($mailAlertExecuted == 0)
+  {
+
+    $mailAlertExecuted = 1;
+    my $dateSqlQuery = time2str("%Y-%m-%d", $start);
+    my $senderMail = dbGetConfig('senderMail');
+    my $recipientMail = dbGetConfig('recipientMail');
+    my $smtpAddress = dbGetConfig('smtpAddress');
+    my %options;
+    my $alertCount = 0;
+    my @htmlModuleContent;
+    my $ref;
+    my $styleTable = 'border-collapse:collapse;';
+    my $styleHead = 'font-family: Calibri; font-size: 14px; color: #FF4536; padding:5px;';
+    my $styleLine = 'border:1px solid black;';
+    my $styleLineHead = 'background-color: #282F35;';
+    my $styleCell = 'border-bottom:1px solid black; font-family: Calibri; font-size: 14px; padding:5px;';
+
+    # VSAN Checks
+    
+    ##################
+    # vCenter Checks #
+    ##################
+    my $vcSessionAge = dbGetConfig('vcSessionAge');
+    $sth = $dbh->prepare("SELECT DATEDIFF('" . $dateSqlQuery . "', lastActiveTime) as age, lastActiveTime, userName, ipAddress, userAgent, vcname FROM sessions INNER JOIN vcenters ON vcenters.id = vcenter WHERE lastActiveTime < '" . $dateSqlQuery . "' - INTERVAL $vcSessionAge DAY AND userName NOT LIKE '%vpxd-extension%' AND userName NOT LIKE '%vsphere-webclient%' AND sessions.firstseen < '" . $dateSqlQuery . " 23:59:59' AND sessions.lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY vcenter, sessionKey");
+    $sth->execute();
+
+    if ($sth->rows > 0)
+    {
+      
+      $alertCount += $sth->rows;
+      my $htmlContent = "<table style='$styleTable'><thead><tr style='$styleLineHead'><th style='$styleHead'>vcenter</th><th style='$styleHead'>age</th><th style='$styleHead'>lastActiveTime</th><th style='$styleHead'>userName</th><th style='$styleHead'>ipAddress</th><th style='$styleHead'>userAgent</th></tr></thead>";
+      
+      while ($ref = $sth->fetchrow_hashref)
+      {
+        
+        $htmlContent = $htmlContent . "<tr style='$styleLine'><td style='$styleCell'>" . $ref->{'vcname'} . "</td><td style='$styleCell'>" . $ref->{'age'} . "</td><td style='$styleCell'>" . $ref->{'lastActiveTime'} . "</td><td style='$styleCell'>" . $ref->{'userName'} . "</td><td style='$styleCell'>" . $ref->{'ipAddress'} . "</td><td style='$styleCell'>" . $ref->{'userAgent'} . "</td></tr>";
+        
+      } # END while ($ref = $sth->fetchrow_hashref)
+      
+      push @htmlModuleContent, { title => 'vCenter Session Age', body => "$htmlContent</table>" };
+      
+    } # END if ($sth->rows > 0)
+
+    ######################
+    # END vCenter Checks #
+    ######################
+    
+    ##################
+    # Cluster Checks #
+    ##################
+    $sth = $dbh->prepare("SELECT cluster_name, dasenabled, lastconfigissue, lastconfigissuetime, v.vcname FROM clusters INNER JOIN vcenters v ON vcenter = v.id WHERE lastconfigissue NOT LIKE '0' AND clusters.firstseen < '" . $dateSqlQuery . " 23:59:59' AND clusters.lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY vcenter, moref");
+    $sth->execute();
+
+    if ($sth->rows > 0)
+    {
+      
+      $alertCount += $sth->rows;
+      my $htmlContent = "<table style='$styleTable'><thead><tr style='$styleLineHead'><th style='$styleHead'>cluster_name</th><th style='$styleHead'>dasenabled</th><th style='$styleHead'>lastconfigissue</th><th style='$styleHead'>lastconfigissuetime</th><th style='$styleHead'>vcname</th></tr></thead>";
+      
+      while ($ref = $sth->fetchrow_hashref)
+      {
+        
+        $htmlContent = $htmlContent . "<tr style='$styleLine'><td style='$styleCell'>" . $ref->{'cluster_name'} . "</td><td style='$styleCell'>" . $ref->{'dasenabled'} . "</td><td style='$styleCell'>" . $ref->{'lastconfigissue'} . "</td><td style='$styleCell'>" . $ref->{'lastconfigissuetime'} . "</td><td style='$styleCell'>" . $ref->{'vcname'} . "</td></tr>";
+        
+      } # END while ($ref = $sth->fetchrow_hashref)
+      
+      push @htmlModuleContent, { title => 'Cluster with Configuration Issues', body => "$htmlContent</table>" };
+      
+    } # END if ($sth->rows > 0)
+    
+    
+    $sth = $dbh->prepare("SELECT alarm_name, status, time, entityMoRef, v.vcname, c.cluster_name as entity FROM alarms INNER JOIN vcenters v ON vcenter = v.id INNER JOIN clusters c ON entityMoRef = c.moref WHERE entityMoRef LIKE 'ClusterComputeResource%' AND alarms.firstseen < '" . $dateSqlQuery . " 23:59:59' AND alarms.lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY alarms.vcenter, alarms.moref");
+    $sth->execute();
+
+    if ($sth->rows > 0)
+    {
+      
+      $alertCount += $sth->rows;
+      my $htmlContent = "<table style='$styleTable'><thead><tr style='$styleLineHead'><th style='$styleHead'>alarm_name</th><th style='$styleHead'>status</th><th style='$styleHead'>time</th><th style='$styleHead'>entityMoRef</th><th style='$styleHead'>vcname</th><th style='$styleHead'>entity</th></tr></thead>";
+      
+      while ($ref = $sth->fetchrow_hashref)
+      {
+        
+        $htmlContent = $htmlContent . "<tr style='$styleLine'><td style='$styleCell'>" . $ref->{'alarm_name'} . "</td><td style='$styleCell'>" . $ref->{'status'} . "</td><td style='$styleCell'>" . $ref->{'time'} . "</td><td style='$styleCell'>" . $ref->{'entityMoRef'} . "</td><td style='$styleCell'>" . $ref->{'vcname'} . "</td><td style='$styleCell'>" . $ref->{'entity'} . "</td></tr>";
+        
+      } # END while ($ref = $sth->fetchrow_hashref)
+      
+      push @htmlModuleContent, { title => 'Cluster Alarms', body => "$htmlContent</table>" };
+      
+    } # END if ($sth->rows > 0)
+    
+    
+    $sth = $dbh->prepare("SELECT cluster_name, v.vcname FROM clusters INNER JOIN vcenters v ON vcenter = v.id WHERE dasenabled NOT LIKE '1' AND clusters.firstseen < '" . $dateSqlQuery . " 23:59:59' AND clusters.lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY vcenter, moref");
+    $sth->execute();
+
+    if ($sth->rows > 0)
+    {
+      
+      $alertCount += $sth->rows;
+      my $htmlContent = "<table style='$styleTable'><thead><tr style='$styleLineHead'><th style='$styleHead'>cluster_name</th><th style='$styleHead'>vcname</th></tr></thead>";
+      
+      while ($ref = $sth->fetchrow_hashref)
+      {
+        
+        $htmlContent = $htmlContent . "<tr style='$styleLine'><td style='$styleCell'>" . $ref->{'cluster_name'} . "</td><td style='$styleCell'>" . $ref->{'vcname'} . "</td></tr>";
+        
+      } # END while ($ref = $sth->fetchrow_hashref)
+      
+      push @htmlModuleContent, { title => 'Cluster Without HA', body => "$htmlContent</table>" };
+      
+    } # END if ($sth->rows > 0)
+    
+    
+    
+    ######################
+    # END Cluster Checks #
+    ######################
+    
+    
+    # Host Checks
+    # Datastore Checks
+    
+    ##################
+    # Network Checks #
+    ##################
+    my $networkDVSVSSportsfree = dbGetConfig('networkDVSVSSportsfree');
+    $sth = $dbh->prepare("SELECT name, autoexpand, numports, openports FROM distributedvirtualportgroups WHERE openports < $networkDVSVSSportsfree AND firstseen < '" . $dateSqlQuery . " 23:59:59' AND lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY vcenter, moref");
+    $sth->execute();
+
+    if ($sth->rows > 0)
+    {
+      
+      $alertCount += $sth->rows;
+      my $htmlContent = "<table style='$styleTable'>";
+      
+      while ($ref = $sth->fetchrow_hashref)
+      {
+        
+        $htmlContent = $htmlContent . "<tr style='$styleLine'><td style='$styleCell'>" . $ref->{'name'} . "</td><td style='$styleCell'>" . $ref->{'autoexpand'} . "</td><td style='$styleCell'>" . $ref->{'numports'} . "</td><td style='$styleCell'>" . $ref->{'openports'} . "</td></tr>";
+        
+      } # END while ($ref = $sth->fetchrow_hashref)
+      
+      push @htmlModuleContent, { title => 'networkDVSVSSportsfree', body => "$htmlContent</table>" };
+      
+    } # END if ($sth->rows > 0)
+    
+    ######################
+    # END Network Checks #
+    ######################
+    
+    # VM Checks
+
+    my $params = { 'modules' => \@htmlModuleContent, 'executionDate' => time2str("%Y-%m-%d %H:%M", $start), 'url' => 'https://'.lc($HOSTNAME) };
+    $options{INCLUDE_PATH} = '/var/www/admin/mail-template';
+    my $msg = MIME::Lite::TT::HTML->new(
+      From        =>  $senderMail,
+      To          =>  $recipientMail,
+      Subject     =>  '['.time2str("%Y-%m-%d", $start).'] Morning Check Report | '.$alertCount.' alerts',
+      Template    =>  { html => 'morningcheck.html' },
+      TmplOptions =>  \%options,
+      TmplParams  =>  $params,
+    );
+    $msg->send('smtp', $smtpAddress, Timeout => 60 );
+    
+  } # END if ($mailAlertExecuted == 0)
+  exit;
 } # END sub mailAlert
