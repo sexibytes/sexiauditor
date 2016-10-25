@@ -19,8 +19,7 @@ class SexiCheck
   private $graph;
   private $achievementFile;
   private $selectedDate;
-  // private $lang;
-  // private $langDef;
+  private $langDef;
   private $db;
 
   public function __construct()
@@ -31,29 +30,8 @@ class SexiCheck
     # database instanciation so we can use $db object in this class methods
     require("dbconnection.php");
     $this->db = $db;
-    // $this->lang = (defined($this->getConfig('lang'))) ? $this->getConfig('lang') : 'en';
-    // 
-    // switch ($this->lang)
-    // {
-    //   
-    //   case 'en':
-    //     $lang_file = 'lang.en.php';
-    //   break; # END case 'en':
-    //   
-    //   case 'fr':
-    //     $lang_file = 'lang.fr.php';
-    //   break; # END case 'fr':
-    //   
-    //   default:
-    //   $lang_file = 'lang.en.php';
-    //   
-    // } # END switch ($this->lang)
-
-    // include_once 'locales/'.$lang_file;
-    // require_once("class/SexiLang.class.php");
-    // $classLang = new SexiLang();
-    global $classLang;
-    $this->langDef = $classLang->getAllLocaleText();
+    global $sexilang;
+    $this->langDef = $sexilang->getAllLocaleText();
     global $powerChoice;
     global $alarmStatus;
     global $servicePolicyChoice;
@@ -575,76 +553,76 @@ class SexiCheck
     
   } # END public function getSelectedDate()
 
-  public function getVMInfos($vmID)
-  {
-    
-    $this->db->join("hosts h", "vms.host = h.id", "INNER");
-    $this->db->join("clusters c", "h.cluster = c.id", "INNER");
-    $this->db->join("vcenters v", "vms.vcenter = v.id", "INNER");
-    $this->db->join("vmMetrics vmm", "vms.id = vmm.vm_id", "INNER");
-    $this->db->where('vms.id', $vmID);
-    $resultVM = $this->db->getOne("vms", "vms.*, vmm.*, vms.host as hostid, c.cluster_name as cluster, h.host_name as host, v.vcname as vcenter, v.id as vcenterID");
-    
-    if ($this->db->count > 0)
-    {
-      
-      return $resultVM;
-      
-    }
-    else
-    {
-      
-      return "undefined";
-      
-    } # END if ($this->db->count > 0)
-    
-  } # END public function getVMInfos($vmID)
-
-  public function getDatastoreInfos($datastoreID)
-  {
-    
-    $this->db->join("datastoreMetrics dm", "datastores.id = dm.datastore_id", "INNER");
-    $this->db->join("vcenters v", "datastores.vcenter = v.id", "INNER");
-    $this->db->where('datastores.id', $datastoreID);
-    $resultVM = $this->db->getOne("datastores", "datastores.*, dm.*, ROUND(100*(freespace/size)) as pct_free, v.vcname as vcenter");
-    
-    if ($this->db->count > 0)
-    {
-      
-      return $resultVM;
-      
-    }
-    else
-    {
-      
-      return "undefined";
-      
-    } # END if ($this->db->count > 0)
-    
-  } # END public function getDatastoreInfos($datastoreID)
-
-  public function getHostInfos($hostID)
-  {
-    
-    $this->db->join("clusters c", "hosts.cluster = c.id", "INNER");
-    $this->db->join("vcenters v", "hosts.vcenter = v.id", "INNER");
-    $this->db->where('hosts.id', $hostID);
-    $resultHost = $this->db->getOne("hosts", "hosts.*, c.cluster_name as cluster, v.vcname as vcenter");
-    
-    if ($this->db->count > 0)
-    {
-      
-      return $resultHost;
-      
-    }
-    else
-    {
-      
-      return "undefined";
-      
-    } # END if ($this->db->count > 0)
-    
-  } # END public function getHostInfos($hostID)
+  // public function getVMInfos($vmID)
+  // {
+  //   
+  //   $this->db->join("hosts h", "vms.host = h.id", "INNER");
+  //   $this->db->join("clusters c", "h.cluster = c.id", "INNER");
+  //   $this->db->join("vcenters v", "vms.vcenter = v.id", "INNER");
+  //   $this->db->join("vmMetrics vmm", "vms.id = vmm.vm_id", "INNER");
+  //   $this->db->where('vms.id', $vmID);
+  //   $resultVM = $this->db->getOne("vms", "vms.*, vmm.*, vms.host as hostid, c.cluster_name as cluster, h.host_name as host, v.vcname as vcenter, v.id as vcenterID");
+  //   
+  //   if ($this->db->count > 0)
+  //   {
+  //     
+  //     return $resultVM;
+  //     
+  //   }
+  //   else
+  //   {
+  //     
+  //     return "undefined";
+  //     
+  //   } # END if ($this->db->count > 0)
+  //   
+  // } # END public function getVMInfos($vmID)
+  // 
+  // public function getDatastoreInfos($datastoreID)
+  // {
+  //   
+  //   $this->db->join("datastoreMetrics dm", "datastores.id = dm.datastore_id", "INNER");
+  //   $this->db->join("vcenters v", "datastores.vcenter = v.id", "INNER");
+  //   $this->db->where('datastores.id', $datastoreID);
+  //   $resultVM = $this->db->getOne("datastores", "datastores.*, dm.*, ROUND(100*(freespace/size)) as pct_free, v.vcname as vcenter");
+  //   
+  //   if ($this->db->count > 0)
+  //   {
+  //     
+  //     return $resultVM;
+  //     
+  //   }
+  //   else
+  //   {
+  //     
+  //     return "undefined";
+  //     
+  //   } # END if ($this->db->count > 0)
+  //   
+  // } # END public function getDatastoreInfos($datastoreID)
+  // 
+  // public function getHostInfos($hostID)
+  // {
+  //   
+  //   $this->db->join("clusters c", "hosts.cluster = c.id", "INNER");
+  //   $this->db->join("vcenters v", "hosts.vcenter = v.id", "INNER");
+  //   $this->db->where('hosts.id', $hostID);
+  //   $resultHost = $this->db->getOne("hosts", "hosts.*, c.cluster_name as cluster, v.vcname as vcenter");
+  //   
+  //   if ($this->db->count > 0)
+  //   {
+  //     
+  //     return $resultHost;
+  //     
+  //   }
+  //   else
+  //   {
+  //     
+  //     return "undefined";
+  //     
+  //   } # END if ($this->db->count > 0)
+  //   
+  // } # END public function getHostInfos($hostID)
 
   private function dbGetCheckQuantity($formPage)
   {
