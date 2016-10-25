@@ -114,7 +114,7 @@ function sendMailNewUser($username, $displayname, $password, $role, $access) {
 }
 
 # class loading
-require_once('class/SexiClass.class.php');
+require_once('class/SexiHelper.class.php');
 require_once('class/SexiCheck.class.php');
 require_once('class/SexiLang.class.php');
 
