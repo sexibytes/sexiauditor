@@ -2,7 +2,6 @@
 /*
 ------------------
 Language: English
-Credits: Frederic MARTIN and Raphael SCHITZ
 ------------------
 */
 
@@ -48,6 +47,7 @@ $lang['ABOUTSEXIAUDITOR'] = "About SexiAuditor";
 $lang['LOGOUT'] = "Logout";
 $lang['GOBACK'] = "Go back";
 $lang['CLOSE'] = "Close";
+$lang['CAPACITYPLANNINGGROUP'] = "Capacity Planning Group";
 
 # Footer
 $lang['ADMINRIGHTS'] = "Beware of these awesome admin rights, with power comes great responsibility-ish !!!";
@@ -73,7 +73,7 @@ $lang['CLUSTERDATASTORECONSISTENCY'] = array('title' => 'Cluster With Datastore 
 $lang['CLUSTERMEMBERSLUNPATHCOUNTMISMATCH'] = array('title' => 'Cluster With Members LUN Path Count Mismatch','description' => 'The following cluster members does not have the same number of LUN, please check for mapping or masking misconfiguration.');
 $lang['CLUSTERTPSSAVINGS'] = array('title' => 'TPS Savings','description' => 'Display TPS savings on all clusters, can be null if disabled or with enforced salting');
 $lang['CLUSTERADMISSIONCONTROL'] = array('title' => 'Admission Control Overtake','description' => 'These cluster have admission control constraint and should be overlook.');
-$lang['CLUSTERCPURATIO'] = array('title' => 'Ratio Virtual/Physical CPU','description' => 'Display ratio of virtual CPU per physical CPU that goes over threshold of ' . $this->getConfig('thresholdCPURatio'));
+$lang['CLUSTERCPURATIO'] = array('title' => 'Ratio Virtual/Physical CPU','description' => 'Display ratio of virtual CPU per physical CPU that goes over threshold');
 
 # host items
 $lang['HOSTLUNPATHDEAD'] = array('title' => 'Host LUN Path Dead', 'description' => 'Dead LUN Paths may cause issues with storage performance or be an indication of loss of redundancy.');
@@ -92,17 +92,17 @@ $lang['HOSTBUILDPIVOT'] = array('title' => 'Host ESXBuild Pivot Table', 'descrip
 
 # datastore items
 $lang['DATASTORESPACEREPORT'] = array('title' => 'Datastore Space report', 'description' => 'Datastores which run out of space will cause impact on the virtual machines held on these datastores.');
-$lang['DATASTOREOVERALLOCATION'] = array('title' => 'Datastore Overallocation', 'description' => 'The following datastores may be overcommitted (allocation > ' . $this->getConfig('datastoreOverallocation') . '%), it is strongly suggested you check these.');
+$lang['DATASTOREOVERALLOCATION'] = array('title' => 'Datastore Overallocation', 'description' => 'The following datastores may be overcommitted, it is strongly suggested you check these.');
 $lang['DATASTOREORPHANEDVMFILESREPORT'] = array('title' => 'Orphaned VM Files', 'description' => 'The following files does not belong to your vSphere platform anymore, you should check and delete them if necessary.');
 $lang['DATASTORESIOCDISABLED'] = array('title' => 'Datastore with SIOC disabled', 'description' => 'Datastores with Storage I/O Control Disabled can impact the performance of your virtual machines.');
 $lang['DATASTOREMAINTENANCEMODE'] = array('title' => 'Datastore in Maintenance Mode', 'description' => 'Datastore held in Maintenance mode will not be hosting any virtual machine, check the below Datastore are in an expected state.');
 $lang['DATASTOREACCESSIBLE'] = array('title' => 'Datastore not Accessible', 'description' => 'The following datastores are not in "Accessible" state, which mean there is a connectivity issue and should be investiguated.');
 
 # network items
-$lang['NETWORKDVSPORTSFREE'] = array('title' => 'DVS ports free', 'description' => 'The following Distributed vSwitch Port Groups have less than ' . $this->getConfig('networkDVSVSSportsfree') . ' open port(s) left.');
+$lang['NETWORKDVSPORTSFREE'] = array('title' => 'DVS ports free', 'description' => 'The following Distributed vSwitch Port Groups have less open port(s) left than threshold.');
 
 #vm items
-$lang['VMSNAPSHOTSAGE'] = array('title' => 'VM Snapshots Age', 'description' => 'This module will display snapshots that are older than ' . $this->getConfig('vmSnapshotAge') . ' day(s). Keeping snapshot can result in performance degradation under certain circumstances.');
+$lang['VMSNAPSHOTSAGE'] = array('title' => 'VM Snapshots Age', 'description' => 'This module will display snapshots that are older than threshold. Keeping snapshot can result in performance degradation under certain circumstances.');
 $lang['VMPHANTOMSNAPSHOT'] = array('title' => 'VM phantom snapshot', 'description' => 'The following VM\s have Phantom Snapshots.');
 $lang['VMCONSOLIDATIONNEEDED'] = array('title' => 'VM consolidation needed', 'description' => 'The following VMs have snapshots that failed to consolidate. See <a href=\'http://blogs.vmware.com/vsphere/2011/08/consolidate-snapshots.html\' target=\'_blank\'>this article</a> for more details.');
 $lang['VMCPURAMHDDRESERVATION'] = array('title' => 'VM CPU-MEM reservation', 'description' => 'The following VMs have a CPU or Memory Reservation configured which may impact the performance of the VM.');
