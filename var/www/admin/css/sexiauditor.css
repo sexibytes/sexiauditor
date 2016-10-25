@@ -250,6 +250,11 @@ h2.text-success small {
     color: #b3b3b3;
     font-style: italic;
 }
+h2.not-available { color: #CCC; }
+h2.not-available small {
+    color: #b3b3b3;
+    font-style: italic;
+}
 h2>i { font-size: 24px; }
 .table-noborder>tbody>tr>td { border-top: none }
 
