@@ -1,0 +1,7 @@
+<!DOCTYPE html><html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Morning check</title></head><body>
+<i>Morning Check generated on [% executionDate %], please visit <a href="[% url %]">here</a> for more information</i>
+[% FOREACH member IN modules %]
+  <h1 style="font-family: Calibri; font-size: 18px; font-weight: bold; color: #FF4536">[% member.title %]</h1>
+  [% member.body %]
+[% END %]
+</body></html>
