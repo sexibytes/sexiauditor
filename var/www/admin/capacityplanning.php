@@ -92,7 +92,7 @@ $capacityPlanningGroups = $db->get("capacityPlanningGroups", NULL, "group_name, 
 foreach ($capacityPlanningGroups as $capacityPlanningGroup)
 {
   
-  if ($capacityPlanningGroup["group_name"] != "PROD-TIGERY-PLATINIUM") {continue;}
+  // if ($capacityPlanningGroup["group_name"] != "PROD-TIGERY-PLATINIUM") {continue;}
   $CPquery = $sexihelper->buildSqlQueryCPGroup($capacityPlanningGroup["members"]);
   $dateYesterday = date('Y-m-d', time() - 60 * 60 * 24);
   $dateBeginning = date('Y-m-d', time() - ($capacityPlanningDays * 24 * 60 * 60));
@@ -135,8 +135,8 @@ foreach ($capacityPlanningGroups as $capacityPlanningGroup)
   $previousMaxUsagePct = max($previousMemUsagePct, $previousCpuUsagePct);
   $previousVmLeft = round(min(((($capacityPlanningGroup["percentageThreshold"] - $safetyPct) * $previousVmOn / $previousMaxUsagePct) - $previousVmOn),((90 * $previousVmOn / $previousStorageUsagePct) - $previousVmOn)));
   $coefficientCapaPlan = ($currentVmLeft-$previousVmLeft)/$capacityPlanningDays;
-  var_dump("previousMemUsage: $previousMemUsage");
-  var_dump("previousMemCapacity: $previousMemCapacity");
+  // var_dump("previousMemUsage: $previousMemUsage");
+  // var_dump("previousMemCapacity: $previousMemCapacity");
   # if VM left count trend is negative, there will an exhaustion, we will compute the days based on this trend, if not we will display 'infinite' icon
   if ($coefficientCapaPlan < 0)
   {
