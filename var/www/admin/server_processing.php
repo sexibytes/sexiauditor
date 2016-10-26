@@ -8,7 +8,7 @@ if (isset($_GET['c']))
     
     require("session.php");
     
-  } # END if ($_GET['c'] != "VMINVENTORY")
+  } # END if ($_GET['c'] != "ROVMINVENTORY")
   
   require("helper.php");
   $sexihelper = new SexiHelper();
@@ -158,7 +158,7 @@ if (isset($_GET['c']))
         array( 'db' => 'v.vcname', 'dt' => 4, 'field' => 'vcname' )
       );
       $joinQuery = "FROM {$table} c INNER JOIN vcenters AS v ON (c.vcenter = v.id)";
-      $extraCondition = "c.firstseen < '" . $dateStart . "' AND c.lastseen > '" . $dateEnd . "' AND c.isAdmissionEnable = 0 OR (c.isAdmissionEnable = 1 AND c.admissionValue <= c.admissionThreshold)";
+      $extraCondition = "c.firstseen < '" . $dateStart . "' AND c.lastseen > '" . $dateEnd . "' AND c.dasenabled = 1 AND (c.isAdmissionEnable = 0 OR (c.isAdmissionEnable = 1 AND c.admissionValue < c.admissionThreshold))";
       
     break; # END case 'CLUSTERADMISSIONCONTROL':
     
