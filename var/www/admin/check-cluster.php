@@ -74,7 +74,7 @@ if ($check->getModuleSchedule('clusterHAStatus') != 'off' && $check->getModuleSc
 if ($check->getModuleSchedule('clusterAdmissionControl') != 'off' && $check->getModuleSchedule('inventory') != 'off')
 {
   
-  $check->displayCheck([  'sqlQuery' => "SELECT main.id FROM clusters main INNER JOIN vcenters v ON main.vcenter = v.id WHERE main.isAdmissionEnable = 0 OR (main.isAdmissionEnable = 1 AND main.admissionValue <= main.admissionThreshold)",
+  $check->displayCheck([  'sqlQuery' => "SELECT main.id FROM clusters main INNER JOIN vcenters v ON main.vcenter = v.id WHERE main.dasenabled = 1 AND (main.isAdmissionEnable = 0 OR (main.isAdmissionEnable = 1 AND main.admissionValue < main.admissionThreshold))",
                           "id" => "CLUSTERADMISSIONCONTROL",
                           "typeCheck" => 'ssp',
                           'thead' => array('Cluster Name', 'isAdmissionEnable', 'admissionThreshold', 'admissionValue', 'vCenter'),
@@ -114,8 +114,7 @@ if ($check->getModuleSchedule('clusterMembersVersion') != 'off' && $check->getMo
 if ($check->getModuleSchedule('clusterMembersLUNPathCountMismatch') != 'off' && $check->getModuleSchedule('inventory') != 'off')
 {
   
-  $check->displayCheck([  'sqlQuery' => "SELECT main.id as clusterId, main.cluster_name as cluster, h.host_name, h.lunpathcount, v.vcname as vcenter FROM hosts h INNER JOIN clusters main ON h.cluster = main.id INNER JOIN vcenters v ON h.vcenter = v.id WHERE true",
-                          "sqlQueryGroupBy" =>  "main.cluster_name",
+  $check->displayCheck([  'sqlQuery' => "SELECT main.id as clusterId, main.cluster_name as cluster, h.host_name, h.lunpathcount, v.vcname as vcenter FROM hosts h INNER JOIN clusters main ON h.cluster = main.id INNER JOIN vcenters v ON h.vcenter = v.id WHERE main.id <> 1",
                           "id" => "CLUSTERMEMBERSLUNPATHCOUNTMISMATCH",
                           'typeCheck' => 'majorityPerCluster',
                           'majorityProperty' => 'lunpathcount',
@@ -127,8 +126,8 @@ if ($check->getModuleSchedule('clusterMembersLUNPathCountMismatch') != 'off' && 
 if ($check->getModuleSchedule('clusterCPURatio') != 'off' && $check->getModuleSchedule('inventory') != 'off')
 {
 
-  $check->displayCheck([  'sqlQuery' => "SELECT main.cluster_name as name, main.id as clus, (SELECT SUM(h.numcpucore) FROM hosts h WHERE h.cluster = main.id) as pcpu, (SELECT SUM(vms.numcpu) FROM vms INNER JOIN hosts h ON vms.host = h.id WHERE vms.firstseen < '" . $check->getSelectedDate() . " 23:59:59' AND vms.lastseen > '" . $check->getSelectedDate() . " 00:00:01' AND h.cluster = main.id) as vcpu, ROUND((SELECT SUM(vms.numcpu) FROM vms INNER JOIN hosts h ON vms.host = h.id WHERE vms.firstseen < '" . $check->getSelectedDate() . " 23:59:59' AND vms.lastseen > '" . $check->getSelectedDate() . " 00:00:01' AND h.cluster = main.id)/(SELECT SUM(h.numcpucore) FROM hosts h WHERE h.firstseen < '" . $check->getSelectedDate() . " 23:59:59' AND h.lastseen > '" . $check->getSelectedDate() . " 00:00:01' AND h.cluster = main.id)) as vp_cpuratio, v.vcname as vcenter FROM clusters main INNER JOIN vcenters v ON main.vcenter = v.id INNER JOIN (SELECT moref, MAX(lastseen) AS ts FROM vms GROUP BY moref) maxt ON (maxt.moref = main.moref AND maxt.ts = main.lastseen) WHERE true",
-                          // "sqlQueryHaving" => "vp_cpuratio > ". $check->getConfig('thresholdCPURatio'),
+  $check->displayCheck([  'sqlQuery' => "SELECT SUM(v.numcpu) as vcpu, vc.vcname as vcenter, c.cluster_name, (SELECT SUM(h.numcpucore) FROM hosts h WHERE h.cluster = c.id) as pcpu FROM vms AS v INNER JOIN vcenters AS vc ON v.vcenter = vc.id INNER JOIN hosts AS h ON h.id = v.host INNER JOIN clusters AS c ON c.id = h.cluster  WHERE v.id IN (SELECT MAX(id) FROM vms WHERE lastseen > '" . $check->getSelectedDate() . "' GROUP BY vcenter, moref) AND c.id <> 1",
+                          "sqlQueryGroupBy" => "c.id",
                           "id" => "CLUSTERCPURATIO",
                           'thead' => array('Cluster Name', 'pCPU', 'vCPU', 'CPU ratio', 'vCenter'),
                           'tbody' => array('"<td>".$entry["name"]."</td>"', '"<td>".$entry["pcpu"]."</td>"', '"<td>".$entry["vcpu"]."</td>"', '"<td>".$entry["vp_cpuratio"]." : 1</td>"', '"<td>".$entry["vcenter"]."</td>"')]);
