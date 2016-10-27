@@ -216,7 +216,7 @@ INSERT INTO `modules` (`id`, `module`, `type`, `displayName`, `version`, `descri
 	(62, 'alarms', 'report', 'Alarms', 1, 'Will display triggered alarms on objects level with status and time of creation.', 8, 'off'),
 	(63, 'hostBuildPivot', 'report', 'Host ESXBuild Pivot Table', 1, 'Will display a list of all ESX build group by count.', 7, 'off'),
 	(64, 'capacityPlanningReport', 'action', 'Capacity Planning Report', 1, 'Send Capacity Planning Report by mail', 8, 'off'),
-	(999, 'mailAlert', 'action', 'Mail Alert', 0, 'Will send an email with all defective checks', 8, 'off');
+	(999, 'mailAlert', 'action', 'Mail Alert', 1, 'Will send an email with all defective checks', 8, 'off');
 /*!40000 ALTER TABLE `modules` ENABLE KEYS */;
 
 
