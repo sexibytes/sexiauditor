@@ -126,11 +126,11 @@ if ($check->getModuleSchedule('clusterMembersLUNPathCountMismatch') != 'off' && 
 if ($check->getModuleSchedule('clusterCPURatio') != 'off' && $check->getModuleSchedule('inventory') != 'off')
 {
 
-  $check->displayCheck([  'sqlQuery' => "SELECT SUM(v.numcpu) as vcpu, vc.vcname as vcenter, c.cluster_name, (SELECT SUM(h.numcpucore) FROM hosts h WHERE h.cluster = c.id) as pcpu FROM vms AS v INNER JOIN vcenters AS vc ON v.vcenter = vc.id INNER JOIN hosts AS h ON h.id = v.host INNER JOIN clusters AS c ON c.id = h.cluster  WHERE v.id IN (SELECT MAX(id) FROM vms WHERE lastseen > '" . $check->getSelectedDate() . "' GROUP BY vcenter, moref) AND c.id <> 1",
+  $check->displayCheck([  'sqlQuery' => "SELECT SUM(main.numcpu) as vcpu, vc.vcname as vcenter, c.cluster_name, (SELECT SUM(h.numcpucore) FROM hosts h WHERE h.cluster = c.id) as pcpu FROM vms AS main INNER JOIN vcenters AS vc ON main.vcenter = vc.id INNER JOIN hosts AS h ON h.id = main.host INNER JOIN clusters AS c ON c.id = h.cluster  WHERE main.id IN (SELECT MAX(id) FROM vms WHERE lastseen > '" . $check->getSelectedDate() . "' GROUP BY vcenter, moref) AND c.id <> 1",
                           "sqlQueryGroupBy" => "c.id",
                           "id" => "CLUSTERCPURATIO",
                           'thead' => array('Cluster Name', 'pCPU', 'vCPU', 'CPU ratio', 'vCenter'),
-                          'tbody' => array('"<td>".$entry["name"]."</td>"', '"<td>".$entry["pcpu"]."</td>"', '"<td>".$entry["vcpu"]."</td>"', '"<td>".$entry["vp_cpuratio"]." : 1</td>"', '"<td>".$entry["vcenter"]."</td>"')]);
+                          'tbody' => array('"<td>".$entry["cluster_name"]."</td>"', '"<td>".$entry["pcpu"]."</td>"', '"<td>".$entry["vcpu"]."</td>"', '"<td>".round($entry["vcpu"]/$entry["pcpu"],0)." : 1</td>"', '"<td>".$entry["vcenter"]."</td>"')]);
 
 } # END if ($check->getModuleSchedule('clusterCPURatio') != 'off' && $check->getModuleSchedule('inventory') != 'off')
 

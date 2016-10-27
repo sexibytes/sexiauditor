@@ -206,7 +206,7 @@ if (isset($_GET['c']))
         array( 'db' => 'v.vcname', 'dt' => 4, 'field' => 'vcname' )
       );
       $joinQuery = "FROM {$table} d INNER JOIN datastoreMetrics AS dm ON (d.id = dm.datastore_id) INNER JOIN vcenters AS v ON (d.vcenter = v.id)";
-      $extraCondition = $timeCondition . "d.firstseen < '" . $dateStart . "' AND d.lastseen > '" . $dateEnd . "' AND dm.id IN (SELECT MAX(id) FROM datastoreMetrics WHERE firstseen < '" . $dateStart . "' AND lastseen > '" . $dateEnd . "' GROUP BY datastore_id) AND ROUND(100*(dm.freespace/dm.size)) < " . $sexihelper->getConfig('datastoreFreeSpaceThreshold') . " GROUP BY d.datastore_name, d.vcenter";
+      $extraCondition = "d.firstseen < '" . $dateStart . "' AND d.lastseen > '" . $dateEnd . "' AND dm.id IN (SELECT MAX(id) FROM datastoreMetrics WHERE firstseen < '" . $dateStart . "' AND lastseen > '" . $dateEnd . "' GROUP BY datastore_id) AND ROUND(100*(dm.freespace/dm.size)) < " . $sexihelper->getConfig('datastoreFreeSpaceThreshold') . " GROUP BY d.datastore_name, d.vcenter";
       
     break; # END case 'DATASTORESPACEREPORT':  
     
