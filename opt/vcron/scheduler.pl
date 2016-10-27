@@ -189,7 +189,7 @@ my %actions = ( inventory => \&inventory,
                 datastoremaintenancemode => \&dummy,
                 datastoreAccessible => \&dummy,
                 capacityPlanningReport => \&capacityPlanningReport,
-                mailAlert => \&dummy
+                mailAlert => \&mailAlert
               );
 
 # Data purge
@@ -487,12 +487,13 @@ foreach $s_item (@server_list)
 } # END foreach $s_item (@server_list)
 
 # Send Mail Alert if enabled, this check must be called manually to be able to query stats from the previous execution
-if (dbGetSchedule('mailAlert') ne 'off')
-{
-  
-  mailAlert();
-  
-} # END if (dbGetSchedule('mailAlert') ne 'off')
+# TODO : check schedule
+# if (dbGetSchedule('mailAlert') ne 'off')
+# {
+#   
+#   mailAlert();
+#   
+# } # END if (dbGetSchedule('mailAlert') ne 'off')
 
 my $sqlInsert = $dbh->prepare("INSERT INTO executiontime (date, seconds) VALUES (FROM_UNIXTIME (?), ?)");
 $sqlInsert->execute($start, time - $start);
@@ -2003,7 +2004,7 @@ sub getHardwareStatus
           if (lc($_->status->key) ne 'green' && lc($_->status->key) ne 'unknown')
           {
             
-            my $query = "SELECT * FROM hardwarestatus WHERE host = '" . $hostID . "' AND issuename = '" . $_->name . "' ORDER BY lastseen DESC LIMIT 1";
+            my $query = "SELECT * FROM hardwarestatus WHERE host = '" . $hostID->{'id'} . "' AND issuename = '" . $_->name . "' ORDER BY lastseen DESC LIMIT 1";
             my $sth = $dbh->prepare($query);
             $sth->execute();
             my $rows = $sth->rows;
@@ -2024,7 +2025,7 @@ sub getHardwareStatus
               
               my $sqlInsert = $dbh->prepare("INSERT INTO hardwarestatus (host, issuename, issuestate, issuetype, firstseen, lastseen) VALUES (?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?))");
               $sqlInsert->execute(
-                $hostID,
+                $hostID->{'id'},
                 $_->name,
                 lc($_->status->key),
                 "cpu",
@@ -2047,7 +2048,7 @@ sub getHardwareStatus
           if (lc($_->status->key) ne 'green' && lc($_->status->key) ne 'unknown')
           {
             
-            my $query = "SELECT * FROM hardwarestatus WHERE host = '" . $hostID . "' AND issuename = '" . $_->name . "' ORDER BY lastseen DESC LIMIT 1";
+            my $query = "SELECT * FROM hardwarestatus WHERE host = '" . $hostID->{'id'} . "' AND issuename = '" . $_->name . "' ORDER BY lastseen DESC LIMIT 1";
             my $sth = $dbh->prepare($query);
             $sth->execute();
             my $rows = $sth->rows;
@@ -2068,7 +2069,7 @@ sub getHardwareStatus
               
               my $sqlInsert = $dbh->prepare("INSERT INTO hardwarestatus (host, issuename, issuestate, issuetype, firstseen, lastseen) VALUES (?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?))");
               $sqlInsert->execute(
-                $hostID,
+                $hostID->{'id'},
                 $_->name,
                 lc($_->status->key),
                 "memory",
@@ -2091,7 +2092,7 @@ sub getHardwareStatus
           if (lc($_->status->key) ne 'green' && lc($_->status->key) ne 'unknown')
           {
             
-            my $query = "SELECT * FROM hardwarestatus WHERE host = '" . $hostID . "' AND issuename = '" . $_->name . "' ORDER BY lastseen DESC LIMIT 1";
+            my $query = "SELECT * FROM hardwarestatus WHERE host = '" . $hostID->{'id'} . "' AND issuename = '" . $_->name . "' ORDER BY lastseen DESC LIMIT 1";
             my $sth = $dbh->prepare($query);
             $sth->execute();
             my $rows = $sth->rows;
@@ -2112,7 +2113,7 @@ sub getHardwareStatus
               
               my $sqlInsert = $dbh->prepare("INSERT INTO hardwarestatus (host, issuename, issuestate, issuetype, firstseen, lastseen) VALUES (?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?))");
               $sqlInsert->execute(
-                $hostID,
+                $hostID->{'id'},
                 $_->name,
                 lc($_->status->key),
                 "storage",
@@ -2140,7 +2141,7 @@ sub getHardwareStatus
           if ($_->healthState && lc($_->healthState->key) ne 'green' && lc($_->healthState->key) ne 'unknown')
           {
             
-            my $query = "SELECT * FROM hardwarestatus WHERE host = '" . $hostID . "' AND issuename = '" . $_->name . "' ORDER BY lastseen DESC LIMIT 1";
+            my $query = "SELECT * FROM hardwarestatus WHERE host = '" . $hostID->{'id'} . "' AND issuename = '" . $_->name . "' ORDER BY lastseen DESC LIMIT 1";
             my $sth = $dbh->prepare($query);
             $sth->execute();
             my $rows = $sth->rows;
@@ -2161,7 +2162,7 @@ sub getHardwareStatus
               
               my $sqlInsert = $dbh->prepare("INSERT INTO hardwarestatus (host, issuename, issuestate, issuetype, firstseen, lastseen) VALUES (?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?))");
               $sqlInsert->execute(
-                $hostID,
+                $hostID->{'id'},
                 $_->name,
                 lc($_->healthState->key),
                 $_->sensorType,
@@ -2358,7 +2359,7 @@ sub getConfigurationIssue
         {
           
           # ConfigIssue already exists, have not changed, updated lastseen property
-          $logger->info("[DEBUG][CONFIGISSUE-INVENTORY] ConfigIssue for host $hostID already exists and have not changed since last check, updating lastseen property") if $showDebug;
+          $logger->info("[DEBUG][CONFIGISSUE-INVENTORY] ConfigIssue for host " . $hostID->{'id'} . " already exists and have not changed since last check, updating lastseen property") if $showDebug;
           my $sqlUpdate = $dbh->prepare("UPDATE configurationissues set lastseen = FROM_UNIXTIME (?) WHERE id = '" . $ref->{'id'} . "'");
           $sqlUpdate->execute($start);
           $sqlUpdate->finish();
@@ -2367,10 +2368,10 @@ sub getConfigurationIssue
         else
         {
           
-          $logger->info("[DEBUG][CONFIGISSUE-INVENTORY] Adding ConfigIssue data for host $hostID") if $showDebug;
+          $logger->info("[DEBUG][CONFIGISSUE-INVENTORY] Adding ConfigIssue data for host " . $hostID->{'id'}) if $showDebug;
           my $sqlInsert = $dbh->prepare("INSERT INTO configurationissues (host, configissue, firstseen, lastseen) VALUES (?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?))");
           $sqlInsert->execute(
-            $hostID,
+            $hostID->{'id'},
             @$_[0]->fullFormattedMessage,
             $start,
             $start
@@ -3820,7 +3821,7 @@ sub mailAlert
         
       } # END if ($sth->rows > 0)
       
-    } # END if (dbGetSchedule('clusterMembersLUNPathCountMismatch') ne 'off')
+    } # END if (dbGetSchedule('hostLUNPathDead') ne 'off')
     
     if (dbGetSchedule('hostSshShell') ne 'off')
     {
@@ -3847,7 +3848,7 @@ sub mailAlert
         
       } # END if ($sth->rows > 0)
       
-    } # END if (dbGetSchedule('clusterMembersLUNPathCountMismatch') ne 'off')
+    } # END if (dbGetSchedule('hostSshShell') ne 'off')
     
     if (dbGetSchedule('hostNTPCheck') ne 'off')
     {
@@ -3865,99 +3866,258 @@ sub mailAlert
         {
           
           my $ntpservers = $ref->{'ntpservers'};
-          $ntpservers =~ s/;/<br>/g;
-          $htmlContent = $htmlContent . "<tr style='$styleLine'><td style='$styleCell'>" . $ref->{'cluster'} . "</td><td style='$styleCell'>" . $ref->{'topProp'} . "</td><td style='$styleCell'>" . $ref->{'host_name'} . "</td><td style='$styleCell'>" . $ref->{'ntpservers'} . "</td><td style='$styleCell'>" . $ref->{'vcenter'} . "</td></tr>";
+          my $topProp = $ref->{'topProp'};
+          $ntpservers =~ s/;/\<br\>/g;
+          $topProp =~ s/;/\<br\>/g;
+          $htmlContent = $htmlContent . "<tr style='$styleLine'><td style='$styleCell'>" . $ref->{'cluster'} . "</td><td style='$styleCell'>$topProp</td><td style='$styleCell'>" . $ref->{'host_name'} . "</td><td style='$styleCell'>$ntpservers</td><td style='$styleCell'>" . $ref->{'vcenter'} . "</td></tr>";
           
         } # END while ($ref = $sth->fetchrow_hashref)
         
-        push @htmlModuleContent, { title => 'Cluster With Datastore Count Mismatch', body => "$htmlContent</table>" };
+        push @htmlModuleContent, { title => 'Host NTP Check', body => "$htmlContent</table>" };
         
       } # END if ($sth->rows > 0)
       
     } # END if (dbGetSchedule('hostNTPCheck') ne 'off')
     
+    if (dbGetSchedule('hostDNSCheck') ne 'off')
+    {
+    
+      $sth = $dbh->prepare("SELECT DISTINCT main.id as clusterId, main.cluster_name as cluster, h.host_name, h.dnsservers, T.topProp, v.vcname as vcenter FROM hosts h INNER JOIN clusters main ON h.cluster = main.id INNER JOIN vcenters v ON h.vcenter = v.id INNER JOIN (SELECT cluster as clus, (SELECT dnsservers FROM hosts WHERE cluster = clus GROUP BY dnsservers ORDER BY COUNT(*) DESC LIMIT 0,1) AS topProp FROM hosts WHERE lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY clus) AS T ON T.clus = main.id WHERE h.dnsservers <> T.topProp AND main.id <> 1");
+      $sth->execute();
 
-    # 
-    # if($check->getModuleSchedule('hostDNSCheck') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
-    #   $check->displayCheck([  'sqlQuery' => "SELECT c.id as clusterId, c.cluster_name as cluster, main.host_name, main.dnsservers, v.vcname as vcenter FROM hosts main INNER JOIN clusters c ON main.cluster = c.id INNER JOIN vcenters v ON main.vcenter = v.id WHERE c.id <> 1",
-    #                           "id" => "HOSTDNSCHECK",
-    #                           'typeCheck' => 'majorityPerCluster',
-    #                           'majorityProperty' => 'dnsservers',
-    #                           'thead' => array('Cluster Name', 'Majority DNS', 'Host Name', 'DNS Servers', 'vCenter'),
-    #                           'tbody' => array('"<td>" . $entry["cluster"] . "</td>"', '"<td>" . str_replace(";", "<br />", $hMajority[$entry["clusterId"]]) . "</td>"', '"<td>" . $entry["host_name"] . "</td>"', '"<td>" . str_replace(";", "<br />", $entry["dnsservers"]) . "</td>"', '"<td>" . $entry["vcenter"] . "</td>"')]);
-    # }
-    # 
-    # if($check->getModuleSchedule('hostSyslogCheck') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
-    #   $check->displayCheck([  'sqlQuery' => "SELECT c.id as clusterId, c.cluster_name as cluster, main.host_name, main.syslog_target, v.vcname as vcenter FROM hosts main INNER JOIN clusters c ON main.cluster = c.id INNER JOIN vcenters v ON main.vcenter = v.id WHERE c.id <> 1",
-    #                           "id" => "HOSTSYSLOGCHECK",
-    #                           'typeCheck' => 'majorityPerCluster',
-    #                           'majorityProperty' => 'syslog_target',
-    #                           'thead' => array('Cluster Name', 'Majority Syslog', 'Host Name', 'Syslog Target', 'vCenter'),
-    #                           'tbody' => array('"<td>" . $entry["cluster"] . "</td>"', '"<td>" . $hMajority[$entry["clusterId"]] . "</td>"', '"<td>" . $entry["host_name"] . "</td>"', '"<td>" . $entry["syslog_target"] . "</td>"', '"<td>" . $entry["vcenter"] . "</td>"')]);
-    # }
-    # 
-    # if($check->getModuleSchedule('hostConfigurationIssues') != 'off') {
-    #   $check->displayCheck([  'sqlQuery' => "SELECT main.configissue, h.host_name, cl.cluster_name as cluster, v.vcname as vcenter FROM configurationissues main INNER JOIN hosts h ON main.host = h.id INNER JOIN clusters cl ON h.cluster = cl.id INNER JOIN vcenters v ON h.vcenter = v.id WHERE true",
-    #                           "id" => "HOSTCONFIGURATIONISSUES",
-    #                           'thead' => array('Issue', 'Name', 'Cluster', 'vCenter'),
-    #                           'tbody' => array('"<td>" . $entry["configissue"] . "</td>"', '"<td>" . $entry["host_name"] . "</td>"', '"<td>" . $entry["cluster"] . "</td>"', '"<td>" . $entry["vcenter"] . "</td>"')]);
-    # }
-    # 
-    # if($check->getModuleSchedule('alarms') != 'off') {
-    #   $check->displayCheck([  'sqlQuery' => "SELECT main.alarm_name, main.status, main.time, main.entityMoRef, v.vcname as vcenter, h.host_name as entity FROM alarms main INNER JOIN vcenters v ON main.vcenter = v.id INNER JOIN hosts h ON main.entityMoRef = h.moref WHERE main.entityMoRef LIKE 'HostSystem%'",
-    #                           'sqlQueryGroupBy' => "main.entityMoRef",
-    #                           "id" => "ALARMSHOST",
-    #                           'thead' => array('Status', 'Alarm', 'Date', 'Name', 'vCenter'),
-    #                           'tbody' => array('"<td>" . $this->alarmStatus[(string) $entry["status"]] . "</td>"', '"<td>" . $entry["alarm_name"] . "</td>"', '"<td>" . $entry["time"] . "</td>"', '"<td>" . $entry["entity"] . "</td>"', '"<td>" . $entry["vcenter"] . "</td>"'),
-    #                           'order' => '[ 1, "asc" ]',
-    #                           'columnDefs' => '{ "orderable": false, className: "dt-body-right", "targets": [ 0 ] }']);
-    # }
-    # 
-    # if($check->getModuleSchedule('hostHardwareStatus') != 'off') {
-    #   $check->displayCheck([  'sqlQuery' => "SELECT main.issuename, main.issuestate, main.issuetype, h.host_name, v.vcname as vcenter FROM hardwarestatus main INNER JOIN hosts h ON main.host = h.id INNER JOIN vcenters v ON h.vcenter = v.id WHERE true",
-    #                           "id" => "HOSTHARDWARESTATUS",
-    #                           'thead' => array('State', 'Issue', 'Type', 'Name', 'vCenter'),
-    #                           'tbody' => array('"<td>" . $this->alarmStatus[(string) $entry["issuestate"]] . "</td>"', '"<td>" . $entry["issuename"] . "</td>"', '"<td>" . $entry["issuetype"] . "</td>"', '"<td>" . $entry["host_name"] . "</td>"', '"<td>" . $entry["vcenter"] . "</td>"'),
-    #                           'order' => '[ 3, "asc" ]',
-    #                           'columnDefs' => '{ "orderable": false, className: "dt-body-right", "targets": [ 0 ] }']);
-    # }
-    # 
-    # if($check->getModuleSchedule('hostRebootrequired') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
-    #   $check->displayCheck([  'sqlQuery' => "SELECT main.host_name, c.cluster_name as cluster, v.vcname as vcenter FROM hosts main INNER JOIN vcenters v ON main.vcenter = v.id INNER JOIN clusters c ON main.cluster = c.id WHERE main.rebootrequired = 1",
-    #                           "id" => "HOSTREBOOTREQUIRED",
-    #                           'thead' => array('Name', 'Cluster', 'vCenter'),
-    #                           'tbody' => array('"<td>" . $entry["host_name"] . "</td>"', '"<td>" . $entry["cluster"] . "</td>"', '"<td>" . $entry["vcenter"] . "</td>"')]);
-    # }
-    # 
-    # if($check->getModuleSchedule('hostFQDNHostnameMismatch') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
-    #   $check->displayCheck([  'sqlQuery' => "SELECT main.host_name, main.hostname, c.cluster_name as cluster, v.vcname as vcenter FROM hosts main INNER JOIN vcenters v ON main.vcenter = v.id INNER JOIN clusters c ON main.cluster = c.id WHERE main.host_name NOT LIKE CONCAT(main.hostname, '%')",
-    #                           'sqlQueryGroupBy' => "main.host_name",
-    #                           "id" => "HOSTFQDNHOSTNAMEMISMATCH",
-    #                           'thead' => array('FQDN', 'Hostname', 'Cluster', 'vCenter'),
-    #                           'tbody' => array('"<td>".$entry["host_name"]."</td>"', '"<td>".$entry["hostname"]."</td>"', '"<td>".$entry["cluster"]."</td>"', '"<td>".$entry["vcenter"]."</td>"')]);
-    # }
-    # 
-    # if($check->getModuleSchedule('hostMaintenanceMode') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
-    #   $check->displayCheck([  'sqlQuery' => "SELECT main.host_name, c.cluster_name as cluster, v.vcname as vcenter FROM hosts main INNER JOIN vcenters v ON main.vcenter = v.id INNER JOIN clusters c ON main.cluster = c.id WHERE main.inmaintenancemode = 1",
-    #                           "id" => "HOSTMAINTENANCEMODE",
-    #                           'thead' => array('Name', 'Cluster', 'vCenter'),
-    #                           'tbody' => array('"<td><img src=\"images/vc-hostInMaintenance.gif\"> ".$entry["host_name"]."</td>"', '"<td>".$entry["cluster"]."</td>"', '"<td>".$entry["vcenter"]."</td>"')]);
-    # }
-    # 
-    # if ($check->getModuleSchedule('hostPowerManagementPolicy') != 'off' && $check->getModuleSchedule('inventory') != 'off')
-    # {
-    #   
-    #   $currentPolicy = $check->getConfig('powerSystemInfo');
-    #   $check->displayCheck([  'sqlQuery' => "SELECT main.id FROM hosts main INNER JOIN vcenters v ON main.vcenter = v.id INNER JOIN clusters c ON main.cluster = c.id WHERE main.powerpolicy <> '" . $currentPolicy . "'",
-    #                           "id" => "HOSTPOWERMANAGEMENTPOLICY",
-    #                           "typeCheck" => 'ssp',
-    #                           'thead' => array('Name', 'Power Policy', 'Desired Power Policy', 'vCenter')]);
-    # 
-    # } # END if ($check->getModuleSchedule('hostPowerManagementPolicy') != 'off' && $check->getModuleSchedule('inventory') != 'off')
+      if ($sth->rows > 0)
+      {
+        
+        $alertCount += $sth->rows;
+        my $htmlContent = "<table style='$styleTable'><thead><tr style='$styleLineHead'><th style='$styleHead'>Cluster Name</th><th style='$styleHead'>Majority DNS</th><th style='$styleHead'>Host Name</th><th style='$styleHead'>DNS Servers</th><th style='$styleHead'>vCenter</th></tr></thead>";
 
+        while ($ref = $sth->fetchrow_hashref)
+        {
+          
+          my $dnsservers = $ref->{'dnsservers'};
+          my $topProp = $ref->{'topProp'};
+          $dnsservers =~ s/;/\<br\>/g;
+          $topProp =~ s/;/\<br\>/g;
+          $htmlContent = $htmlContent . "<tr style='$styleLine'><td style='$styleCell'>" . $ref->{'cluster'} . "</td><td style='$styleCell'>$topProp</td><td style='$styleCell'>" . $ref->{'host_name'} . "</td><td style='$styleCell'>$dnsservers</td><td style='$styleCell'>" . $ref->{'vcenter'} . "</td></tr>";
+          
+        } # END while ($ref = $sth->fetchrow_hashref)
+        
+        push @htmlModuleContent, { title => 'Host DNS Check', body => "$htmlContent</table>" };
+        
+      } # END if ($sth->rows > 0)
+      
+    } # END if (dbGetSchedule('hostDNSCheck') ne 'off')
     
+    if (dbGetSchedule('hostSyslogCheck') ne 'off')
+    {
     
+      $sth = $dbh->prepare("SELECT DISTINCT main.id as clusterId, main.cluster_name as cluster, h.host_name, h.syslog_target, T.topProp, v.vcname as vcenter FROM hosts h INNER JOIN clusters main ON h.cluster = main.id INNER JOIN vcenters v ON h.vcenter = v.id INNER JOIN (SELECT cluster as clus, (SELECT syslog_target FROM hosts WHERE cluster = clus GROUP BY syslog_target ORDER BY COUNT(*) DESC LIMIT 0,1) AS topProp FROM hosts WHERE lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY clus) AS T ON T.clus = main.id WHERE h.syslog_target <> T.topProp AND main.id <> 1");
+      $sth->execute();
+
+      if ($sth->rows > 0)
+      {
+        
+        $alertCount += $sth->rows;
+        my $htmlContent = "<table style='$styleTable'><thead><tr style='$styleLineHead'><th style='$styleHead'>Cluster Name</th><th style='$styleHead'>Majority Syslog</th><th style='$styleHead'>Host Name</th><th style='$styleHead'>Syslog Target</th><th style='$styleHead'>vCenter</th></tr></thead>";
+
+        while ($ref = $sth->fetchrow_hashref)
+        {
+          
+          my $syslog_target = $ref->{'syslog_target'};
+          my $topProp = $ref->{'topProp'};
+          $syslog_target =~ s/;/\<br\>/g;
+          $topProp =~ s/;/\<br\>/g;
+          $htmlContent = $htmlContent . "<tr style='$styleLine'><td style='$styleCell'>" . $ref->{'cluster'} . "</td><td style='$styleCell'>$topProp</td><td style='$styleCell'>" . $ref->{'host_name'} . "</td><td style='$styleCell'>$syslog_target</td><td style='$styleCell'>" . $ref->{'vcenter'} . "</td></tr>";
+          
+        } # END while ($ref = $sth->fetchrow_hashref)
+        
+        push @htmlModuleContent, { title => 'Host Syslog Check', body => "$htmlContent</table>" };
+        
+      } # END if ($sth->rows > 0)
+      
+    } # END if (dbGetSchedule('hostSyslogCheck') ne 'off')
     
+    if (dbGetSchedule('hostConfigurationIssues') ne 'off')
+    {
+    
+      $sth = $dbh->prepare("SELECT main.configissue, h.host_name, cl.cluster_name as cluster, v.vcname as vcenter FROM configurationissues main INNER JOIN hosts h ON main.host = h.id INNER JOIN clusters cl ON h.cluster = cl.id INNER JOIN vcenters v ON h.vcenter = v.id WHERE main.lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY host, configissue");
+
+      $sth->execute();
+
+      if ($sth->rows > 0)
+      {
+        
+        $alertCount += $sth->rows;
+        my $htmlContent = "<table style='$styleTable'><thead><tr style='$styleLineHead'><th style='$styleHead'>Issue</th><th style='$styleHead'>Name</th><th style='$styleHead'>Cluster</th><th style='$styleHead'>vCenter</th></tr></thead>";
+
+        while ($ref = $sth->fetchrow_hashref)
+        {
+
+          $htmlContent = $htmlContent . "<tr style='$styleLine'><td style='$styleCell'>" . $ref->{'configissue'} . "</td><td style='$styleCell'>" . $ref->{'host_name'} . "</td><td style='$styleCell'>" . $ref->{'cluster'} . "</td><td style='$styleCell'>" . $ref->{'vcenter'} . "</td></tr>";
+          
+        } # END while ($ref = $sth->fetchrow_hashref)
+        
+        push @htmlModuleContent, { title => 'Host configuration issues', body => "$htmlContent</table>" };
+        
+      } # END if ($sth->rows > 0)
+      
+    } # END if (dbGetSchedule('hostConfigurationIssues') ne 'off')
+    
+    if (dbGetSchedule('alarms') ne 'off')
+    {
+    
+      $sth = $dbh->prepare("SELECT main.alarm_name, main.status, main.time, main.entityMoRef, v.vcname as vcenter, h.host_name as entity FROM alarms main INNER JOIN vcenters v ON main.vcenter = v.id INNER JOIN hosts h ON main.entityMoRef = h.moref WHERE main.entityMoRef LIKE 'HostSystem%' AND main.lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY main.entityMoRef");
+
+      $sth->execute();
+
+      if ($sth->rows > 0)
+      {
+        
+        $alertCount += $sth->rows;
+        my $htmlContent = "<table style='$styleTable'><thead><tr style='$styleLineHead'><th style='$styleHead'>Status</th><th style='$styleHead'>Alarm</th><th style='$styleHead'>Date</th><th style='$styleHead'>Name</th><th style='$styleHead'>vCenter</th></tr></thead>";
+
+        while ($ref = $sth->fetchrow_hashref)
+        {
+
+          $htmlContent = $htmlContent . "<tr style='$styleLine'><td style='$styleCell'>" . $ref->{'status'} . "</td><td style='$styleCell'>" . $ref->{'alarm_name'} . "</td><td style='$styleCell'>" . $ref->{'time'} . "</td><td style='$styleCell'>" . $ref->{'entity'} . "</td><td style='$styleCell'>" . $ref->{'vcenter'} . "</td></tr>";
+          
+        } # END while ($ref = $sth->fetchrow_hashref)
+        
+        push @htmlModuleContent, { title => 'Host Alarms', body => "$htmlContent</table>" };
+        
+      } # END if ($sth->rows > 0)
+      
+    } # END if (dbGetSchedule('alarms') ne 'off')
+    
+    if (dbGetSchedule('hostHardwareStatus') ne 'off')
+    {
+    
+      $sth = $dbh->prepare("SELECT main.issuename, main.issuestate, main.issuetype, h.host_name, v.vcname as vcenter FROM hardwarestatus main INNER JOIN hosts h ON main.host = h.id INNER JOIN vcenters v ON h.vcenter = v.id WHERE main.lastseen > '" . $dateSqlQuery . " 00:00:01'");
+
+      $sth->execute();
+
+      if ($sth->rows > 0)
+      {
+        
+        $alertCount += $sth->rows;
+        my $htmlContent = "<table style='$styleTable'><thead><tr style='$styleLineHead'><th style='$styleHead'>State</th><th style='$styleHead'>Issue</th><th style='$styleHead'>Type</th><th style='$styleHead'>Name</th><th style='$styleHead'>vCenter</th></tr></thead>";
+
+        while ($ref = $sth->fetchrow_hashref)
+        {
+
+          $htmlContent = $htmlContent . "<tr style='$styleLine'><td style='$styleCell'>" . $ref->{'issuestate'} . "</td><td style='$styleCell'>" . $ref->{'issuename'} . "</td><td style='$styleCell'>" . $ref->{'issuetype'} . "</td><td style='$styleCell'>" . $ref->{'host_name'} . "</td><td style='$styleCell'>" . $ref->{'vcenter'} . "</td></tr>";
+          
+        } # END while ($ref = $sth->fetchrow_hashref)
+        
+        push @htmlModuleContent, { title => 'Host Hardware Status', body => "$htmlContent</table>" };
+        
+      } # END if ($sth->rows > 0)
+      
+    } # END if (dbGetSchedule('hostHardwareStatus') ne 'off')
+    
+    if (dbGetSchedule('hostRebootrequired') ne 'off')
+    {
+    
+      $sth = $dbh->prepare("SELECT main.host_name, c.cluster_name as cluster, v.vcname as vcenter FROM hosts main INNER JOIN vcenters v ON main.vcenter = v.id INNER JOIN clusters c ON main.cluster = c.id WHERE main.rebootrequired = 1 AND main.lastseen > '" . $dateSqlQuery . " 00:00:01'");
+
+      $sth->execute();
+
+      if ($sth->rows > 0)
+      {
+        
+        $alertCount += $sth->rows;
+        my $htmlContent = "<table style='$styleTable'><thead><tr style='$styleLineHead'><th style='$styleHead'>Name</th><th style='$styleHead'>Cluster</th><th style='$styleHead'>vCenter</th></tr></thead>";
+
+        while ($ref = $sth->fetchrow_hashref)
+        {
+
+          $htmlContent = $htmlContent . "<tr style='$styleLine'><td style='$styleCell'>" . $ref->{'host_name'} . "</td><td style='$styleCell'>" . $ref->{'cluster'} . "</td><td style='$styleCell'>" . $ref->{'vcenter'} . "</td></tr>";
+          
+        } # END while ($ref = $sth->fetchrow_hashref)
+        
+        push @htmlModuleContent, { title => 'Host Reboot required', body => "$htmlContent</table>" };
+        
+      } # END if ($sth->rows > 0)
+      
+    } # END if (dbGetSchedule('hostRebootrequired') ne 'off')
+    
+    if (dbGetSchedule('hostFQDNHostnameMismatch') ne 'off')
+    {
+    
+      $sth = $dbh->prepare("SELECT main.host_name, main.hostname, c.cluster_name as cluster, v.vcname as vcenter FROM hosts main INNER JOIN vcenters v ON main.vcenter = v.id INNER JOIN clusters c ON main.cluster = c.id WHERE main.host_name NOT LIKE CONCAT(main.hostname, '%') AND main.lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY main.vcenter, main.moref");
+
+      $sth->execute();
+
+      if ($sth->rows > 0)
+      {
+        
+        $alertCount += $sth->rows;
+        my $htmlContent = "<table style='$styleTable'><thead><tr style='$styleLineHead'><th style='$styleHead'>FQDN</th><th style='$styleHead'>Hostname</th><th style='$styleHead'>Cluster</th><th style='$styleHead'>vCenter</th></tr></thead>";
+
+        while ($ref = $sth->fetchrow_hashref)
+        {
+
+          $htmlContent = $htmlContent . "<tr style='$styleLine'><td style='$styleCell'>" . $ref->{'host_name'} . "</td><td style='$styleCell'>" . $ref->{'hostname'} . "</td><td style='$styleCell'>" . $ref->{'cluster'} . "</td><td style='$styleCell'>" . $ref->{'vcenter'} . "</td></tr>";
+          
+        } # END while ($ref = $sth->fetchrow_hashref)
+        
+        push @htmlModuleContent, { title => 'Host FQDN and hostname mismatch', body => "$htmlContent</table>" };
+        
+      } # END if ($sth->rows > 0)
+      
+    } # END if (dbGetSchedule('hostFQDNHostnameMismatch') ne 'off')
+    
+    if (dbGetSchedule('hostMaintenanceMode') ne 'off')
+    {
+    
+      $sth = $dbh->prepare("SELECT main.host_name, c.cluster_name as cluster, v.vcname as vcenter FROM hosts main INNER JOIN vcenters v ON main.vcenter = v.id INNER JOIN clusters c ON main.cluster = c.id WHERE main.inmaintenancemode = 1 AND main.lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY main.vcenter, main.moref");
+
+      $sth->execute();
+
+      if ($sth->rows > 0)
+      {
+        
+        $alertCount += $sth->rows;
+        my $htmlContent = "<table style='$styleTable'><thead><tr style='$styleLineHead'><th style='$styleHead'>Name</th><th style='$styleHead'>vCenter</th></tr></thead>";
+
+        while ($ref = $sth->fetchrow_hashref)
+        {
+
+          $htmlContent = $htmlContent . "<tr style='$styleLine'><td style='$styleCell'>" . $ref->{'host_name'} . "</td><td style='$styleCell'>" . $ref->{'cluster'} . "</td><td style='$styleCell'>" . $ref->{'vcenter'} . "</td></tr>";
+          
+        } # END while ($ref = $sth->fetchrow_hashref)
+        
+        push @htmlModuleContent, { title => 'Host in maintenance mode', body => "$htmlContent</table>" };
+        
+      } # END if ($sth->rows > 0)
+      
+    } # END if (dbGetSchedule('hostMaintenanceMode') ne 'off')
+    
+    if (dbGetSchedule('hostPowerManagementPolicy') ne 'off')
+    {
+
+      my $currentPowerSystemInfo = dbGetConfig('powerSystemInfo');
+      $sth = $dbh->prepare("SELECT main.host_name, main.powerpolicy, v.vcname as vcenter FROM hosts main INNER JOIN vcenters v ON main.vcenter = v.id INNER JOIN clusters c ON main.cluster = c.id WHERE main.powerpolicy <> '" . $currentPowerSystemInfo . "' AND main.lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY main.vcenter, main.moref");
+      $sth->execute();
+
+      if ($sth->rows > 0)
+      {
+        
+        $alertCount += $sth->rows;
+        my $htmlContent = "<table style='$styleTable'><thead><tr style='$styleLineHead'><th style='$styleHead'>Name</th><th style='$styleHead'>Power Policy</th><th style='$styleHead'>Desired Power Policy</th><th style='$styleHead'>vCenter</th></tr></thead>";
+
+        while ($ref = $sth->fetchrow_hashref)
+        {
+
+          $htmlContent = $htmlContent . "<tr style='$styleLine'><td style='$styleCell'>" . $ref->{'host_name'} . "</td><td style='$styleCell'>" . $ref->{'powerpolicy'} . "</td><td style='$styleCell'>$currentPowerSystemInfo</td><td style='$styleCell'>" . $ref->{'vcenter'} . "</td></tr>";
+          
+        } # END while ($ref = $sth->fetchrow_hashref)
+        
+        push @htmlModuleContent, { title => 'Host PowerManagement Policy', body => "$htmlContent</table>" };
+        
+      } # END if ($sth->rows > 0)
+      
+    } # END if (dbGetSchedule('hostPowerManagementPolicy') ne 'off')
     
     ###################
     # END Host Checks #
@@ -3967,6 +4127,160 @@ sub mailAlert
     # Datastore Checks #
     ####################
     
+    if (dbGetSchedule('datastoreSpacereport') ne 'off')
+    {
+
+      my $datastoreFreeSpaceThreshold = dbGetConfig('datastoreFreeSpaceThreshold');
+      $sth = $dbh->prepare("SELECT main.datastore_name, dm.size, dm.freespace, ROUND(100*(dm.freespace/dm.size)) as pct_free, v.vcname FROM datastores AS main INNER JOIN datastoreMetrics AS dm ON (main.id = dm.datastore_id) INNER JOIN vcenters AS v ON main.vcenter = v.id WHERE dm.id IN (SELECT MAX(id) FROM datastoreMetrics WHERE lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY datastore_id) GROUP BY main.datastore_name, main.vcenter HAVING pct_free < " . $datastoreFreeSpaceThreshold);
+      $sth->execute();
+
+      if ($sth->rows > 0)
+      {
+        
+        $alertCount += $sth->rows;
+        my $htmlContent = "<table style='$styleTable'><thead><tr style='$styleLineHead'><th style='$styleHead'>Datastore Name</th><th style='$styleHead'>Capacity</th><th style='$styleHead'>FreeSpace</th><th style='$styleHead'>% Free</th><th style='$styleHead'>vCenter</th></tr></thead>";
+
+        while ($ref = $sth->fetchrow_hashref)
+        {
+
+          $htmlContent = $htmlContent . "<tr style='$styleLine'><td style='$styleCell'>" . $ref->{'datastore_name'} . "</td><td style='$styleCell'>" . format_bytes($ref->{'size'})."B" . "</td><td style='$styleCell'>" . format_bytes($ref->{'freespace'})."B" . "</td><td style='$styleCell'>" . $ref->{'pct_free'} . " %</td><td style='$styleCell'>" . $ref->{'vcname'} . "</td></tr>";
+          
+        } # END while ($ref = $sth->fetchrow_hashref)
+        
+        push @htmlModuleContent, { title => 'Datastore Space report', body => "$htmlContent</table>" };
+        
+      } # END if ($sth->rows > 0)
+      
+    } # END if (dbGetSchedule('datastoreSpacereport') ne 'off')
+    
+    if (dbGetSchedule('datastoreOrphanedVMFilesreport') ne 'off')
+    {
+
+      $sth = $dbh->prepare("SELECT v.vcname, o.filePath, o.fileSize, o.fileModification FROM orphanFiles o INNER JOIN vcenters AS v ON (o.vcenter = v.id) WHERE o.lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY v.vcname, o.filePath");
+      $sth->execute();
+
+      if ($sth->rows > 0)
+      {
+        
+        $alertCount += $sth->rows;
+        my $htmlContent = "<table style='$styleTable'><thead><tr style='$styleLineHead'><th style='$styleHead'>vCenter Name</th><th style='$styleHead'>File Path</th><th style='$styleHead'>File Size</th><th style='$styleHead'>File Modification</th></tr></thead>";
+
+        while ($ref = $sth->fetchrow_hashref)
+        {
+
+          $htmlContent = $htmlContent . "<tr style='$styleLine'><td style='$styleCell'>" . $ref->{'vcname'} . "</td><td style='$styleCell'>" . $ref->{'filePath'} . "</td><td style='$styleCell'>" . format_bytes($ref->{'fileSize'})."B" . "</td><td style='$styleCell'>" . $ref->{'fileModification'} . "</td></tr>";
+          
+        } # END while ($ref = $sth->fetchrow_hashref)
+        
+        push @htmlModuleContent, { title => 'Orphaned VM Files', body => "$htmlContent</table>" };
+        
+      } # END if ($sth->rows > 0)
+      
+    } # END if (dbGetSchedule('datastoreOrphanedVMFilesreport') ne 'off')
+    
+    if (dbGetSchedule('datastoreOverallocation') ne 'off')
+    {
+
+      my $datastoreOverallocation = dbGetConfig('datastoreOverallocation');
+      $sth = $dbh->prepare("SELECT d.datastore_name, dm.size, dm.freespace, dm.uncommitted, ROUND(100*((dm.size-dm.freespace+dm.uncommitted)/dm.size)) as pct_overallocation, v.vcname FROM datastores d INNER JOIN datastoreMetrics dm ON (d.id = dm.datastore_id) INNER JOIN vcenters AS v ON (d.vcenter = v.id) WHERE d.lastseen > '" . $dateSqlQuery . " 00:00:01' AND dm.id IN (SELECT MAX(id) FROM datastoreMetrics GROUP BY datastore_id) AND ROUND(100*((dm.size-dm.freespace+dm.uncommitted)/dm.size)) > $datastoreOverallocation");
+      $sth->execute();
+
+      if ($sth->rows > 0)
+      {
+        
+        $alertCount += $sth->rows;
+        my $htmlContent = "<table style='$styleTable'><thead><tr style='$styleLineHead'><th style='$styleHead'>Datastore Name</th><th style='$styleHead'>Capacity</th><th style='$styleHead'>FreeSpace</th><th style='$styleHead'>Uncommitted</th><th style='$styleHead'>Allocation</th><th style='$styleHead'>vCenter</th></tr></thead>";
+
+        while ($ref = $sth->fetchrow_hashref)
+        {
+
+          $htmlContent = $htmlContent . "<tr style='$styleLine'><td style='$styleCell'>" . $ref->{'datastore_name'} . "</td><td style='$styleCell'>" . format_bytes($ref->{'size'})."B" . "</td><td style='$styleCell'>" . format_bytes($ref->{'freespace'})."B" . "</td><td style='$styleCell'>" . format_bytes($ref->{'uncommitted'})."B" . "</td><td style='$styleCell'>" . $ref->{'pct_overallocation'} . " %</td><td style='$styleCell'>" . $ref->{'vcname'} . "</td></tr>";
+          
+        } # END while ($ref = $sth->fetchrow_hashref)
+        
+        push @htmlModuleContent, { title => 'Datastore Overallocation', body => "$htmlContent</table>" };
+        
+      } # END if ($sth->rows > 0)
+      
+    } # END if (dbGetSchedule('datastoreOverallocation') ne 'off')
+    
+    if (dbGetSchedule('datastoreSIOCdisabled') ne 'off')
+    {
+    
+      $sth = $dbh->prepare("SELECT main.datastore_name, v.vcname as vcenter FROM datastores main INNER JOIN vcenters v ON main.vcenter = v.id WHERE main.iormConfiguration = 0 AND main.isAccessible = 1 AND main.lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY main.vcenter, main.moref");
+
+      $sth->execute();
+
+      if ($sth->rows > 0)
+      {
+        
+        $alertCount += $sth->rows;
+        my $htmlContent = "<table style='$styleTable'><thead><tr style='$styleLineHead'><th style='$styleHead'>Datastore Name</th><th style='$styleHead'>vCenter</th></tr></thead>";
+
+        while ($ref = $sth->fetchrow_hashref)
+        {
+
+          $htmlContent = $htmlContent . "<tr style='$styleLine'><td style='$styleCell'>" . $ref->{'datastore_name'} . "</td><td style='$styleCell'>" . $ref->{'vcenter'} . "</td></tr>";
+          
+        } # END while ($ref = $sth->fetchrow_hashref)
+        
+        push @htmlModuleContent, { title => 'Datastore with SIOC disabled', body => "$htmlContent</table>" };
+        
+      } # END if ($sth->rows > 0)
+      
+    } # END if (dbGetSchedule('datastoreSIOCdisabled') ne 'off')
+    
+    if (dbGetSchedule('datastoremaintenancemode') ne 'off')
+    {
+    
+      $sth = $dbh->prepare("SELECT main.datastore_name, v.vcname as vcenter FROM datastores main INNER JOIN vcenters v ON main.vcenter = v.id WHERE main.maintenanceMode <> 'normal' AND main.lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY main.vcenter, main.moref");
+
+      $sth->execute();
+
+      if ($sth->rows > 0)
+      {
+        
+        $alertCount += $sth->rows;
+        my $htmlContent = "<table style='$styleTable'><thead><tr style='$styleLineHead'><th style='$styleHead'>Datastore Name</th><th style='$styleHead'>vCenter</th></tr></thead>";
+
+        while ($ref = $sth->fetchrow_hashref)
+        {
+
+          $htmlContent = $htmlContent . "<tr style='$styleLine'><td style='$styleCell'>" . $ref->{'datastore_name'} . "</td><td style='$styleCell'>" . $ref->{'vcenter'} . "</td></tr>";
+          
+        } # END while ($ref = $sth->fetchrow_hashref)
+        
+        push @htmlModuleContent, { title => 'Datastore in Maintenance Mode', body => "$htmlContent</table>" };
+        
+      } # END if ($sth->rows > 0)
+      
+    } # END if (dbGetSchedule('datastoremaintenancemode') ne 'off')
+    
+    if (dbGetSchedule('datastoreAccessible') ne 'off')
+    {
+    
+      $sth = $dbh->prepare("SELECT main.datastore_name, v.vcname as vcenter FROM datastores main INNER JOIN vcenters v ON main.vcenter = v.id WHERE main.isAccessible = 0 AND main.lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY main.vcenter, main.moref");
+
+      $sth->execute();
+
+      if ($sth->rows > 0)
+      {
+        
+        $alertCount += $sth->rows;
+        my $htmlContent = "<table style='$styleTable'><thead><tr style='$styleLineHead'><th style='$styleHead'>Datastore Name</th><th style='$styleHead'>vCenter</th></tr></thead>";
+
+        while ($ref = $sth->fetchrow_hashref)
+        {
+
+          $htmlContent = $htmlContent . "<tr style='$styleLine'><td style='$styleCell'>" . $ref->{'datastore_name'} . "</td><td style='$styleCell'>" . $ref->{'vcenter'} . "</td></tr>";
+          
+        } # END while ($ref = $sth->fetchrow_hashref)
+        
+        push @htmlModuleContent, { title => 'Datastore not Accessible', body => "$htmlContent</table>" };
+        
+      } # END if ($sth->rows > 0)
+      
+    } # END if (dbGetSchedule('datastoreAccessible') ne 'off')
     
     ########################
     # END Datastore Checks #
@@ -3987,7 +4301,7 @@ sub mailAlert
       {
         
         $alertCount += $sth->rows;
-        my $htmlContent = "<table style='$styleTable'>";
+        my $htmlContent = "<table style='$styleTable'><thead><tr style='$styleLineHead'><th style='$styleHead'>DVPortgroup Name</th><th style='$styleHead'>AutoExpand</th><th style='$styleHead'>Num Port</th><th style='$styleHead'>Port Left</th></tr></thead>";
         
         while ($ref = $sth->fetchrow_hashref)
         {
@@ -4006,7 +4320,428 @@ sub mailAlert
     # END Network Checks #
     ######################
     
-    # VM Checks
+    #############
+    # VM Checks #
+    #############
+
+    if (dbGetSchedule('vmSnapshotsage') ne 'off')
+    {
+      
+      my $vmSnapshotAge = dbGetConfig('vmSnapshotAge');
+      $sth = $dbh->prepare("SELECT vms.name, main.name as snapshot_name, main.description, DATEDIFF('$dateSqlQuery', main.createTime) as age, v.vcname, main.state, main.quiesced FROM snapshots main INNER JOIN vms ON main.vm = vms.id INNER JOIN vcenters v ON vms.vcenter = v.id HAVING age > $vmSnapshotAge");
+      $sth->execute();
+
+      if ($sth->rows > 0)
+      {
+        
+        $alertCount += $sth->rows;
+        my $htmlContent = "<table style='$styleTable'><thead><tr style='$styleLineHead'><th style='$styleHead'>VM Name</th><th style='$styleHead'>Quiesced</th><th style='$styleHead'>State</th><th style='$styleHead'>Snapshot</th><th style='$styleHead'>Description</th><th style='$styleHead'>Age</th><th style='$styleHead'>vCenter</th></tr></thead>";
+        
+        while ($ref = $sth->fetchrow_hashref)
+        {
+
+          $htmlContent = $htmlContent . "<tr style='$styleLine'><td style='$styleCell'>" . $ref->{'name'} . "</td><td style='$styleCell'>" . $ref->{'quiesced'} . "</td><td style='$styleCell'>" . $ref->{'state'} . "</td><td style='$styleCell'>" . $ref->{'snapshot_name'} . "</td><td style='$styleCell'>" . decode_utf8($ref->{'description'}) . "</td><td style='$styleCell'>" . $ref->{'age'} . " days</td><td style='$styleCell'>" . $ref->{'vcname'} . "</td></tr>";
+
+        } # END while ($ref = $sth->fetchrow_hashref)
+        
+        push @htmlModuleContent, { title => 'VM Snapshots Age', body => "$htmlContent</table>" };
+        
+      } # END if ($sth->rows > 0)
+      
+    } # END if (dbGetSchedule('vmSnapshotsage') ne 'off')
+    
+    if (dbGetSchedule('vmphantomsnapshot') ne 'off')
+    {
+    
+      $sth = $dbh->prepare("SELECT main.name, v.vcname FROM vms AS main INNER JOIN hosts h ON main.host = h.id INNER JOIN vcenters v ON h.vcenter = v.id WHERE main.phantomSnapshot > 0 AND main.lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY main.vcenter, main.moref");
+
+      $sth->execute();
+
+      if ($sth->rows > 0)
+      {
+        
+        $alertCount += $sth->rows;
+        my $htmlContent = "<table style='$styleTable'><thead><tr style='$styleLineHead'><th style='$styleHead'>VM Name</th><th style='$styleHead'>vCenter</th></tr></thead>";
+
+        while ($ref = $sth->fetchrow_hashref)
+        {
+
+          $htmlContent = $htmlContent . "<tr style='$styleLine'><td style='$styleCell'>" . $ref->{'name'} . "</td><td style='$styleCell'>" . $ref->{'vcname'} . "</td></tr>";
+          
+        } # END while ($ref = $sth->fetchrow_hashref)
+        
+        push @htmlModuleContent, { title => 'VM phantom snapshot', body => "$htmlContent</table>" };
+        
+      } # END if ($sth->rows > 0)
+      
+    } # END if (dbGetSchedule('vmphantomsnapshot') ne 'off')
+    
+    if (dbGetSchedule('vmconsolidationneeded') ne 'off')
+    {
+    
+      $sth = $dbh->prepare("SELECT main.name, v.vcname FROM vms AS main INNER JOIN hosts h ON main.host = h.id INNER JOIN vcenters v ON h.vcenter = v.id WHERE main.consolidationNeeded = 1 AND main.lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY main.vcenter, main.moref");
+
+      $sth->execute();
+
+      if ($sth->rows > 0)
+      {
+        
+        $alertCount += $sth->rows;
+        my $htmlContent = "<table style='$styleTable'><thead><tr style='$styleLineHead'><th style='$styleHead'>VM Name</th><th style='$styleHead'>vCenter</th></tr></thead>";
+
+        while ($ref = $sth->fetchrow_hashref)
+        {
+
+          $htmlContent = $htmlContent . "<tr style='$styleLine'><td style='$styleCell'>" . $ref->{'name'} . "</td><td style='$styleCell'>" . $ref->{'vcname'} . "</td></tr>";
+          
+        } # END while ($ref = $sth->fetchrow_hashref)
+        
+        push @htmlModuleContent, { title => 'VM consolidation needed', body => "$htmlContent</table>" };
+        
+      } # END if ($sth->rows > 0)
+      
+    } # END if (dbGetSchedule('vmconsolidationneeded') ne 'off')
+    
+    if (dbGetSchedule('vmcpuramhddreservation') ne 'off')
+    {
+    
+      $sth = $dbh->prepare("SELECT main.name, main.cpuReservation, main.memReservation, v.vcname FROM vms AS main INNER JOIN vcenters v ON main.vcenter = v.id WHERE (main.cpuReservation > 0 OR main.memReservation > 0) AND main.lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY main.vcenter, main.moref");
+
+      $sth->execute();
+
+      if ($sth->rows > 0)
+      {
+        
+        $alertCount += $sth->rows;
+        my $htmlContent = "<table style='$styleTable'><thead><tr style='$styleLineHead'><th style='$styleHead'>VM Name</th><th style='$styleHead'>CPU Reservation</th><th style='$styleHead'>MEM Reservation</th><th style='$styleHead'>vCenter</th></tr></thead>";
+
+        while ($ref = $sth->fetchrow_hashref)
+        {
+
+          $htmlContent = $htmlContent . "<tr style='$styleLine'><td style='$styleCell'>" . $ref->{'name'} . "</td><td style='$styleCell'>" . $ref->{'cpuReservation'} . "MHz</td><td style='$styleCell'>" . $ref->{'memReservation'} . "MB</td><td style='$styleCell'>" . $ref->{'vcname'} . "</td></tr>";
+          
+        } # END while ($ref = $sth->fetchrow_hashref)
+        
+        push @htmlModuleContent, { title => 'VM CPU-MEM reservation', body => "$htmlContent</table>" };
+        
+      } # END if ($sth->rows > 0)
+      
+    } # END if (dbGetSchedule('vmcpuramhddreservation') ne 'off')
+    
+    if (dbGetSchedule('vmcpuramhddlimits') ne 'off')
+    {
+    
+      $sth = $dbh->prepare("SELECT main.name, main.cpuLimit, main.memLimit, v.vcname FROM vms AS main INNER JOIN vcenters v ON main.vcenter = v.id WHERE (main.cpuLimit > 0 OR main.memLimit > 0) AND main.lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY main.vcenter, main.moref");
+
+      $sth->execute();
+
+      if ($sth->rows > 0)
+      {
+        
+        $alertCount += $sth->rows;
+        my $htmlContent = "<table style='$styleTable'><thead><tr style='$styleLineHead'><th style='$styleHead'>VM Name</th><th style='$styleHead'>CPU Limit</th><th style='$styleHead'>MEM Limit</th><th style='$styleHead'>vCenter</th></tr></thead>";
+
+        while ($ref = $sth->fetchrow_hashref)
+        {
+
+          $htmlContent = $htmlContent . "<tr style='$styleLine'><td style='$styleCell'>" . $ref->{'name'} . "</td><td style='$styleCell'>" . $ref->{'cpuLimit'} . "MHz</td><td style='$styleCell'>" . $ref->{'memLimit'} . "MB</td><td style='$styleCell'>" . $ref->{'vcname'} . "</td></tr>";
+          
+        } # END while ($ref = $sth->fetchrow_hashref)
+        
+        push @htmlModuleContent, { title => 'VM CPU-MEM limit', body => "$htmlContent</table>" };
+        
+      } # END if ($sth->rows > 0)
+      
+    } # END if (dbGetSchedule('vmcpuramhddlimits') ne 'off')
+    
+    if (dbGetSchedule('vmcpuramhotadd') ne 'off')
+    {
+    
+      $sth = $dbh->prepare("SELECT main.name, main.cpuHotAddEnabled, main.memHotAddEnabled, v.vcname FROM vms AS main INNER JOIN vcenters v ON main.vcenter = v.id WHERE (main.cpuHotAddEnabled = 1 OR main.memHotAddEnabled = 1) AND main.lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY main.vcenter, main.moref");
+
+      $sth->execute();
+
+      if ($sth->rows > 0)
+      {
+        
+        $alertCount += $sth->rows;
+        my $htmlContent = "<table style='$styleTable'><thead><tr style='$styleLineHead'><th style='$styleHead'>VM Name</th><th style='$styleHead'>CPU HotAdd</th><th style='$styleHead'>MEM HotAdd</th><th style='$styleHead'>vCenter</th></tr></thead>";
+
+        while ($ref = $sth->fetchrow_hashref)
+        {
+
+          $htmlContent = $htmlContent . "<tr style='$styleLine'><td style='$styleCell'>" . $ref->{'name'} . "</td><td style='$styleCell'>" . $ref->{'cpuHotAddEnabled'} . "</td><td style='$styleCell'>" . $ref->{'memHotAddEnabled'} . "</td><td style='$styleCell'>" . $ref->{'vcname'} . "</td></tr>";
+          
+        } # END while ($ref = $sth->fetchrow_hashref)
+        
+        push @htmlModuleContent, { title => 'VM CPU-MEM hot-add', body => "$htmlContent</table>" };
+        
+      } # END if ($sth->rows > 0)
+      
+    } # END if (dbGetSchedule('vmcpuramhotadd') ne 'off')
+    
+    if (dbGetSchedule('vmballoonzipswap') ne 'off')
+    {
+    
+      $sth = $dbh->prepare("SELECT main.name, vmm.balloonedMemory, vmm.compressedMemory, vmm.swappedMemory, v.vcname FROM vms AS main INNER JOIN vcenters AS v ON (main.vcenter = v.id) INNER JOIN vmMetrics AS vmm ON (vmm.vm_id = main.id) WHERE main.lastseen > '" . $dateSqlQuery . " 00:00:01' AND vmm.id IN (SELECT MAX(id) FROM vmMetrics WHERE lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY vm_id) AND (vmm.swappedMemory > 0 OR vmm.balloonedMemory > 0 OR vmm.compressedMemory > 0) GROUP BY main.moref, v.id");
+
+      $sth->execute();
+
+      if ($sth->rows > 0)
+      {
+        
+        $alertCount += $sth->rows;
+        my $htmlContent = "<table style='$styleTable'><thead><tr style='$styleLineHead'><th style='$styleHead'>VM Name</th><th style='$styleHead'>Ballooned</th><th style='$styleHead'>Compressed</th><th style='$styleHead'>Swapped</th><th style='$styleHead'>vCenter</th></tr></thead>";
+
+        while ($ref = $sth->fetchrow_hashref)
+        {
+
+          $htmlContent = $htmlContent . "<tr style='$styleLine'><td style='$styleCell'>" . $ref->{'name'} . "</td><td style='$styleCell'>" . format_bytes($ref->{'balloonedMemory'}) . "B</td><td style='$styleCell'>" . format_bytes($ref->{'compressedMemory'}) . "B</td><td style='$styleCell'>" . format_bytes($ref->{'swappedMemory'}) . "B</td><td style='$styleCell'>" . $ref->{'vcname'} . "</td></tr>";
+          
+        } # END while ($ref = $sth->fetchrow_hashref)
+        
+        push @htmlModuleContent, { title => 'Balloon-Swap-Compression on memory', body => "$htmlContent</table>" };
+        
+      } # END if ($sth->rows > 0)
+      
+    } # END if (dbGetSchedule('vmballoonzipswap') ne 'off')
+    
+    if (dbGetSchedule('vmmultiwritermode') ne 'off')
+    {
+    
+      $sth = $dbh->prepare("SELECT main.name, v.vcname FROM vms AS main INNER JOIN vcenters v ON main.vcenter = v.id WHERE main.multiwriter = 1 AND main.lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY main.vcenter, main.moref");
+
+      $sth->execute();
+
+      if ($sth->rows > 0)
+      {
+        
+        $alertCount += $sth->rows;
+        my $htmlContent = "<table style='$styleTable'><thead><tr style='$styleLineHead'><th style='$styleHead'>VM Name</th><th style='$styleHead'>vCenter</th></tr></thead>";
+
+        while ($ref = $sth->fetchrow_hashref)
+        {
+
+          $htmlContent = $htmlContent . "<tr style='$styleLine'><td style='$styleCell'>" . $ref->{'name'} . "</td><td style='$styleCell'>" . $ref->{'vcname'} . "</td></tr>";
+          
+        } # END while ($ref = $sth->fetchrow_hashref)
+        
+        push @htmlModuleContent, { title => 'VM with vmdk in multiwriter mode', body => "$htmlContent</table>" };
+        
+      } # END if ($sth->rows > 0)
+      
+    } # END if (dbGetSchedule('vmmultiwritermode') ne 'off')
+    
+    if (dbGetSchedule('vmscsibussharing') ne 'off')
+    {
+    
+      $sth = $dbh->prepare("SELECT main.name, v.vcname FROM vms AS main INNER JOIN vcenters v ON main.vcenter = v.id WHERE main.sharedBus = 1 AND main.lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY main.vcenter, main.moref");
+
+      $sth->execute();
+
+      if ($sth->rows > 0)
+      {
+        
+        $alertCount += $sth->rows;
+        my $htmlContent = "<table style='$styleTable'><thead><tr style='$styleLineHead'><th style='$styleHead'>VM Name</th><th style='$styleHead'>vCenter</th></tr></thead>";
+
+        while ($ref = $sth->fetchrow_hashref)
+        {
+
+          $htmlContent = $htmlContent . "<tr style='$styleLine'><td style='$styleCell'>" . $ref->{'name'} . "</td><td style='$styleCell'>" . $ref->{'vcname'} . "</td></tr>";
+          
+        } # END while ($ref = $sth->fetchrow_hashref)
+        
+        push @htmlModuleContent, { title => 'VM with scsi bus sharing', body => "$htmlContent</table>" };
+        
+      } # END if ($sth->rows > 0)
+      
+    } # END if (dbGetSchedule('vmscsibussharing') ne 'off')
+    
+    if (dbGetSchedule('vmInvalidOrInaccessible') ne 'off')
+    {
+    
+      $sth = $dbh->prepare("SELECT main.name, main.connectionState, v.vcname FROM vms AS main INNER JOIN vcenters v ON main.vcenter = v.id WHERE main.connectionState NOT LIKE 'connected' AND main.lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY main.vcenter, main.moref");
+
+      $sth->execute();
+
+      if ($sth->rows > 0)
+      {
+        
+        $alertCount += $sth->rows;
+        my $htmlContent = "<table style='$styleTable'><thead><tr style='$styleLineHead'><th style='$styleHead'>VM Name</th><th style='$styleHead'>Connection State</th><th style='$styleHead'>vCenter</th></tr></thead>";
+
+        while ($ref = $sth->fetchrow_hashref)
+        {
+
+          $htmlContent = $htmlContent . "<tr style='$styleLine'><td style='$styleCell'>" . $ref->{'name'} . "</td><td style='$styleCell'>" . $ref->{'connectionState'} . "</td><td style='$styleCell'>" . $ref->{'vcname'} . "</td></tr>";
+          
+        } # END while ($ref = $sth->fetchrow_hashref)
+        
+        push @htmlModuleContent, { title => 'VM invalid or innaccessible', body => "$htmlContent</table>" };
+        
+      } # END if ($sth->rows > 0)
+      
+    } # END if (dbGetSchedule('vmInvalidOrInaccessible') ne 'off')
+    
+    if (dbGetSchedule('vmInconsistent') ne 'off')
+    {
+    
+      $sth = $dbh->prepare("SELECT main.name, main.vmxpath, v.vcname FROM vms AS main INNER JOIN vcenters AS v ON (main.vcenter = v.id) WHERE main.lastseen > '" . $dateSqlQuery . " 00:00:01' AND main.vmxpath NOT LIKE CONCAT('%', main.name, '/', main.name, '.vmx') GROUP BY main.moref, v.id");
+
+      $sth->execute();
+
+      if ($sth->rows > 0)
+      {
+        
+        $alertCount += $sth->rows;
+        my $htmlContent = "<table style='$styleTable'><thead><tr style='$styleLineHead'><th style='$styleHead'>VM Name</th><th style='$styleHead'>vmx Path</th><th style='$styleHead'>vCenter</th></tr></thead>";
+
+        while ($ref = $sth->fetchrow_hashref)
+        {
+
+          $htmlContent = $htmlContent . "<tr style='$styleLine'><td style='$styleCell'>" . $ref->{'name'} . "</td><td style='$styleCell'>" . $ref->{'vmxpath'} . "</td><td style='$styleCell'>" . $ref->{'vcname'} . "</td></tr>";
+          
+        } # END while ($ref = $sth->fetchrow_hashref)
+        
+        push @htmlModuleContent, { title => 'VM in inconsistent folder', body => "$htmlContent</table>" };
+        
+      } # END if ($sth->rows > 0)
+      
+    } # END if (dbGetSchedule('vmInconsistent') ne 'off')
+    
+    if (dbGetSchedule('vmRemovableConnected') ne 'off')
+    {
+    
+      $sth = $dbh->prepare("SELECT main.name, v.vcname FROM vms AS main INNER JOIN vcenters v ON main.vcenter = v.id WHERE main.removable = 1 AND main.lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY main.moref, v.id");
+
+      $sth->execute();
+
+      if ($sth->rows > 0)
+      {
+        
+        $alertCount += $sth->rows;
+        my $htmlContent = "<table style='$styleTable'><thead><tr style='$styleLineHead'><th style='$styleHead'>VM Name</th><th style='$styleHead'>vCenter</th></tr></thead>";
+
+        while ($ref = $sth->fetchrow_hashref)
+        {
+
+          $htmlContent = $htmlContent . "<tr style='$styleLine'><td style='$styleCell'>" . $ref->{'name'} . "</td><td style='$styleCell'>" . $ref->{'vcname'} . "</td></tr>";
+          
+        } # END while ($ref = $sth->fetchrow_hashref)
+        
+        push @htmlModuleContent, { title => 'VM with removable devices', body => "$htmlContent</table>" };
+        
+      } # END if ($sth->rows > 0)
+      
+    } # END if (dbGetSchedule('vmRemovableConnected') ne 'off')
+    
+    if (dbGetSchedule('alarms') ne 'off')
+    {
+    
+      $sth = $dbh->prepare("SELECT alarm_name, status, time, entityMoRef, v.vcname, vms.name as entity FROM alarms INNER JOIN vcenters v ON vcenter = v.id INNER JOIN vms ON entityMoRef = vms.moref WHERE entityMoRef LIKE 'VirtualMachine%' AND alarms.lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY alarms.vcenter, alarms.moref");
+      $sth->execute();
+
+      if ($sth->rows > 0)
+      {
+        
+        $alertCount += $sth->rows;
+        my $htmlContent = "<table style='$styleTable'><thead><tr style='$styleLineHead'><th style='$styleHead'>alarm_name</th><th style='$styleHead'>status</th><th style='$styleHead'>time</th><th style='$styleHead'>entityMoRef</th><th style='$styleHead'>vcname</th><th style='$styleHead'>entity</th></tr></thead>";
+        
+        while ($ref = $sth->fetchrow_hashref)
+        {
+
+          $htmlContent = $htmlContent . "<tr style='$styleLine'><td style='$styleCell'>" . $ref->{'alarm_name'} . "</td><td style='$styleCell'>" . $ref->{'status'} . "</td><td style='$styleCell'>" . $ref->{'time'} . "</td><td style='$styleCell'>" . $ref->{'entityMoRef'} . "</td><td style='$styleCell'>" . $ref->{'vcname'} . "</td><td style='$styleCell'>" . $ref->{'entity'} . "</td></tr>";
+          
+        } # END while ($ref = $sth->fetchrow_hashref)
+        
+        push @htmlModuleContent, { title => 'VM Alarms', body => "$htmlContent</table>" };
+        
+      } # END if ($sth->rows > 0)
+    
+    } # END if (dbGetSchedule('alarms') ne 'off')
+    
+    if (dbGetSchedule('vmGuestIdMismatch') ne 'off')
+    {
+    
+      $sth = $dbh->prepare("SELECT main.name, main.guestId, main.configGuestId, v.vcname FROM vms AS main INNER JOIN vcenters v ON main.vcenter = v.id WHERE main.guestId <> 'Not Available' AND main.guestId <> main.configGuestId AND main.lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY main.moref, v.id");
+
+      $sth->execute();
+
+      if ($sth->rows > 0)
+      {
+        
+        $alertCount += $sth->rows;
+        my $htmlContent = "<table style='$styleTable'><thead><tr style='$styleLineHead'><th style='$styleHead'>VM Name</th><th style='$styleHead'>GuestId</th><th style='$styleHead'>Config GuestId</th><th style='$styleHead'>vCenter</th></tr></thead>";
+
+        while ($ref = $sth->fetchrow_hashref)
+        {
+
+          $htmlContent = $htmlContent . "<tr style='$styleLine'><td style='$styleCell'>" . $ref->{'name'} . "</td><td style='$styleCell'>" . $ref->{'guestId'} . "</td><td style='$styleCell'>" . $ref->{'configGuestId'} . "</td><td style='$styleCell'>" . $ref->{'vcname'} . "</td></tr>";
+          
+        } # END while ($ref = $sth->fetchrow_hashref)
+        
+        push @htmlModuleContent, { title => 'VM GuestId Mismatch', body => "$htmlContent</table>" };
+        
+      } # END if ($sth->rows > 0)
+      
+    } # END if (dbGetSchedule('vmGuestIdMismatch') ne 'off')
+    
+    if (dbGetSchedule('vmPoweredOff') ne 'off')
+    {
+    
+      $sth = $dbh->prepare("SELECT main.name, v.vcname FROM vms AS main INNER JOIN vcenters v ON main.vcenter = v.id WHERE main.powerState = 'poweredOff' AND main.lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY main.moref, v.id");
+
+      $sth->execute();
+
+      if ($sth->rows > 0)
+      {
+        
+        $alertCount += $sth->rows;
+        my $htmlContent = "<table style='$styleTable'><thead><tr style='$styleLineHead'><th style='$styleHead'>VM Name</th><th style='$styleHead'>vCenter</th></tr></thead>";
+
+        while ($ref = $sth->fetchrow_hashref)
+        {
+
+          $htmlContent = $htmlContent . "<tr style='$styleLine'><td style='$styleCell'>" . $ref->{'name'} . "</td><td style='$styleCell'>" . $ref->{'vcname'} . "</td></tr>";
+          
+        } # END while ($ref = $sth->fetchrow_hashref)
+        
+        push @htmlModuleContent, { title => 'VM Powered Off', body => "$htmlContent</table>" };
+        
+      } # END if ($sth->rows > 0)
+      
+    } # END if (dbGetSchedule('vmPoweredOff') ne 'off')
+    
+    if (dbGetSchedule('vmMisnamed') ne 'off')
+    {
+    
+      $sth = $dbh->prepare("SELECT main.name, main.fqdn, v.vcname FROM vms AS main INNER JOIN vcenters v ON main.vcenter = v.id WHERE main.fqdn <> 'Not Available' AND main.fqdn NOT LIKE CONCAT(main.name, '%') AND main.lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY main.moref, v.id");
+
+      $sth->execute();
+
+      if ($sth->rows > 0)
+      {
+        
+        $alertCount += $sth->rows;
+        my $htmlContent = "<table style='$styleTable'><thead><tr style='$styleLineHead'><th style='$styleHead'>VM Name</th><th style='$styleHead'>FQDN</th><th style='$styleHead'>vCenter</th></tr></thead>";
+
+        while ($ref = $sth->fetchrow_hashref)
+        {
+
+          $htmlContent = $htmlContent . "<tr style='$styleLine'><td style='$styleCell'>" . $ref->{'name'} . "</td><td style='$styleCell'>" . $ref->{'fqdn'} . "</td><td style='$styleCell'>" . $ref->{'vcname'} . "</td></tr>";
+          
+        } # END while ($ref = $sth->fetchrow_hashref)
+        
+        push @htmlModuleContent, { title => 'VM misnamed', body => "$htmlContent</table>" };
+        
+      } # END if ($sth->rows > 0)
+      
+    } # END if (dbGetSchedule('vmMisnamed') ne 'off')
+    
+    #################
+    # END VM Checks #
+    #################
 
     my $params = { 'modules' => \@htmlModuleContent, 'executionDate' => time2str("%Y-%m-%d %H:%M", $start), 'url' => 'https://'.lc($HOSTNAME) };
     $options{INCLUDE_PATH} = '/var/www/admin/mail-template';
@@ -4021,6 +4756,5 @@ sub mailAlert
     $msg->send('smtp', $smtpAddress, Timeout => 60 );
     
   } # END if ($mailAlertExecuted == 0)
-  exit;
   
 } # END sub mailAlert
