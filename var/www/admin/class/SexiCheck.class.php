@@ -84,14 +84,7 @@ class SexiCheck
     $this->footer = "";
     $this->graph = "";
     $sqlQuery .= " AND main.firstseen < '" . $this->selectedDate . " 23:59:59' AND main.lastseen > '" . $this->selectedDate . " 00:00:01'";
-
-    if (!empty($sqlQueryHaving))
-    {
-      
-      $sqlQuery .= " HAVING $sqlQueryHaving";
-      
-    } # END if (!empty($sqlQueryHaving))
-    
+  
     if (!empty($sqlQueryGroupBy))
     {
       
@@ -104,6 +97,13 @@ class SexiCheck
       $sqlQuery .= " GROUP BY main.moref, v.id";
       
     } # END if (!empty($sqlQueryGroupBy))
+
+    if (!empty($sqlQueryHaving))
+    {
+      
+      $sqlQuery .= " HAVING $sqlQueryHaving";
+      
+    } # END if (!empty($sqlQueryHaving))
     
     // error_log($sqlQuery);
     $sqlData = $this->db->rawQuery($sqlQuery);
