@@ -614,3 +614,4 @@ input[readonly] {
   text-decoration: none;
 }
 .navbar-brand a:hover { text-shadow: 0 0 5px white; }
+.btn-inventory { outline: 5px auto; }
