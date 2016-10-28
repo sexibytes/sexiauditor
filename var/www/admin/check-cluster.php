@@ -85,7 +85,7 @@ if ($check->getModuleSchedule('clusterAdmissionControl') != 'off' && $check->get
 if ($check->getModuleSchedule('clusterMembersLUNPathCountMismatch') != 'off' && $check->getModuleSchedule('inventory') != 'off')
 {
   
-  $check->displayCheck([  'sqlQuery' => "SELECT main.id as clusterId, main.cluster_name as cluster, h.host_name, h.datastorecount, v.vcname as vcenter FROM hosts h INNER JOIN clusters main ON h.cluster = main.id INNER JOIN vcenters v ON h.vcenter = v.id WHERE true",
+  $check->displayCheck([  'sqlQuery' => "SELECT main.id as clusterId, main.cluster_name as cluster, h.host_name, h.datastorecount, v.vcname as vcenter FROM hosts h INNER JOIN clusters main ON h.cluster = main.id INNER JOIN vcenters v ON h.vcenter = v.id WHERE main.id <> 1",
                           "id" => "CLUSTERDATASTORECONSISTENCY",
                           'typeCheck' => 'majorityPerCluster',
                           'majorityProperty' => 'datastorecount',
