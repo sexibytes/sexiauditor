@@ -61,6 +61,7 @@ my %perfCntr;
 my $capacityPlanningExecuted = 0;
 my $mailAlertExecuted = 0;
 chomp(my $HOSTNAME = `hostname -s`);
+my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
 
 # Using --force switch will bypass scheduler and run every subroutine
 my $force;
@@ -189,7 +190,7 @@ my %actions = ( inventory => \&inventory,
                 datastoremaintenancemode => \&dummy,
                 datastoreAccessible => \&dummy,
                 capacityPlanningReport => \&capacityPlanningReport,
-                mailAlert => \&mailAlert
+                mailAlert => \&dummy
               );
 
 # Data purge
@@ -375,7 +376,6 @@ foreach $s_item (@server_list)
     
     my $key = $ref->{'module'};
     my $value = $ref->{'schedule'};
-    my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
     
     if ($force && $value ne "off")
     {
@@ -415,7 +415,7 @@ foreach $s_item (@server_list)
           else
           {
             
-            $logger->info("[DEBUG][SUBROUTINE] Skipping daily process for $key as it's not yet daily schedule $dailySchedule");
+            $logger->info("[DEBUG][SUBROUTINE] Skipping daily process for $key as it's not yet daily schedule $dailySchedule") if $showDebug;
             
           } # END if ($hour == $dailySchedule)
           
@@ -444,7 +444,7 @@ foreach $s_item (@server_list)
         case "monthly"
         {
           
-          if ($wday == $weeklySchedule)
+          if ($mon == $monthlySchedule)
           {
             
             $logger->info("[INFO][SUBROUTINE] Start monthly process for $key");
@@ -464,7 +464,7 @@ foreach $s_item (@server_list)
         case "off"
         {
           
-          $logger->info("[INFO][SUBROUTINE] Ignoring process for $key as it's off");
+          $logger->info("[DEBUG][SUBROUTINE] Ignoring process for $key as it's off") if $showDebug;
           
         } # END case "off"
         
@@ -486,14 +486,18 @@ foreach $s_item (@server_list)
   
 } # END foreach $s_item (@server_list)
 
-# Send Mail Alert if enabled, this check must be called manually to be able to query stats from the previous execution
-# TODO : check schedule
-# if (dbGetSchedule('mailAlert') ne 'off')
-# {
-#   
-#   mailAlert();
-#   
-# } # END if (dbGetSchedule('mailAlert') ne 'off')
+# Send Mail Alert if enabled, this check must be called manually to be able to query stats from all vcenter and from the previous execution
+if (  ($force && dbGetSchedule('mailAlert') ne "off") || 
+      dbGetSchedule('mailAlert') eq "hourly" || 
+      (dbGetSchedule('mailAlert') eq "daily" && $hour == $dailySchedule) || 
+      (dbGetSchedule('mailAlert') eq "weekly" && $wday == $weeklySchedule) || 
+      (dbGetSchedule('mailAlert') eq "monthly" && $mon == $monthlySchedule))
+{
+  
+  # --force switch have been triggered or schedule is due
+  mailAlert();
+  
+}
 
 my $sqlInsert = $dbh->prepare("INSERT INTO executiontime (date, seconds) VALUES (FROM_UNIXTIME (?), ?)");
 $sqlInsert->execute($start, time - $start);
@@ -3191,7 +3195,7 @@ sub terminateSession
       
       $sessionBody = $sessionBody . "<tr style='font-size:16px;'><td style='border:1px solid #CCC'>" . $session->userName . "</td><td style='border:1px solid #CCC'>" . $session->lastActiveTime . "</td></tr>";
       $logger->info("[TERMINATESESSION] Killing session " . $session->key . " of user " . $session->userName . " since it's idle since " . $session->lastActiveTime);
-       $sessionMgr->TerminateSession(sessionId => [$session->key]);
+      $sessionMgr->TerminateSession(sessionId => [$session->key]);
       $killedSession++;
       
     } # END if exclude session
