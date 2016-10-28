@@ -544,6 +544,7 @@ sub sessionage
     if (($rows gt 0)
       && ($ref->{'sessionKey'} eq $sessionKey)
       && ($ref->{'loginTime'} eq $loginTime)
+      && ($ref->{'lastActiveTime'} eq $lastActiveTime)
       && ($ref->{'userAgent'} eq $userAgent)
       && ($ref->{'ipAddress'} eq $ipAddress)
       && ($ref->{'userName'} eq $session->userName))
