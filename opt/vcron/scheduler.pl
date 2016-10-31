@@ -3176,16 +3176,22 @@ sub terminateSession
 
   my $sessionMgr = Vim::get_view(mo_ref => Vim::get_service_content()->sessionManager);
   my $sessionList = eval {$sessionMgr->sessionList || []};
+  my $vcentersdk = new URI::URL $sessionMgr->{'vim'}->{'service_url'};
   my $thresholdSession = dbGetConfig('vcSessionAge');
   my $senderMail = dbGetConfig('senderMail');
   my $recipientMail = dbGetConfig('recipientMail');
   my $smtpAddress = dbGetConfig('smtpAddress');
   my $killedSession = 0;
+  my $styleTable = 'border-collapse:collapse;';
+  my $styleHead = 'font-family: Calibri; font-size: 14px; color: #FF4536; padding:5px;';
+  my $styleLine = 'border:1px solid black;';
+  my $styleLineHead = 'background-color: #282F35;';
+  my $styleCell = 'border-bottom:1px solid black; font-family: Calibri; font-size: 14px; padding:5px;';
+  my @htmlModuleContent;
   my %options;
   $options{INCLUDE_PATH} = '/var/www/admin/mail-template';
-  # chomp(my $HOSTNAME = `hostname -s`);
-  my $sessionBody = "";
-  
+  my $htmlContent = "<table style='$styleTable'><thead><tr style='$styleLineHead'><th style='$styleHead'>Username</th><th style='$styleHead'>Last Active Time</th><th style='$styleHead'>vCenter</th></tr></thead>";
+
   foreach my $session (@$sessionList)
   {
     
@@ -3194,7 +3200,7 @@ sub terminateSession
     if (((abs(str2time($session->lastActiveTime) - $start) / 86400) > $thresholdSession) && ($session->userName !~ /vpxd-extension/) && ($session->userName !~ /vsphere-webclient/))
     {
       
-      $sessionBody = $sessionBody . "<tr style='font-size:16px;'><td style='border:1px solid #CCC'>" . $session->userName . "</td><td style='border:1px solid #CCC'>" . $session->lastActiveTime . "</td></tr>";
+      $htmlContent = $htmlContent . "<tr style='$styleLine'><td style='$styleCell'>" . $session->userName . "</td><td style='$styleCell'>" . $session->lastActiveTime . "</td><td style='$styleCell'>" . $vcentersdk->host . "</td></tr>"; 
       $logger->info("[TERMINATESESSION] Killing session " . $session->key . " of user " . $session->userName . " since it's idle since " . $session->lastActiveTime);
       $sessionMgr->TerminateSession(sessionId => [$session->key]);
       $killedSession++;
@@ -3206,16 +3212,14 @@ sub terminateSession
   if ($killedSession > 0)
   {
     
-    my %params;
-    $params{VCSESSIONAGE} = $thresholdSession;
-    $params{TERMINATESESSIONBODY} = $sessionBody;
+    my $params = { 'body' => "$htmlContent</table>", 'executionDate' => time2str("%Y-%m-%d %H:%M", $start), 'url' => 'https://'.lc($HOSTNAME), 'VCSESSIONAGE' => $thresholdSession };
     my $msg = MIME::Lite::TT::HTML->new(
       From        =>  $senderMail,
       To          =>  $recipientMail,
       Subject     =>  '['.uc($HOSTNAME).'] Terminate vCenter '.$activeVC.' Sessions Report',
       Template    =>  { html => 'terminatesession.html' },
       TmplOptions =>  \%options,
-      TmplParams  =>  \%params,
+      TmplParams  =>  $params,
     );
     $msg->send('smtp', $smtpAddress, Timeout => 60 );
     
