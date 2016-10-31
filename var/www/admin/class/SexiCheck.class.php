@@ -68,6 +68,7 @@ class SexiCheck
       'id' => null,
       'sqlQueryHaving' => null,
       'sqlQueryGroupBy' => null,
+      'sqlQueryOrderBy' => null,
     ];
     extract($args);
     $this->thead = $thead;
@@ -104,6 +105,13 @@ class SexiCheck
       $sqlQuery .= " HAVING $sqlQueryHaving";
       
     } # END if (!empty($sqlQueryHaving))
+
+    if (!empty($sqlQueryOrderBy))
+    {
+      
+      $sqlQuery .= " ORDER BY $sqlQueryOrderBy";
+      
+    } # END if (!empty($sqlQueryOrderBy))
     
     // error_log($sqlQuery);
     $sqlData = $this->db->rawQuery($sqlQuery);
@@ -228,15 +236,37 @@ class SexiCheck
           $this->graph .= '            series : [{'."\n";
           $this->graph .= '                    name:' . $this->id . ','."\n";
           $this->graph .= '                    type:"pie",'."\n";
+          $nbPivotEntries = 0;
+          $othersPivotEntries = 0;
           
           foreach ($sqlData as $entry)
           {
             
-            $data[] = (object) array('value' => $entry["dataValue"], 'name' => $entry["dataKey"]);
+            if ($nbPivotEntries < 9)
+            {
+              
+              $nbPivotEntries++;
+              $data[] = (object) array('value' => $entry["dataValue"], 'name' => $entry["dataKey"]);
+              $this->body .= '            <tr><td>' . $entry["dataKey"] . '</td><td>' . $entry["dataValue"] . '</td></tr>'."\n";
+              
+            }
+            else
+            {
+              
+              $othersPivotEntries += $entry["dataValue"];
+              
+            } # END if ($nbPivotEntries < 10)
+
             $entries++;
-            $this->body .= '            <tr><td>' . $entry["dataKey"] . '</td><td>' . $entry["dataValue"] . '</td></tr>'."\n";
-            
+
           } # END foreach ($sqlData as $entry)
+          if ($othersPivotEntries > 0)
+          {
+            
+            $data[] = (object) array('value' => $othersPivotEntries, 'name' => "Others");
+            $this->body .= '            <tr><td>Others</td><td>' . $othersPivotEntries . '</td></tr>'."\n";
+            
+          } # END if ($othersPivotEntries > 0)
           
           $this->graph .= '                      data: ' . json_encode($data, JSON_NUMERIC_CHECK) . ''."\n";
           $this->graph .= '                  }]'."\n";
@@ -257,7 +287,7 @@ class SexiCheck
         break; # END case 'ssp':
         
         default:
-        
+          
           foreach ($sqlData as $entry)
           {
             
@@ -296,7 +326,7 @@ class SexiCheck
         $this->footer .= '    $("#tab_' . $this->id . '").DataTable( {'."\n";
         $this->footer .= '      "language": { "infoFiltered": "" },'."\n";
         
-        if ($entries < 11)
+        if ($entries < 11 || $this->typeCheck == "pivotTableGraphed")
         {
           
           $this->footer .= '      "paging":   false,'."\n";
