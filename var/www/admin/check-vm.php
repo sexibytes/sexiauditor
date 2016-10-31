@@ -96,6 +96,7 @@ if($check->getModuleSchedule('vmcpuramhotadd') != 'off' && $check->getModuleSche
 if($check->getModuleSchedule('vmToolsPivot') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
   $check->displayCheck([  'sqlQuery' => "SELECT main.vmtools as dataKey, COUNT(*) as dataValue FROM vms AS main WHERE main.vmtools > 0",
                           'sqlQueryGroupBy' => "main.vmtools",
+                          'sqlQueryOrderBy' => "dataValue DESC",
                           "id" => "VMTOOLSPIVOT",
                           'typeCheck' => 'pivotTableGraphed',
                           'thead' => array('vmtools Version', 'Count'),
@@ -105,6 +106,7 @@ if($check->getModuleSchedule('vmToolsPivot') != 'off' && $check->getModuleSchedu
 if($check->getModuleSchedule('vmvHardwarePivot') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
   $check->displayCheck([  'sqlQuery' => "SELECT main.hwversion as dataKey, COUNT(*) as dataValue FROM vms AS main WHERE true",
                           'sqlQueryGroupBy' => "main.hwversion",
+                          'sqlQueryOrderBy' => "dataValue DESC",
                           "id" => "VMVHARDWAREPIVOT",
                           'typeCheck' => 'pivotTableGraphed',
                           'thead' => array('vmtools Hardware', 'Count'),
@@ -206,6 +208,7 @@ if($check->getModuleSchedule('vmMisnamed') != 'off' && $check->getModuleSchedule
 if($check->getModuleSchedule('vmGuestPivot') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
   $check->displayCheck([  'sqlQuery' => "SELECT main.guestOS as dataKey, COUNT(*) as dataValue FROM vms AS main WHERE main.guestOS <> 'Not Available'",
                           "sqlQueryGroupBy" => "main.guestOS",
+                          'sqlQueryOrderBy' => "dataValue DESC",
                           "id" => "VMGUESTPIVOT",
                           'typeCheck' => 'pivotTableGraphed',
                           'thead' => array('GuestOS', 'Count'),
