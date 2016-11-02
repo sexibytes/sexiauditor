@@ -4337,7 +4337,7 @@ sub mailAlert
     {
       
       my $vmSnapshotAge = dbGetConfig('vmSnapshotAge');
-      $sth = $dbh->prepare("SELECT vms.name, main.name as snapshot_name, main.description, DATEDIFF('$dateSqlQuery', main.createTime) as age, v.vcname, main.state, main.quiesced FROM snapshots main INNER JOIN vms ON main.vm = vms.id INNER JOIN vcenters v ON vms.vcenter = v.id HAVING age > $vmSnapshotAge");
+      $sth = $dbh->prepare("SELECT vms.name, main.name as snapshot_name, main.description, DATEDIFF('$dateSqlQuery', main.createTime) as age, v.vcname, main.state, main.quiesced FROM snapshots main INNER JOIN vms ON main.vm = vms.id INNER JOIN vcenters v ON vms.vcenter = v.id HAVING age > $vmSnapshotAge GROUP BY main.vm, main.moref");
       $sth->execute();
 
       if ($sth->rows > 0)
