@@ -1,5 +1,6 @@
-<!DOCTYPE html><html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Capacity Planning</title></head><body><table>
-<tr>
+<!DOCTYPE html><html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Capacity Planning</title></head><body>
+<i>Capacity Planning Report generated on [% executionDate %], please visit <a href="[% url %]">here</a> for more information</i><br><br>
+<table><tr>
 [% FOREACH member IN groups %]
   <td>
     <table style="text-align:center;background-color:[% member.color %];width:100%">
@@ -15,5 +16,4 @@
 </tr>
 <tr>
 [% END %]
-</tr>
-</table></body></html>
+</tr></table></body></html>
