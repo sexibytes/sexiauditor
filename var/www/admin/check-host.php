@@ -41,6 +41,7 @@ catch (Exception $e)
 
 if($check->getModuleSchedule('hostLUNPathDead') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
   $check->displayCheck([  'sqlQuery' => "SELECT main.host_name, main.deadlunpathcount, main.lunpathcount, c.cluster_name as cluster, v.vcname as vcenter FROM hosts main INNER JOIN vcenters v ON main.vcenter = v.id INNER JOIN clusters c ON main.cluster = c.id WHERE main.deadlunpathcount > 0",
+                          'sqlQueryGroupBy' => "main.moref, main.vcenter",
                           "id" => "HOSTLUNPATHDEAD",
                           'thead' => array('Name', 'Dead LUN path', 'LUN Path', 'Cluster', 'vCenter'),
                           'tbody' => array('"<td>".$entry["host_name"]."</td>"', '"<td>".$entry["deadlunpathcount"]."</td>"', '"<td>".$entry["lunpathcount"]."</td>"', '"<td>".$entry["cluster"]."</td>"', '"<td>".$entry["vcenter"]."</td>"')]);
@@ -55,7 +56,8 @@ if ($check->getModuleSchedule('hostSshShell') != 'off' && $check->getModuleSched
   
   $currentSshPolicy = $check->getConfig('hostSSHPolicy');
   $currentShellPolicy = $check->getConfig('hostShellPolicy');
-  $check->displayCheck([  'sqlQuery' => "SELECT main.id FROM hosts main INNER JOIN vcenters v ON main.vcenter = v.id INNER JOIN clusters c ON main.cluster = c.id WHERE main.ssh_policy <> '$currentSshPolicy' OR main.shell_policy <> '$currentShellPolicy'",
+  $check->displayCheck([  'sqlQuery' => "SELECT main.id FROM hosts main INNER JOIN vcenters v ON main.vcenter = v.id INNER JOIN clusters c ON main.cluster = c.id WHERE main.ssh_policy <> '$currentSshPolicy' OR main.shell_policy <> '$currentShellPolicy' AND main.connectionState LIKE 'connected' AND main.id IN (SELECT MAX(id) FROM hosts GROUP BY moref,vcenter)",
+                          'sqlQueryGroupBy' => "main.moref, main.vcenter",
                           "id" => "HOSTSSHSHELL",
                           "typeCheck" => 'ssp',
                           'thead' => array('Name', 'SSH Policy', 'Desired SSH Policy', 'Shell Policy', 'Desired Shell Policy', 'vCenter')]);
@@ -63,7 +65,8 @@ if ($check->getModuleSchedule('hostSshShell') != 'off' && $check->getModuleSched
 } # END if ($check->getModuleSchedule('hostSshShell') != 'off' && $check->getModuleSchedule('inventory') != 'off')
 
 if($check->getModuleSchedule('hostNTPCheck') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
-  $check->displayCheck([  'sqlQuery' => "SELECT c.id as clusterId, c.cluster_name as cluster, main.host_name, main.ntpservers, v.vcname as vcenter FROM hosts main INNER JOIN clusters c ON main.cluster = c.id INNER JOIN vcenters v ON main.vcenter = v.id WHERE true",
+  $check->displayCheck([  'sqlQuery' => "SELECT c.id as clusterId, c.cluster_name as cluster, main.host_name, main.ntpservers, v.vcname as vcenter FROM hosts main INNER JOIN clusters c ON main.cluster = c.id INNER JOIN vcenters v ON main.vcenter = v.id WHERE c.id <> 1 AND main.connectionState LIKE 'connected' AND main.id IN (SELECT MAX(id) FROM hosts GROUP BY moref,vcenter)",
+                          'sqlQueryGroupBy' => "main.moref, main.vcenter",
                           "id" => "HOSTNTPCHECK",
                           'typeCheck' => 'majorityPerCluster',
                           'majorityProperty' => 'ntpservers',
@@ -72,7 +75,8 @@ if($check->getModuleSchedule('hostNTPCheck') != 'off' && $check->getModuleSchedu
 }
 
 if($check->getModuleSchedule('hostDNSCheck') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
-  $check->displayCheck([  'sqlQuery' => "SELECT c.id as clusterId, c.cluster_name as cluster, main.host_name, main.dnsservers, v.vcname as vcenter FROM hosts main INNER JOIN clusters c ON main.cluster = c.id INNER JOIN vcenters v ON main.vcenter = v.id WHERE c.id <> 1",
+  $check->displayCheck([  'sqlQuery' => "SELECT c.id as clusterId, c.cluster_name as cluster, main.host_name, main.dnsservers, v.vcname as vcenter FROM hosts main INNER JOIN clusters c ON main.cluster = c.id INNER JOIN vcenters v ON main.vcenter = v.id WHERE c.id <> 1 AND main.connectionState LIKE 'connected' AND main.id IN (SELECT MAX(id) FROM hosts GROUP BY moref,vcenter)",
+                          'sqlQueryGroupBy' => "main.moref, main.vcenter",
                           "id" => "HOSTDNSCHECK",
                           'typeCheck' => 'majorityPerCluster',
                           'majorityProperty' => 'dnsservers',
@@ -81,7 +85,8 @@ if($check->getModuleSchedule('hostDNSCheck') != 'off' && $check->getModuleSchedu
 }
 
 if($check->getModuleSchedule('hostSyslogCheck') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
-  $check->displayCheck([  'sqlQuery' => "SELECT c.id as clusterId, c.cluster_name as cluster, main.host_name, main.syslog_target, v.vcname as vcenter FROM hosts main INNER JOIN clusters c ON main.cluster = c.id INNER JOIN vcenters v ON main.vcenter = v.id WHERE c.id <> 1",
+  $check->displayCheck([  'sqlQuery' => "SELECT c.id as clusterId, c.cluster_name as cluster, main.host_name, main.syslog_target, v.vcname as vcenter FROM hosts main INNER JOIN clusters c ON main.cluster = c.id INNER JOIN vcenters v ON main.vcenter = v.id WHERE c.id <> 1 AND main.connectionState LIKE 'connected' AND main.id IN (SELECT MAX(id) FROM hosts GROUP BY moref,vcenter)",
+                          'sqlQueryGroupBy' => "main.moref, main.vcenter",
                           "id" => "HOSTSYSLOGCHECK",
                           'typeCheck' => 'majorityPerCluster',
                           'majorityProperty' => 'syslog_target',
@@ -90,7 +95,8 @@ if($check->getModuleSchedule('hostSyslogCheck') != 'off' && $check->getModuleSch
 }
 
 if($check->getModuleSchedule('hostConfigurationIssues') != 'off') {
-  $check->displayCheck([  'sqlQuery' => "SELECT main.configissue, h.host_name, cl.cluster_name as cluster, v.vcname as vcenter FROM configurationissues main INNER JOIN hosts h ON main.host = h.id INNER JOIN clusters cl ON h.cluster = cl.id INNER JOIN vcenters v ON h.vcenter = v.id WHERE true",
+  $check->displayCheck([  'sqlQuery' => "SELECT main.configissue, h.host_name, cl.cluster_name as cluster, v.vcname as vcenter FROM configurationissues main INNER JOIN hosts h ON main.host = h.id INNER JOIN clusters cl ON h.cluster = cl.id INNER JOIN vcenters v ON h.vcenter = v.id WHERE h.connectionState LIKE 'connected' AND h.id IN (SELECT MAX(id) FROM hosts GROUP BY moref,vcenter)",
+                          'sqlQueryGroupBy' => "main.host, main.configissue",
                           "id" => "HOSTCONFIGURATIONISSUES",
                           'thead' => array('Issue', 'Name', 'Cluster', 'vCenter'),
                           'tbody' => array('"<td>" . $entry["configissue"] . "</td>"', '"<td>" . $entry["host_name"] . "</td>"', '"<td>" . $entry["cluster"] . "</td>"', '"<td>" . $entry["vcenter"] . "</td>"')]);
@@ -107,7 +113,8 @@ if($check->getModuleSchedule('alarms') != 'off') {
 }
 
 if($check->getModuleSchedule('hostHardwareStatus') != 'off') {
-  $check->displayCheck([  'sqlQuery' => "SELECT main.issuename, main.issuestate, main.issuetype, h.host_name, v.vcname as vcenter FROM hardwarestatus main INNER JOIN hosts h ON main.host = h.id INNER JOIN vcenters v ON h.vcenter = v.id WHERE true",
+  $check->displayCheck([  'sqlQuery' => "SELECT main.issuename, main.issuestate, main.issuetype, h.host_name, v.vcname as vcenter FROM hardwarestatus main INNER JOIN hosts h ON main.host = h.id INNER JOIN vcenters v ON h.vcenter = v.id WHERE h.connectionState LIKE 'connected'",
+                          'sqlQueryGroupBy' => "main.issuename, main.issuestate, h.host_name, v.vcname",
                           "id" => "HOSTHARDWARESTATUS",
                           'thead' => array('State', 'Issue', 'Type', 'Name', 'vCenter'),
                           'tbody' => array('"<td>" . $this->alarmStatus[(string) $entry["issuestate"]] . "</td>"', '"<td>" . $entry["issuename"] . "</td>"', '"<td>" . $entry["issuetype"] . "</td>"', '"<td>" . $entry["host_name"] . "</td>"', '"<td>" . $entry["vcenter"] . "</td>"'),
@@ -131,7 +138,8 @@ if($check->getModuleSchedule('hostFQDNHostnameMismatch') != 'off' && $check->get
 }
 
 if($check->getModuleSchedule('hostMaintenanceMode') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
-  $check->displayCheck([  'sqlQuery' => "SELECT main.host_name, c.cluster_name as cluster, v.vcname as vcenter FROM hosts main INNER JOIN vcenters v ON main.vcenter = v.id INNER JOIN clusters c ON main.cluster = c.id WHERE main.inmaintenancemode = 1",
+  $check->displayCheck([  'sqlQuery' => "SELECT main.host_name, c.cluster_name as cluster, v.vcname as vcenter FROM hosts main INNER JOIN vcenters v ON main.vcenter = v.id INNER JOIN clusters c ON main.cluster = c.id WHERE main.inmaintenancemode = 1 AND main.connectionState LIKE 'connected'",
+                          'sqlQueryGroupBy' => "main.vcenter, main.moref",
                           "id" => "HOSTMAINTENANCEMODE",
                           'thead' => array('Name', 'Cluster', 'vCenter'),
                           'tbody' => array('"<td><img src=\"images/vc-hostInMaintenance.gif\"> ".$entry["host_name"]."</td>"', '"<td>".$entry["cluster"]."</td>"', '"<td>".$entry["vcenter"]."</td>"')]);
@@ -141,7 +149,8 @@ if ($check->getModuleSchedule('hostPowerManagementPolicy') != 'off' && $check->g
 {
   
   $currentPolicy = $check->getConfig('powerSystemInfo');
-  $check->displayCheck([  'sqlQuery' => "SELECT main.id FROM hosts main INNER JOIN vcenters v ON main.vcenter = v.id INNER JOIN clusters c ON main.cluster = c.id WHERE main.powerpolicy <> '" . $currentPolicy . "'",
+  $check->displayCheck([  'sqlQuery' => "SELECT main.id FROM hosts main INNER JOIN vcenters v ON main.vcenter = v.id INNER JOIN clusters c ON main.cluster = c.id WHERE main.powerpolicy <> '" . $currentPolicy . "' AND main.connectionState LIKE 'connected'",
+                          'sqlQueryGroupBy' => "main.vcenter, main.moref",
                           "id" => "HOSTPOWERMANAGEMENTPOLICY",
                           "typeCheck" => 'ssp',
                           'thead' => array('Name', 'Power Policy', 'Desired Power Policy', 'vCenter')]);
@@ -153,6 +162,7 @@ if ($check->getModuleSchedule('hostBuildPivot') != 'off' && $check->getModuleSch
   
   $check->displayCheck([  'sqlQuery' => "SELECT main.esxbuild as dataKey, COUNT(*) as dataValue FROM hosts AS main WHERE true",
                           'sqlQueryGroupBy' => "main.esxbuild",
+                          'sqlQueryOrderBy' => "dataValue DESC",
                           "id" => "HOSTBUILDPIVOT",
                           'typeCheck' => 'pivotTableGraphed',
                           'thead' => array('Host Build', 'Count'),

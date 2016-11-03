@@ -13,7 +13,7 @@ try
 {
   
   # Main class loading
-  $sexiclass = new SexiClass();
+  $sexihelper = new SexiHelper();
   
 }
 catch (Exception $e)
@@ -24,12 +24,12 @@ catch (Exception $e)
   
 } # END try
 
-if (!is_array($esxhost = $sexiclass->getHostInfos($_GET['hostid'])))
+if (!is_array($esxhost = $sexihelper->getHostInfos($_GET['hostid'])))
 {
   
   exit('  <div class="alert alert-danger" role="alert"><span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span><span class="sr-only">Error:</span> ' . $esxhost . '</div>');
   
-} # END if (!is_array($esxhost = $sexiclass->getHostInfos($_GET['hostid'])))
+} # END if (!is_array($esxhost = $sexihelper->getHostInfos($_GET['hostid'])))
 
 ?>
 

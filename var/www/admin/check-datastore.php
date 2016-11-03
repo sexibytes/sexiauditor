@@ -94,8 +94,8 @@ if ($check->getModuleSchedule('datastoremaintenancemode') != 'off' && $check->ge
 if ($check->getModuleSchedule('datastoreAccessible') != 'off' && $check->getModuleSchedule('inventory') != 'off')
 {
   
-  $check->displayCheck([  'sqlQuery' => "SELECT main.datastore_name, v.vcname as vcenter FROM datastores main INNER JOIN vcenters v ON main.vcenter = v.id WHERE main.isAccessible = 0",
-                          'sqlQueryGroupBy' => "main.datastore_name, main.vcenter",
+  $check->displayCheck([  'sqlQuery' => "SELECT main.datastore_name, v.vcname as vcenter FROM datastores main INNER JOIN vcenters v ON main.vcenter = v.id INNER JOIN datastoreMappings dm ON dm.datastore_id = main.id INNER JOIN hosts h ON dm.host_id = h.id WHERE main.isAccessible = 0 AND h.connectionState LIKE 'connected' AND h.id IN (SELECT MAX(id) FROM hosts GROUP BY vcenter, moref)",
+                          'sqlQueryGroupBy' => "main.moref, main.vcenter",
                           "id" => "DATASTOREACCESSIBLE",
                           'thead' => array('Datastore Name', 'vCenter'),
                           'tbody' => array('"<td>".$entry["datastore_name"]."</td>"', '"<td>".$entry["vcenter"]."</td>"')]);

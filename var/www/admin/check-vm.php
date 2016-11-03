@@ -42,7 +42,8 @@ catch (Exception $e)
 if ($check->getModuleSchedule('vmSnapshotsage') != 'off' && $check->getModuleSchedule('inventory') != 'off')
 {
   
-  $check->displayCheck([  'sqlQuery' => "SELECT main.id FROM snapshots main INNER JOIN vms ON main.vm = vms.id INNER JOIN hosts h ON vms.host = h.id INNER JOIN vcenters v ON h.vcenter = v.id WHERE DATEDIFF('" . $check->getSelectedDate() . "', main.createTime) > " . $check->getConfig('vmSnapshotAge'),
+  $check->displayCheck([  'sqlQuery' => "SELECT main.id FROM snapshots main INNER JOIN vms ON main.vm = vms.id INNER JOIN vcenters v ON vms.vcenter = v.id WHERE main.id IN (SELECT MAX(id) FROM snapshots WHERE lastseen > '" . $check->getSelectedDate() . " 00:00:01' GROUP BY vm, moref) AND DATEDIFF('" . $check->getSelectedDate() . "', main.createTime) > " . $check->getConfig('vmSnapshotAge'),
+                          'sqlQueryGroupBy' => "vms.vcenter, vms.moref, main.moref",
                           "id" => "VMSNAPSHOTSAGE",
                           "typeCheck" => 'ssp',
                           'thead' => array('VM Name', 'Quiesced/State', 'Snapshot', 'Description', 'Age(day)', 'vCenter'),
@@ -67,7 +68,8 @@ if($check->getModuleSchedule('vmconsolidationneeded') != 'off' && $check->getMod
 }
 
 if($check->getModuleSchedule('vmcpuramhddreservation') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
-  $check->displayCheck([  'sqlQuery' => "SELECT main.id FROM vms AS main INNER JOIN hosts h ON main.host = h.id INNER JOIN vcenters v ON h.vcenter = v.id WHERE (main.cpuReservation > 0 OR main.memReservation > 0)",
+  $check->displayCheck([  'sqlQuery' => "SELECT main.id FROM vms AS main INNER JOIN hosts h ON main.host = h.id INNER JOIN vcenters v ON h.vcenter = v.id WHERE (main.cpuReservation > 0 OR main.memReservation > 0) AND main.id IN (SELECT MAX(id) FROM vms GROUP BY vcenter, moref)",
+                          'sqlQueryGroupBy' => "main.vcenter, main.moref",
                           "id" => "VMCPURAMHDDRESERVATION",
                           "typeCheck" => 'ssp',
                           'thead' => array('VM Name', 'CPU Reservation', 'MEM Reservation', 'vCenter')]);
@@ -76,7 +78,8 @@ if($check->getModuleSchedule('vmcpuramhddreservation') != 'off' && $check->getMo
 }
 
 if($check->getModuleSchedule('vmcpuramhddlimits') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
-  $check->displayCheck([  'sqlQuery' => "SELECT main.id FROM vms AS main INNER JOIN hosts h ON main.host = h.id INNER JOIN vcenters v ON h.vcenter = v.id WHERE (main.cpuLimit > 0 OR main.memLimit > 0)",
+  $check->displayCheck([  'sqlQuery' => "SELECT main.id FROM vms AS main INNER JOIN hosts h ON main.host = h.id INNER JOIN vcenters v ON h.vcenter = v.id WHERE (main.cpuLimit > 0 OR main.memLimit > 0) AND main.id IN (SELECT MAX(id) FROM vms GROUP BY vcenter, moref)",
+                          'sqlQueryGroupBy' => "main.vcenter, main.moref",
                           "id" => "VMCPURAMHDDLIMITS",
                           "typeCheck" => 'ssp',
                           'thead' => array('VM Name', 'CPU Limit', 'MEM Limit', 'vCenter')]);
@@ -85,7 +88,8 @@ if($check->getModuleSchedule('vmcpuramhddlimits') != 'off' && $check->getModuleS
 }
 
 if($check->getModuleSchedule('vmcpuramhotadd') != 'off' && $check->getModuleSchedule('inventory') != 'off') {
-  $check->displayCheck([  'sqlQuery' => "SELECT main.id FROM vms AS main INNER JOIN hosts h ON main.host = h.id INNER JOIN vcenters v ON h.vcenter = v.id WHERE (main.cpuHotAddEnabled = 1 OR main.memHotAddEnabled = 1)",
+  $check->displayCheck([  'sqlQuery' => "SELECT main.id FROM vms AS main INNER JOIN hosts h ON main.host = h.id INNER JOIN vcenters v ON h.vcenter = v.id WHERE (main.cpuHotAddEnabled = 1 OR main.memHotAddEnabled = 1) AND main.id IN (SELECT MAX(id) FROM vms GROUP BY vcenter, moref)",
+                          'sqlQueryGroupBy' => "main.vcenter, main.moref",
                           "id" => "VMCPURAMHOTADD",
                           "typeCheck" => 'ssp',
                           'thead' => array('VM Name', 'CPU HotAdd', 'MEM HotAdd', 'vCenter'),

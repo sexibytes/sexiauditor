@@ -175,7 +175,7 @@ if (isset($_GET['c']))
         array( 'db' => 'v.vcname', 'dt' => 5, 'field' => 'vcname' )
       );
       $joinQuery = "FROM {$table} h INNER JOIN vcenters AS v ON (h.vcenter = v.id)";
-      $extraCondition = "h.firstseen < '" . $dateStart . "' AND h.lastseen > '" . $dateEnd . "' AND h.ssh_policy <> '". $sexihelper->getConfig('hostSSHPolicy') . "' OR h.shell_policy <> '" . $sexihelper->getConfig('hostSSHPolicy'). "' GROUP BY h.host_name";
+      $extraCondition = "h.firstseen < '" . $dateStart . "' AND h.lastseen > '" . $dateEnd . "' AND h.ssh_policy <> '". $sexihelper->getConfig('hostSSHPolicy') . "' OR h.shell_policy <> '" . $sexihelper->getConfig('hostSSHPolicy'). "' AND h.connectionState LIKE 'connected' AND h.id IN (SELECT MAX(id) FROM hosts GROUP BY moref,vcenter) GROUP BY h.host_name, h.vcenter";
       
     break; # END case 'HOSTSSHSHELL':
     
@@ -190,7 +190,7 @@ if (isset($_GET['c']))
         array( 'db' => 'v.vcname', 'dt' => 3, 'field' => 'vcname' )
       );
       $joinQuery = "FROM {$table} h INNER JOIN vcenters AS v ON (h.vcenter = v.id)";
-      $extraCondition = "h.firstseen < '" . $dateStart . "' AND h.lastseen > '" . $dateEnd . "' AND h.powerpolicy <> '". $sexihelper->getConfig('powerSystemInfo') . "'";
+      $extraCondition = "h.firstseen < '" . $dateStart . "' AND h.lastseen > '" . $dateEnd . "' AND h.powerpolicy <> '". $sexihelper->getConfig('powerSystemInfo') . "' AND h.connectionState LIKE 'connected' GROUP BY h.vcenter, h.moref";
       
     break; # END case 'HOSTPOWERMANAGEMENTPOLICY':
     
@@ -272,7 +272,7 @@ if (isset($_GET['c']))
         array( 'db' => 'v.vcname', 'dt' => 3, 'field' => 'vcname' )
       );
       $joinQuery = "FROM {$table} INNER JOIN hosts AS h ON (vms.host = h.id) INNER JOIN vcenters AS v ON (h.vcenter = v.id)";
-      $extraCondition = "vms.firstseen < '" . $dateStart . "' AND vms.lastseen > '" . $dateEnd . "' AND (vms.cpuReservation > 0 OR vms.memReservation > 0) GROUP BY vms.moref, v.id";
+      $extraCondition = "vms.firstseen < '" . $dateStart . "' AND vms.lastseen > '" . $dateEnd . "' AND (vms.cpuReservation > 0 OR vms.memReservation > 0) AND vms.id IN (SELECT MAX(id) FROM vms GROUP BY vcenter, moref) GROUP BY vms.vcenter, vms.moref";
       
     break; # END case 'VMCPURAMHDDRESERVATION':
     
@@ -313,7 +313,7 @@ if (isset($_GET['c']))
         array( 'db' => 'v.vcname', 'dt' => 3, 'field' => 'vcname' )
       );
       $joinQuery = "FROM {$table} INNER JOIN hosts AS h ON (vms.host = h.id) INNER JOIN vcenters AS v ON (h.vcenter = v.id)";
-      $extraCondition = "vms.firstseen < '" . $dateStart . "' AND vms.lastseen > '" . $dateEnd . "' AND (vms.cpuLimit > 0 OR vms.memLimit > 0) GROUP BY vms.moref, v.id";
+      $extraCondition = "vms.firstseen < '" . $dateStart . "' AND vms.lastseen > '" . $dateEnd . "' AND (vms.cpuLimit > 0 OR vms.memLimit > 0) AND vms.id IN (SELECT MAX(id) FROM vms GROUP BY vcenter, moref) GROUP BY vms.vcenter, vms.moref";
       
     break; # END case 'VMCPURAMHDDLIMITS':
     
@@ -429,7 +429,7 @@ if (isset($_GET['c']))
         array( 'db' => 'v.vcname', 'dt' => 4, 'field' => 'vcname' )
       );
       $joinQuery = "FROM {$table} a INNER JOIN vcenters v ON a.vcenter = v.id INNER JOIN vms ON a.entityMoRef = vms.moref";
-      $extraCondition = "a.firstseen < '" . $dateStart . "' AND a.lastseen > '" . $dateEnd . "' AND a.entityMoRef LIKE 'VirtualMachine%'";
+      $extraCondition = "a.firstseen < '" . $dateStart . "' AND a.lastseen > '" . $dateEnd . "' AND a.entityMoRef LIKE 'VirtualMachine%' GROUP BY a.vcenter, a.moref";
       
     break; # END case 'ALARMSVM':
     
