@@ -322,7 +322,7 @@ foreach $s_item (@server_list)
   $view_ClusterComputeResource = Vim::find_entity_views(view_type => 'ClusterComputeResource', properties => ['name', 'host', 'summary', 'configIssue', 'configuration.dasConfig.admissionControlPolicy', 'configuration.dasConfig.admissionControlEnabled', 'configurationEx']);
   $logger->info("[INFO][OBJECTS] End retrieving ClusterComputeResource objects");
   $logger->info("[INFO][OBJECTS] Start retrieving HostSystem objects");
-  $view_HostSystem = Vim::find_entity_views(view_type => 'HostSystem', properties => ['name', 'config.dateTimeInfo.ntpConfig.server', 'config.network.dnsConfig', 'config.powerSystemInfo.currentPolicy.shortName', 'configIssue', 'configManager.advancedOption', 'configManager.firmwareSystem', 'configManager.healthStatusSystem', 'configManager.storageSystem', 'configManager.serviceSystem', 'datastore', 'runtime.inMaintenanceMode', 'runtime.connectionState', 'summary.config.product.fullName', 'summary.hardware.cpuMhz', 'summary.hardware.cpuModel', 'summary.hardware.memorySize', 'summary.hardware.model', 'summary.hardware.numCpuCores', 'summary.hardware.numCpuPkgs', 'summary.rebootRequired', 'summary.runtime.connectionState', 'summary.quickStats']);
+  $view_HostSystem = Vim::find_entity_views(view_type => 'HostSystem', properties => ['name', 'config.dateTimeInfo.ntpConfig.server', 'config.network.dnsConfig', 'config.powerSystemInfo.currentPolicy.shortName', 'configIssue', 'configManager.advancedOption', 'configManager.firmwareSystem', 'configManager.healthStatusSystem', 'configManager.storageSystem', 'configManager.serviceSystem', 'datastore', 'runtime.inMaintenanceMode', 'runtime.connectionState', 'summary.config.product.fullName', 'summary.hardware.cpuMhz', 'summary.hardware.cpuModel', 'summary.hardware.memorySize', 'summary.hardware.model', 'summary.hardware.numCpuCores', 'summary.hardware.numCpuPkgs', 'summary.rebootRequired', 'summary.quickStats']);
   $logger->info("[INFO][OBJECTS] End retrieving HostSystem objects");
   $logger->info("[INFO][OBJECTS] Start retrieving DistributedVirtualPortgroup objects");
   $view_DistributedVirtualPortgroup = Vim::find_entity_views(view_type => 'DistributedVirtualPortgroup', properties => ['name', 'vm', 'config.numPorts', 'config.autoExpand', 'tag']);
@@ -1084,6 +1084,7 @@ sub hostinventory
     my $lunpathcount = 0;
     my $lundeadpathcount = 0;
     my $syslog_target = '';
+    my $connectionState = $host_view->{'runtime.connectionState'}->val;
 
     # We should call get_view subroutine only if host is connected to avoid error
     if ($host_view->{'runtime.connectionState'}->val eq "connected")
@@ -1187,7 +1188,8 @@ sub hostinventory
       && ($refHost->{'cpumhz'} eq $host_view->{'summary.hardware.cpuMhz'})
       && ($refHost->{'esxbuild'} eq $host_view->{'summary.config.product.fullName'})
       && ($refHost->{'ssh_policy'} eq $service_ssh)
-      && ($refHost->{'shell_policy'} eq $service_shell))
+      && ($refHost->{'shell_policy'} eq $service_shell)
+      && ($refHost->{'connectionState'} eq $connectionState))
     {
 
       # Host already exists, have not changed, updated lastseen property
@@ -1226,12 +1228,13 @@ sub hostinventory
         compareAndLog($refHost->{'esxbuild'}, $host_view->{'summary.config.product.fullName'});
         compareAndLog($refHost->{'ssh_policy'}, $service_ssh);
         compareAndLog($refHost->{'shell_policy'}, $service_shell);
+        compareAndLog($refHost->{'connectionState'}, $connectionState);
         $logger->info("[DEBUG][HOST-INVENTORY] Host $moRef have changed since last check, sending old entry it into oblivion") if $showDebug;
         
       } # END if ($refHost != 0)
       
       $logger->info("[DEBUG][HOST-INVENTORY] Adding data for host $moRef") if $showDebug;
-      my $sqlInsert = $dbh->prepare("INSERT INTO hosts (vcenter, cluster, moref, hostname, host_name, ntpservers, deadlunpathcount, numcpucore, syslog_target, rebootrequired, powerpolicy, bandwidthcapacity, memory, dnsservers, cputype, numcpu, inmaintenancemode, lunpathcount, datastorecount, model, cpumhz, esxbuild, ssh_policy, shell_policy, firstseen, lastseen) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?))");
+      my $sqlInsert = $dbh->prepare("INSERT INTO hosts (vcenter, cluster, moref, hostname, host_name, ntpservers, deadlunpathcount, numcpucore, syslog_target, rebootrequired, powerpolicy, bandwidthcapacity, memory, dnsservers, cputype, numcpu, inmaintenancemode, lunpathcount, datastorecount, model, cpumhz, esxbuild, ssh_policy, shell_policy, connectionState, firstseen, lastseen) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?))");
       $sqlInsert->execute(
         $vcenterID,
         $clusterID,
@@ -1257,6 +1260,7 @@ sub hostinventory
         $host_view->{'summary.config.product.fullName'},
         $service_ssh,
         $service_shell,
+        $connectionState,
         $start,
         $start
       );
@@ -3535,12 +3539,12 @@ sub capacityPlanningReport
     {
       
       # Once we retrieved data, we send the report by mail using responsive template
-      my $params = { 'groups' => \@groups };
+      my $params = { 'groups' => \@groups, 'executionDate' => time2str("%Y-%m-%d %H:%M", $start), 'url' => 'https://'.lc($HOSTNAME) };
       $options{INCLUDE_PATH} = '/var/www/admin/mail-template';
       my $msg = MIME::Lite::TT::HTML->new(
         From        =>  $senderMail,
         To          =>  $recipientMail,
-        Subject     =>  '['.uc($HOSTNAME).'] Capacity Planning Report',
+        Subject     =>  '['.time2str("%Y-%m-%d", $start).'] Capacity Planning Report',
         Template    =>  { html => 'capacityplanning.html' },
         TmplOptions =>  \%options,
         TmplParams  =>  $params,
@@ -3809,7 +3813,7 @@ sub mailAlert
     if (dbGetSchedule('hostLUNPathDead') ne 'off')
     {
     
-      $sth = $dbh->prepare("SELECT main.host_name, main.deadlunpathcount, main.lunpathcount, c.cluster_name as cluster, v.vcname as vcenter FROM hosts main INNER JOIN vcenters v ON main.vcenter = v.id INNER JOIN clusters c ON main.cluster = c.id WHERE main.deadlunpathcount > 0 AND main.lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY main.host_name, v.vcname");
+      $sth = $dbh->prepare("SELECT main.host_name, main.deadlunpathcount, main.lunpathcount, c.cluster_name as cluster, v.vcname as vcenter FROM hosts main INNER JOIN vcenters v ON main.vcenter = v.id INNER JOIN clusters c ON main.cluster = c.id WHERE main.deadlunpathcount > 0 AND main.lastseen > '" . $dateSqlQuery . " 00:00:01' AND main.connectionState LIKE 'connected' GROUP BY main.host_name, v.vcname");
 
       $sth->execute();
 
@@ -3837,7 +3841,7 @@ sub mailAlert
 
       my $currentSshPolicy = dbGetConfig('hostSSHPolicy');
       my $currentShellPolicy = dbGetConfig('hostShellPolicy');
-      $sth = $dbh->prepare("SELECT main.host_name, main.ssh_policy, main.shell_policy, v.vcname FROM hosts main INNER JOIN vcenters v ON main.vcenter = v.id INNER JOIN clusters c ON main.cluster = c.id WHERE (main.ssh_policy <> '$currentSshPolicy' OR main.shell_policy <> '$currentShellPolicy') AND main.lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY main.host_name");
+      $sth = $dbh->prepare("SELECT main.host_name, main.ssh_policy, main.shell_policy, v.vcname FROM hosts main INNER JOIN vcenters v ON main.vcenter = v.id INNER JOIN clusters c ON main.cluster = c.id WHERE (main.ssh_policy <> '$currentSshPolicy' OR main.shell_policy <> '$currentShellPolicy') AND main.lastseen > '" . $dateSqlQuery . " 00:00:01' AND main.connectionState LIKE 'connected' AND main.id IN (SELECT MAX(id) FROM hosts GROUP BY moref,vcenter) GROUP BY main.host_name");
       $sth->execute();
 
       if ($sth->rows > 0)
@@ -3862,7 +3866,7 @@ sub mailAlert
     if (dbGetSchedule('hostNTPCheck') ne 'off')
     {
     
-      $sth = $dbh->prepare("SELECT DISTINCT main.id as clusterId, main.cluster_name as cluster, h.host_name, h.ntpservers, T.topProp, v.vcname as vcenter FROM hosts h INNER JOIN clusters main ON h.cluster = main.id INNER JOIN vcenters v ON h.vcenter = v.id INNER JOIN (SELECT cluster as clus, (SELECT ntpservers FROM hosts WHERE cluster = clus GROUP BY ntpservers ORDER BY COUNT(*) DESC LIMIT 0,1) AS topProp FROM hosts WHERE lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY clus) AS T ON T.clus = main.id WHERE h.ntpservers <> T.topProp AND main.id <> 1 AND h.id IN (SELECT MAX(id) FROM hosts WHERE lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY id)");
+      $sth = $dbh->prepare("SELECT DISTINCT main.id as clusterId, main.cluster_name as cluster, h.host_name, h.ntpservers, T.topProp, v.vcname as vcenter FROM hosts h INNER JOIN clusters main ON h.cluster = main.id INNER JOIN vcenters v ON h.vcenter = v.id INNER JOIN (SELECT cluster as clus, (SELECT ntpservers FROM hosts WHERE cluster = clus GROUP BY ntpservers ORDER BY COUNT(*) DESC LIMIT 0,1) AS topProp FROM hosts WHERE lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY clus) AS T ON T.clus = main.id WHERE h.ntpservers <> T.topProp AND main.id <> 1 AND h.connectionState LIKE 'connected' AND h.id IN (SELECT MAX(id) FROM hosts GROUP BY moref,vcenter)");
       $sth->execute();
 
       if ($sth->rows > 0)
@@ -3891,7 +3895,7 @@ sub mailAlert
     if (dbGetSchedule('hostDNSCheck') ne 'off')
     {
     
-      $sth = $dbh->prepare("SELECT DISTINCT main.id as clusterId, main.cluster_name as cluster, h.host_name, h.dnsservers, T.topProp, v.vcname as vcenter FROM hosts h INNER JOIN clusters main ON h.cluster = main.id INNER JOIN vcenters v ON h.vcenter = v.id INNER JOIN (SELECT cluster as clus, (SELECT dnsservers FROM hosts WHERE cluster = clus GROUP BY dnsservers ORDER BY COUNT(*) DESC LIMIT 0,1) AS topProp FROM hosts WHERE lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY clus) AS T ON T.clus = main.id WHERE h.dnsservers <> T.topProp AND main.id <> 1");
+      $sth = $dbh->prepare("SELECT DISTINCT main.id as clusterId, main.cluster_name as cluster, h.host_name, h.dnsservers, T.topProp, v.vcname as vcenter FROM hosts h INNER JOIN clusters main ON h.cluster = main.id INNER JOIN vcenters v ON h.vcenter = v.id INNER JOIN (SELECT cluster as clus, (SELECT dnsservers FROM hosts WHERE cluster = clus GROUP BY dnsservers ORDER BY COUNT(*) DESC LIMIT 0,1) AS topProp FROM hosts WHERE lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY clus) AS T ON T.clus = main.id WHERE h.dnsservers <> T.topProp AND main.id <> 1 AND h.connectionState LIKE 'connected' AND h.id IN (SELECT MAX(id) FROM hosts GROUP BY moref,vcenter)");
       $sth->execute();
 
       if ($sth->rows > 0)
@@ -3920,7 +3924,7 @@ sub mailAlert
     if (dbGetSchedule('hostSyslogCheck') ne 'off')
     {
     
-      $sth = $dbh->prepare("SELECT DISTINCT main.id as clusterId, main.cluster_name as cluster, h.host_name, h.syslog_target, T.topProp, v.vcname as vcenter FROM hosts h INNER JOIN clusters main ON h.cluster = main.id INNER JOIN vcenters v ON h.vcenter = v.id INNER JOIN (SELECT cluster as clus, (SELECT syslog_target FROM hosts WHERE cluster = clus GROUP BY syslog_target ORDER BY COUNT(*) DESC LIMIT 0,1) AS topProp FROM hosts WHERE lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY clus) AS T ON T.clus = main.id WHERE h.syslog_target <> T.topProp AND main.id <> 1");
+      $sth = $dbh->prepare("SELECT DISTINCT main.id as clusterId, main.cluster_name as cluster, h.host_name, h.syslog_target, T.topProp, v.vcname as vcenter FROM hosts h INNER JOIN clusters main ON h.cluster = main.id INNER JOIN vcenters v ON h.vcenter = v.id INNER JOIN (SELECT cluster as clus, (SELECT syslog_target FROM hosts WHERE cluster = clus GROUP BY syslog_target ORDER BY COUNT(*) DESC LIMIT 0,1) AS topProp FROM hosts WHERE lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY clus) AS T ON T.clus = main.id WHERE h.syslog_target <> T.topProp AND h.connectionState LIKE 'connected' AND main.id <> 1 AND h.id IN (SELECT MAX(id) FROM hosts GROUP BY moref,vcenter)");
       $sth->execute();
 
       if ($sth->rows > 0)
@@ -3949,7 +3953,7 @@ sub mailAlert
     if (dbGetSchedule('hostConfigurationIssues') ne 'off')
     {
     
-      $sth = $dbh->prepare("SELECT main.configissue, h.host_name, cl.cluster_name as cluster, v.vcname as vcenter FROM configurationissues main INNER JOIN hosts h ON main.host = h.id INNER JOIN clusters cl ON h.cluster = cl.id INNER JOIN vcenters v ON h.vcenter = v.id WHERE main.lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY host, configissue");
+      $sth = $dbh->prepare("SELECT main.configissue, h.host_name, cl.cluster_name as cluster, v.vcname as vcenter FROM configurationissues main INNER JOIN hosts h ON main.host = h.id INNER JOIN clusters cl ON h.cluster = cl.id INNER JOIN vcenters v ON h.vcenter = v.id WHERE main.lastseen > '" . $dateSqlQuery . " 00:00:01' AND h.connectionState LIKE 'connected' AND h.id IN (SELECT MAX(id) FROM hosts GROUP BY vcenter, moref) GROUP BY host, configissue");
 
       $sth->execute();
 
@@ -4001,7 +4005,7 @@ sub mailAlert
     if (dbGetSchedule('hostHardwareStatus') ne 'off')
     {
     
-      $sth = $dbh->prepare("SELECT main.issuename, main.issuestate, main.issuetype, h.host_name, v.vcname as vcenter FROM hardwarestatus main INNER JOIN hosts h ON main.host = h.id INNER JOIN vcenters v ON h.vcenter = v.id WHERE main.lastseen > '" . $dateSqlQuery . " 00:00:01'");
+      $sth = $dbh->prepare("SELECT main.issuename, main.issuestate, main.issuetype, h.host_name, v.vcname as vcenter FROM hardwarestatus main INNER JOIN hosts h ON main.host = h.id INNER JOIN vcenters v ON h.vcenter = v.id WHERE main.lastseen > '" . $dateSqlQuery . " 00:00:01' AND h.connectionState LIKE 'connected' GROUP BY main.issuename, main.issuestate, h.host_name, v.vcname");
 
       $sth->execute();
 
@@ -4027,7 +4031,7 @@ sub mailAlert
     if (dbGetSchedule('hostRebootrequired') ne 'off')
     {
     
-      $sth = $dbh->prepare("SELECT main.host_name, c.cluster_name as cluster, v.vcname as vcenter FROM hosts main INNER JOIN vcenters v ON main.vcenter = v.id INNER JOIN clusters c ON main.cluster = c.id WHERE main.rebootrequired = 1 AND main.lastseen > '" . $dateSqlQuery . " 00:00:01'");
+      $sth = $dbh->prepare("SELECT main.host_name, c.cluster_name as cluster, v.vcname as vcenter FROM hosts main INNER JOIN vcenters v ON main.vcenter = v.id INNER JOIN clusters c ON main.cluster = c.id WHERE main.rebootrequired = 1 AND main.lastseen > '" . $dateSqlQuery . " 00:00:01' AND main.connectionState LIKE 'connected'");
 
       $sth->execute();
 
@@ -4053,7 +4057,7 @@ sub mailAlert
     if (dbGetSchedule('hostFQDNHostnameMismatch') ne 'off')
     {
     
-      $sth = $dbh->prepare("SELECT main.host_name, main.hostname, c.cluster_name as cluster, v.vcname as vcenter FROM hosts main INNER JOIN vcenters v ON main.vcenter = v.id INNER JOIN clusters c ON main.cluster = c.id WHERE main.host_name NOT LIKE CONCAT(main.hostname, '%') AND main.lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY main.vcenter, main.moref");
+      $sth = $dbh->prepare("SELECT main.host_name, main.hostname, c.cluster_name as cluster, v.vcname as vcenter FROM hosts main INNER JOIN vcenters v ON main.vcenter = v.id INNER JOIN clusters c ON main.cluster = c.id WHERE main.host_name NOT LIKE CONCAT(main.hostname, '%') AND main.lastseen > '" . $dateSqlQuery . " 00:00:01' AND main.connectionState LIKE 'connected' GROUP BY main.vcenter, main.moref");
 
       $sth->execute();
 
@@ -4079,7 +4083,7 @@ sub mailAlert
     if (dbGetSchedule('hostMaintenanceMode') ne 'off')
     {
     
-      $sth = $dbh->prepare("SELECT main.host_name, c.cluster_name as cluster, v.vcname as vcenter FROM hosts main INNER JOIN vcenters v ON main.vcenter = v.id INNER JOIN clusters c ON main.cluster = c.id WHERE main.inmaintenancemode = 1 AND main.lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY main.vcenter, main.moref");
+      $sth = $dbh->prepare("SELECT main.host_name, c.cluster_name as cluster, v.vcname as vcenter FROM hosts main INNER JOIN vcenters v ON main.vcenter = v.id INNER JOIN clusters c ON main.cluster = c.id WHERE main.inmaintenancemode = 1 AND main.lastseen > '" . $dateSqlQuery . " 00:00:01' AND main.connectionState LIKE 'connected' GROUP BY main.vcenter, main.moref");
 
       $sth->execute();
 
@@ -4087,7 +4091,7 @@ sub mailAlert
       {
         
         $alertCount += $sth->rows;
-        my $htmlContent = "<table style='$styleTable'><thead><tr style='$styleLineHead'><th style='$styleHead'>Name</th><th style='$styleHead'>vCenter</th></tr></thead>";
+        my $htmlContent = "<table style='$styleTable'><thead><tr style='$styleLineHead'><th style='$styleHead'>Name</th><th style='$styleHead'>Cluster</th><th style='$styleHead'>vCenter</th></tr></thead>";
 
         while ($ref = $sth->fetchrow_hashref)
         {
@@ -4106,7 +4110,7 @@ sub mailAlert
     {
 
       my $currentPowerSystemInfo = dbGetConfig('powerSystemInfo');
-      $sth = $dbh->prepare("SELECT main.host_name, main.powerpolicy, v.vcname as vcenter FROM hosts main INNER JOIN vcenters v ON main.vcenter = v.id INNER JOIN clusters c ON main.cluster = c.id WHERE main.powerpolicy <> '" . $currentPowerSystemInfo . "' AND main.lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY main.vcenter, main.moref");
+      $sth = $dbh->prepare("SELECT main.host_name, main.powerpolicy, v.vcname as vcenter FROM hosts main INNER JOIN vcenters v ON main.vcenter = v.id INNER JOIN clusters c ON main.cluster = c.id WHERE main.powerpolicy <> '" . $currentPowerSystemInfo . "' AND main.lastseen > '" . $dateSqlQuery . " 00:00:01' AND main.connectionState LIKE 'connected' GROUP BY main.vcenter, main.moref");
       $sth->execute();
 
       if ($sth->rows > 0)
@@ -4268,8 +4272,7 @@ sub mailAlert
     if (dbGetSchedule('datastoreAccessible') ne 'off')
     {
     
-      $sth = $dbh->prepare("SELECT main.datastore_name, v.vcname as vcenter FROM datastores main INNER JOIN vcenters v ON main.vcenter = v.id WHERE main.isAccessible = 0 AND main.lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY main.vcenter, main.moref");
-
+      $sth = $dbh->prepare("SELECT main.datastore_name, v.vcname as vcenter FROM datastores main INNER JOIN vcenters v ON main.vcenter = v.id INNER JOIN datastoreMappings dm ON dm.datastore_id = main.id INNER JOIN hosts h ON dm.host_id = h.id WHERE main.isAccessible = 0 AND main.lastseen > '" . $dateSqlQuery . " 00:00:01' AND h.connectionState LIKE 'connected' AND h.id IN (SELECT MAX(id) FROM hosts GROUP BY vcenter, moref) GROUP BY main.vcenter, main.moref");
       $sth->execute();
 
       if ($sth->rows > 0)
@@ -4337,7 +4340,7 @@ sub mailAlert
     {
       
       my $vmSnapshotAge = dbGetConfig('vmSnapshotAge');
-      $sth = $dbh->prepare("SELECT vms.name, main.name as snapshot_name, main.description, DATEDIFF('$dateSqlQuery', main.createTime) as age, v.vcname, main.state, main.quiesced FROM snapshots main INNER JOIN vms ON main.vm = vms.id INNER JOIN vcenters v ON vms.vcenter = v.id GROUP BY main.vm, main.moref HAVING age > $vmSnapshotAge");
+      $sth = $dbh->prepare("SELECT vms.name, main.name as snapshot_name, main.description, DATEDIFF('$dateSqlQuery', main.createTime) as age, v.vcname, main.state, main.quiesced FROM snapshots main INNER JOIN vms ON main.vm = vms.id INNER JOIN vcenters v ON vms.vcenter = v.id WHERE main.id IN (SELECT MAX(id) FROM snapshots WHERE lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY vm, moref) GROUP BY vms.vcenter, vms.moref, main.moref HAVING age > $vmSnapshotAge");
       $sth->execute();
 
       if ($sth->rows > 0)
@@ -4414,7 +4417,7 @@ sub mailAlert
     if (dbGetSchedule('vmcpuramhddreservation') ne 'off')
     {
     
-      $sth = $dbh->prepare("SELECT main.name, main.cpuReservation, main.memReservation, v.vcname FROM vms AS main INNER JOIN vcenters v ON main.vcenter = v.id WHERE (main.cpuReservation > 0 OR main.memReservation > 0) AND main.lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY main.vcenter, main.moref");
+      $sth = $dbh->prepare("SELECT main.name, main.cpuReservation, main.memReservation, v.vcname FROM vms AS main INNER JOIN vcenters v ON main.vcenter = v.id WHERE (main.cpuReservation > 0 OR main.memReservation > 0) AND main.lastseen > '" . $dateSqlQuery . " 00:00:01' AND main.id IN (SELECT MAX(id) FROM vms GROUP BY vcenter, moref) GROUP BY main.vcenter, main.moref");
 
       $sth->execute();
 
