@@ -1,5 +1,5 @@
 <?php
-require("session.php");
+// require("session.php");
 require("helper.php");
 
 if (empty($_GET['hostid']))
