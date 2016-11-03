@@ -330,6 +330,7 @@ CREATE TABLE IF NOT EXISTS `hosts` (
   `esxbuild` varchar(100) CHARACTER SET utf8 NOT NULL,
   `ssh_policy` varchar(100) CHARACTER SET utf8 NOT NULL,
   `shell_policy` varchar(100) CHARACTER SET utf8 NOT NULL,
+  `connectionState` varchar(50) CHARACTER SET utf8 NOT NULL,
   `firstseen` datetime NOT NULL,
   `lastseen` datetime NOT NULL,
   PRIMARY KEY (`id`),
