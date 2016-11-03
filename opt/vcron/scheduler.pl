@@ -3545,7 +3545,7 @@ sub capacityPlanningReport
         TmplOptions =>  \%options,
         TmplParams  =>  $params,
       );
-      # $msg->send('smtp', $smtpAddress, Timeout => 60 );
+      $msg->send('smtp', $smtpAddress, Timeout => 60 );
       
     } # END if ($numGroup > 0)
 
@@ -3862,7 +3862,7 @@ sub mailAlert
     if (dbGetSchedule('hostNTPCheck') ne 'off')
     {
     
-      $sth = $dbh->prepare("SELECT DISTINCT main.id as clusterId, main.cluster_name as cluster, h.host_name, h.ntpservers, T.topProp, v.vcname as vcenter FROM hosts h INNER JOIN clusters main ON h.cluster = main.id INNER JOIN vcenters v ON h.vcenter = v.id INNER JOIN (SELECT cluster as clus, (SELECT ntpservers FROM hosts WHERE cluster = clus GROUP BY ntpservers ORDER BY COUNT(*) DESC LIMIT 0,1) AS topProp FROM hosts WHERE lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY clus) AS T ON T.clus = main.id WHERE h.ntpservers <> T.topProp AND main.id <> 1");
+      $sth = $dbh->prepare("SELECT DISTINCT main.id as clusterId, main.cluster_name as cluster, h.host_name, h.ntpservers, T.topProp, v.vcname as vcenter FROM hosts h INNER JOIN clusters main ON h.cluster = main.id INNER JOIN vcenters v ON h.vcenter = v.id INNER JOIN (SELECT cluster as clus, (SELECT ntpservers FROM hosts WHERE cluster = clus GROUP BY ntpservers ORDER BY COUNT(*) DESC LIMIT 0,1) AS topProp FROM hosts WHERE lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY clus) AS T ON T.clus = main.id WHERE h.ntpservers <> T.topProp AND main.id <> 1 AND h.id IN (SELECT MAX(id) FROM hosts WHERE lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY id)");
       $sth->execute();
 
       if ($sth->rows > 0)
@@ -4337,7 +4337,7 @@ sub mailAlert
     {
       
       my $vmSnapshotAge = dbGetConfig('vmSnapshotAge');
-      $sth = $dbh->prepare("SELECT vms.name, main.name as snapshot_name, main.description, DATEDIFF('$dateSqlQuery', main.createTime) as age, v.vcname, main.state, main.quiesced FROM snapshots main INNER JOIN vms ON main.vm = vms.id INNER JOIN vcenters v ON vms.vcenter = v.id HAVING age > $vmSnapshotAge GROUP BY main.vm, main.moref");
+      $sth = $dbh->prepare("SELECT vms.name, main.name as snapshot_name, main.description, DATEDIFF('$dateSqlQuery', main.createTime) as age, v.vcname, main.state, main.quiesced FROM snapshots main INNER JOIN vms ON main.vm = vms.id INNER JOIN vcenters v ON vms.vcenter = v.id GROUP BY main.vm, main.moref HAVING age > $vmSnapshotAge");
       $sth->execute();
 
       if ($sth->rows > 0)
