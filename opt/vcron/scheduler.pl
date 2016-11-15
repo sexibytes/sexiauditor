@@ -3469,9 +3469,9 @@ sub capacityPlanningReport
       my $currentMaxUsagePct = max($currentMemUsagePct, $currentCpuUsagePct);
       if ($currentMaxUsagePct == 0) { $currentMaxUsagePct = 1; }
       my $currentVmLeft = int(min(((($CPGroup->{'percentageThreshold'} - $safetyPct) * $currentVmOn / $currentMaxUsagePct) - $currentVmOn),((90 * $currentVmOn / $currentStorageUsagePct) - $currentVmOn))+ 0.5);
-      my $currentVmMemUsage = int($currentMemUsage / $currentVmOn + 0.5);
-      my $currentVmCpuUsage = int($currentCpuUsage / $currentVmOn + 0.5);
-      my $currentVmStorageUsage = int($currentStorageUsage / $currentVmOn + 0.5);
+      my $currentVmMemUsage = ($currentVmOn == 0) ? 0 : int($currentMemUsage / $currentVmOn + 0.5);
+      my $currentVmCpuUsage = ($currentVmOn == 0) ? 0 : int($currentCpuUsage / $currentVmOn + 0.5);
+      my $currentVmStorageUsage = ($currentVmOn == 0) ? 0 : int($currentStorageUsage / $currentVmOn + 0.5);
       # Retrieve previous statistices based on $capacityPlanningDays for compute (cpu and memory)
       $query = "SELECT COUNT(v.id) AS NUMVMON FROM vms AS v INNER JOIN hosts AS h ON (h.id = v.host) INNER JOIN clusters AS c ON (c.id = h.cluster) WHERE $CPquery AND v.firstseen < '" . time2str("%Y-%m-%d", $start - ($capacityPlanningDays * 24 * 60 * 60)) . "' AND v.lastseen > '" . time2str("%Y-%m-%d", $start - ($capacityPlanningDays * 24 * 60 * 60)) . "'";
       $sth = $dbh->prepare($query);
