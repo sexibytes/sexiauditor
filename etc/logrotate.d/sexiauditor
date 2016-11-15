@@ -7,3 +7,13 @@
   notifempty
   create 600 www-data www-data
 }
+
+/var/log/sexiauditor/*.err {
+  daily
+  missingok
+  rotate 14
+  compress
+  delaycompress
+  notifempty
+  create 600 www-data www-data
+}
