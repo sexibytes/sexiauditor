@@ -105,18 +105,18 @@ foreach ($capacityPlanningGroups as $capacityPlanningGroup)
   $currentCpuCapacity = $currentStatsCompute['CPUCAPA'];
   $currentMemUsage = $currentStatsCompute['MEMUSAGE'];
   $currentCpuUsage = $currentStatsCompute['CPUUSAGE'];
-  $currentMemUsagePct = round(100 * ($currentMemUsage / $currentMemCapacity));
-  $currentCpuUsagePct = round(100 * ($currentCpuUsage / $currentCpuCapacity));
+  $currentMemUsagePct = 100 * ($currentMemUsage / $currentMemCapacity);
+  $currentCpuUsagePct = 100 * ($currentCpuUsage / $currentCpuCapacity);
   # Retrieve current statistices for storage
   $currentStatsStorage = $db->rawQueryOne("SELECT SUM(size) AS STORAGECAPA, SUM(freespace) AS STORAGEFREE FROM (SELECT DISTINCT c.cluster_name, d.datastore_name, dm.size, dm.freespace FROM clusters AS c INNER JOIN hosts AS h ON c.id = h.cluster INNER JOIN datastoreMappings AS dma ON h.id = dma.host_id INNER JOIN datastores AS d ON dma.datastore_id = d.id INNER JOIN datastoreMetrics AS dm ON dm.datastore_id = d.id WHERE $CPquery AND d.firstseen < '" . $dateYesterday . "' AND d.lastseen > '" . $dateYesterday . "' AND dm.id IN (SELECT MAX(id) FROM datastoreMetrics WHERE lastseen < '" . $dateYesterday . "' GROUP BY datastore_id) ) AS T1");
   $currentStorageCapacity = $currentStatsStorage['STORAGECAPA'];
   $currentStorageUsage = $currentStorageCapacity - $currentStatsStorage['STORAGEFREE'];
-  $currentStorageUsagePct = ceil(100 * ($currentStorageUsage / $currentStorageCapacity));
+  $currentStorageUsagePct = 100 * ($currentStorageUsage / $currentStorageCapacity);
   $currentMaxUsagePct = max($currentMemUsagePct, $currentCpuUsagePct);
-  $currentVmLeft = (int)round(min(((($capacityPlanningGroup["percentageThreshold"] - $safetyPct) * $currentVmOn / $currentMaxUsagePct) - $currentVmOn),((90 * $currentVmOn / $currentStorageUsagePct) - $currentVmOn)));
-  $currentVmMemUsage = round($currentMemUsage / $currentVmOn);
-  $currentVmCpuUsage = round($currentCpuUsage / $currentVmOn);
-  $currentVmStorageUsage = round($currentStorageUsage / $currentVmOn);
+  $currentVmLeft = min(((($capacityPlanningGroup["percentageThreshold"] - $safetyPct) * $currentVmOn / $currentMaxUsagePct) - $currentVmOn),((90 * $currentVmOn / $currentStorageUsagePct) - $currentVmOn));
+  $currentVmMemUsage = $currentMemUsage / $currentVmOn;
+  $currentVmCpuUsage = $currentCpuUsage / $currentVmOn;
+  $currentVmStorageUsage = $currentStorageUsage / $currentVmOn;
   # Retrieve previous statistices based on $capacityPlanningDays for compute (cpu and memory)
   $previousVmOn = $db->rawQueryValue("SELECT COUNT(v.id) AS NUMVMON FROM vms AS v INNER JOIN hosts AS h ON (h.id = v.host) INNER JOIN clusters AS c ON (c.id = h.cluster) WHERE $CPquery AND v.firstseen < '" . $dateBeginning . "' AND v.lastseen > '" . $dateBeginning . "' LIMIT 1");
   # Retrieve previous statistices based on $capacityPlanningDays for compute (cpu and memory)
@@ -125,23 +125,22 @@ foreach ($capacityPlanningGroups as $capacityPlanningGroup)
   $previousCpuCapacity = $previousStatsCompute['CPUCAPA'];
   $previousMemUsage = $previousStatsCompute['MEMUSAGE'];
   $previousCpuUsage = $previousStatsCompute['CPUUSAGE'];
-  $previousMemUsagePct = round(100 * ($previousMemUsage / $previousMemCapacity));
-  $previousCpuUsagePct = round(100 * ($previousCpuUsage / $previousCpuCapacity));
+  $previousMemUsagePct = 100 * ($previousMemUsage / $previousMemCapacity);
+  $previousCpuUsagePct = 100 * ($previousCpuUsage / $previousCpuCapacity);
   # Retrieve previous statistices for storage
   $previousStatsStorage = $db->rawQueryOne("SELECT SUM(size) AS STORAGECAPA, SUM(freespace) AS STORAGEFREE FROM (SELECT DISTINCT c.cluster_name, d.datastore_name, dm.size, dm.freespace FROM clusters AS c INNER JOIN hosts AS h ON c.id = h.cluster INNER JOIN datastoreMappings AS dma ON h.id = dma.host_id INNER JOIN datastores AS d ON dma.datastore_id = d.id INNER JOIN datastoreMetrics AS dm ON dm.datastore_id = d.id WHERE $CPquery AND d.firstseen < '" . $dateBeginning . "' AND d.lastseen > '" . $dateBeginning . "' AND dm.id IN (SELECT MAX(id) FROM datastoreMetrics WHERE lastseen < '" . $dateBeginning . "' GROUP BY datastore_id) ) AS T1");
   $previousStorageCapacity = $previousStatsStorage['STORAGECAPA'];
   $previousStorageUsage = $previousStorageCapacity - $previousStatsStorage['STORAGEFREE'];
-  $previousStorageUsagePct = ceil(100 * ($previousStorageUsage / $previousStorageCapacity));
+  $previousStorageUsagePct = 100 * ($previousStorageUsage / $previousStorageCapacity);
   $previousMaxUsagePct = max($previousMemUsagePct, $previousCpuUsagePct);
-  $previousVmLeft = round(min(((($capacityPlanningGroup["percentageThreshold"] - $safetyPct) * $previousVmOn / $previousMaxUsagePct) - $previousVmOn),((90 * $previousVmOn / $previousStorageUsagePct) - $previousVmOn)));
+  $previousVmLeft = min(((($capacityPlanningGroup["percentageThreshold"] - $safetyPct) * $previousVmOn / $previousMaxUsagePct) - $previousVmOn),((90 * $previousVmOn / $previousStorageUsagePct) - $previousVmOn));
   $coefficientCapaPlan = ($currentVmLeft-$previousVmLeft)/$capacityPlanningDays;
-  // var_dump("previousMemUsage: $previousMemUsage");
-  // var_dump("previousMemCapacity: $previousMemCapacity");
+  
   # if VM left count trend is negative, there will an exhaustion, we will compute the days based on this trend, if not we will display 'infinite' icon
   if ($coefficientCapaPlan < 0)
   {
     
-    $daysLeft = (int)round(abs($currentVmLeft/$coefficientCapaPlan));
+    $daysLeft = round(abs($currentVmLeft/$coefficientCapaPlan));
     
   }
   else
@@ -176,7 +175,7 @@ foreach ($capacityPlanningGroups as $capacityPlanningGroup)
     echo "         <div class='stat ".$categoryStats." wide2'>\n";
     echo "          <div class='widget widget-".$widget."'>\n";
     echo "            <div class='title'>".$capacityPlanningGroup["group_name"]."</div>\n";
-    echo "            <div class='value'>" . $daysLeft . " <small>days left</small><br>" . $currentVmLeft . " <small>VM left</small></div>\n";
+    echo "            <div class='value'>" . $daysLeft . " <small>days left</small><br>" . round($currentVmLeft) . " <small>VM left</small></div>\n";
     echo "            <div class='more-info'>Based on maximum consumption threshold: " . $capacityPlanningGroup["percentageThreshold"] . "%<br/>Avg. consumption: <i class='glyphicon icon-cpu-processor'></i> " .  human_filesize($currentVmCpuUsage*1000*1000,0,'Hz') . " <i class='glyphicon icon-ram'></i> " .  human_filesize($currentVmMemUsage*1024*1024,0) . " <i class='glyphicon icon-database'></i> " .  human_filesize($currentVmStorageUsage,0) . "</div>\n";
     echo "          </div>\n";
     echo "        </div>\n";
