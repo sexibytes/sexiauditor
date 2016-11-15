@@ -3468,8 +3468,8 @@ sub capacityPlanningReport
       my $currentMemUsage = $ref->{'MEMUSAGE'};
       my $currentCpuUsage = $ref->{'CPUUSAGE'};
       next if (!defined($currentMemCapacity) || !defined($currentCpuCapacity) || !defined($currentMemUsage) || !defined($currentCpuUsage));
-      my $currentMemUsagePct = int(100 * ($currentMemUsage / $currentMemCapacity) + 0.5);
-      my $currentCpuUsagePct = int(100 * ($currentCpuUsage / $currentCpuCapacity) + 0.5);
+      my $currentMemUsagePct = 100 * ($currentMemUsage / $currentMemCapacity);
+      my $currentCpuUsagePct = 100 * ($currentCpuUsage / $currentCpuCapacity);
       # Retrieve current statistices for storage
       $query = "SELECT SUM(size) AS STORAGECAPA, SUM(freespace) AS STORAGEFREE FROM (SELECT DISTINCT c.cluster_name, d.datastore_name, dm.size, dm.freespace FROM clusters AS c INNER JOIN hosts AS h ON c.id = h.cluster INNER JOIN datastoreMappings AS dma ON h.id = dma.host_id INNER JOIN datastores AS d ON dma.datastore_id = d.id INNER JOIN datastoreMetrics AS dm ON dm.datastore_id = d.id WHERE $CPquery AND d.firstseen < '" . time2str("%Y-%m-%d", $start - (24 * 60 * 60)) . "' AND d.lastseen > '" . time2str("%Y-%m-%d", $start - (24 * 60 * 60)) . "' AND dm.id IN (SELECT MAX(id) FROM datastoreMetrics WHERE lastseen < '" . time2str("%Y-%m-%d", $start - (24 * 60 * 60)) . "' GROUP BY datastore_id) ) AS T1";
       $sth = $dbh->prepare($query);
@@ -3477,14 +3477,14 @@ sub capacityPlanningReport
       $ref = $sth->fetchrow_hashref;
       my $currentStorageCapacity = $ref->{'STORAGECAPA'};
       my $currentStorageUsage = $currentStorageCapacity - $ref->{'STORAGEFREE'};
-      my $currentStorageUsagePct = int(100 * ($currentStorageUsage / $currentStorageCapacity) + 0.5);
+      my $currentStorageUsagePct = 100 * ($currentStorageUsage / $currentStorageCapacity);
       if ($currentStorageUsagePct == 0) { $currentStorageUsagePct = 1; }
       my $currentMaxUsagePct = max($currentMemUsagePct, $currentCpuUsagePct);
       if ($currentMaxUsagePct == 0) { $currentMaxUsagePct = 1; }
-      my $currentVmLeft = int(min(((($CPGroup->{'percentageThreshold'} - $safetyPct) * $currentVmOn / $currentMaxUsagePct) - $currentVmOn),((90 * $currentVmOn / $currentStorageUsagePct) - $currentVmOn))+ 0.5);
-      my $currentVmMemUsage = ($currentVmOn == 0) ? 0 : int($currentMemUsage / $currentVmOn + 0.5);
-      my $currentVmCpuUsage = ($currentVmOn == 0) ? 0 : int($currentCpuUsage / $currentVmOn + 0.5);
-      my $currentVmStorageUsage = ($currentVmOn == 0) ? 0 : int($currentStorageUsage / $currentVmOn + 0.5);
+      my $currentVmLeft = min(((($CPGroup->{'percentageThreshold'} - $safetyPct) * $currentVmOn / $currentMaxUsagePct) - $currentVmOn),((90 * $currentVmOn / $currentStorageUsagePct) - $currentVmOn));
+      my $currentVmMemUsage = ($currentVmOn == 0) ? 0 : $currentMemUsage / $currentVmOn;
+      my $currentVmCpuUsage = ($currentVmOn == 0) ? 0 : $currentCpuUsage / $currentVmOn;
+      my $currentVmStorageUsage = ($currentVmOn == 0) ? 0 : $currentStorageUsage / $currentVmOn;
       # Retrieve previous statistices based on $capacityPlanningDays for compute (cpu and memory)
       $query = "SELECT COUNT(v.id) AS NUMVMON FROM vms AS v INNER JOIN hosts AS h ON (h.id = v.host) INNER JOIN clusters AS c ON (c.id = h.cluster) WHERE $CPquery AND v.firstseen < '" . time2str("%Y-%m-%d", $start - ($capacityPlanningDays * 24 * 60 * 60)) . "' AND v.lastseen > '" . time2str("%Y-%m-%d", $start - ($capacityPlanningDays * 24 * 60 * 60)) . "'";
       $sth = $dbh->prepare($query);
@@ -3500,8 +3500,8 @@ sub capacityPlanningReport
       my $previousMemUsage = $ref->{'MEMUSAGE'};
       my $previousCpuUsage = $ref->{'CPUUSAGE'};
       next if (!defined($previousMemCapacity) || !defined($previousCpuCapacity) || !defined($previousMemUsage) || !defined($previousCpuUsage));
-      my $previousMemUsagePct = int(100 * ($previousMemUsage / $previousMemCapacity) + 0.5);
-      my $previousCpuUsagePct = int(100 * ($previousCpuUsage / $previousCpuCapacity) + 0.5);
+      my $previousMemUsagePct = 100 * ($previousMemUsage / $previousMemCapacity);
+      my $previousCpuUsagePct = 100 * ($previousCpuUsage / $previousCpuCapacity);
       # Retrieve previous statistices for storage
       $query = "SELECT SUM(size) AS STORAGECAPA, SUM(freespace) AS STORAGEFREE FROM (SELECT DISTINCT c.cluster_name, d.datastore_name, dm.size, dm.freespace FROM clusters AS c INNER JOIN hosts AS h ON c.id = h.cluster INNER JOIN datastoreMappings AS dma ON h.id = dma.host_id INNER JOIN datastores AS d ON dma.datastore_id = d.id INNER JOIN datastoreMetrics AS dm ON dm.datastore_id = d.id WHERE $CPquery AND d.firstseen < '" . time2str("%Y-%m-%d", $start - ($capacityPlanningDays * 24 * 60 * 60)) . "' AND d.lastseen > '" . time2str("%Y-%m-%d", $start - ($capacityPlanningDays * 24 * 60 * 60)) . "' AND dm.id IN (SELECT MAX(id) FROM datastoreMetrics WHERE lastseen < '" . time2str("%Y-%m-%d", $start - ($capacityPlanningDays * 24 * 60 * 60)) . "' GROUP BY datastore_id) ) AS T1";
       $sth = $dbh->prepare($query);
@@ -3509,11 +3509,11 @@ sub capacityPlanningReport
       $ref = $sth->fetchrow_hashref;
       my $previousStorageCapacity = $ref->{'STORAGECAPA'};
       my $previousStorageUsage = $previousStorageCapacity - $ref->{'STORAGEFREE'};
-      my $previousStorageUsagePct = int(100 * ($previousStorageUsage / $previousStorageCapacity) + 0.5);
+      my $previousStorageUsagePct = 100 * ($previousStorageUsage / $previousStorageCapacity);
       if ($previousStorageUsagePct == 0) { $previousStorageUsagePct = 1; }
       my $previousMaxUsagePct = max ($previousMemUsagePct, $previousCpuUsagePct);
       if ($previousMaxUsagePct == 0) { $previousMaxUsagePct = 1; }
-      my $previousVmLeft = int(min(((($CPGroup->{'percentageThreshold'} - $safetyPct) * $previousVmOn / $previousMaxUsagePct) - $previousVmOn),((90 * $previousVmOn / $previousStorageUsagePct) - $previousVmOn)) + 0.5);
+      my $previousVmLeft = min(((($CPGroup->{'percentageThreshold'} - $safetyPct) * $previousVmOn / $previousMaxUsagePct) - $previousVmOn),((90 * $previousVmOn / $previousStorageUsagePct) - $previousVmOn));
       my $coefficientCapaPlan = ($currentVmLeft-$previousVmLeft)/$capacityPlanningDays;
       my $daysLeft = "Infinite";
       
@@ -3521,7 +3521,7 @@ sub capacityPlanningReport
       if ($coefficientCapaPlan < 0)
       {
         
-        $daysLeft = int(abs($currentVmLeft/$coefficientCapaPlan) + 0.5);
+        $daysLeft = abs($currentVmLeft/$coefficientCapaPlan);
         
       } # END if ($coefficientCapaPlan < 0)
       
@@ -3543,7 +3543,7 @@ sub capacityPlanningReport
         
       } # END if ($daysLeft < $daysLeftThreshold)
 
-      push @groups, { title => $CPGroup->{'group_name'}, daysLeft => $daysLeft, vmLeft => $currentVmLeft, cpu => format_bytes($currentVmCpuUsage*1000*1000)."Hz", mem => format_bytes($currentVmMemUsage*1024*1024)."B", hdd => format_bytes($currentVmStorageUsage)."B", maxpct =>  $CPGroup->{'percentageThreshold'}, color => $colorCP };
+      push @groups, { title => $CPGroup->{'group_name'}, daysLeft => int($daysLeft + 0.5), vmLeft => int($currentVmLeft + 0.5), cpu => format_bytes($currentVmCpuUsage*1000*1000)."Hz", mem => format_bytes($currentVmMemUsage*1024*1024)."B", hdd => format_bytes($currentVmStorageUsage)."B", maxpct =>  $CPGroup->{'percentageThreshold'}, color => $colorCP };
       $numGroup++;
       
     } # END while (my $CPGroup = $sthCPG->fetchrow_hashref)
