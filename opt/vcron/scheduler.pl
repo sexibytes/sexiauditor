@@ -44,9 +44,22 @@ my $start = time;
 
 $Util::script_version = "0.1";
 $ENV{'PERL_LWP_SSL_VERIFY_HOSTNAME'} = 0;
-Log::Log4perl::init('/etc/log4perl.conf');
-
 my $logger = Log::Log4perl->get_logger('sexiauditor.vcronScheduler');
+
+BEGIN {
+  Log::Log4perl::init('/etc/log4perl.conf');
+  $SIG{__WARN__} = sub {
+    my $logger = get_logger('sexiauditor.vcronSchedulerError');
+    local $Log::Log4perl::caller_depth = $Log::Log4perl::caller_depth + 1;
+    $logger->warn("WARN @_");
+   };
+  $SIG{__DIE__} = sub {
+    my $logger = get_logger('sexiauditor.vcronSchedulerError');
+    local $Log::Log4perl::caller_depth = $Log::Log4perl::caller_depth + 1;
+    $logger->fatal("DIE @_");
+  };
+}
+
 my $filename = "/var/www/.vmware/credstore/vicredentials.xml";
 my $s_item;
 my @server_list;
@@ -1653,7 +1666,7 @@ sub VSANHealthCheck
   foreach my $cluster_view (@$view_ClusterComputeResource)
   {
     
-		if (defined($cluster_view->configurationEx->vsanConfigInfo) && $cluster_view->configurationEx->vsanConfigInfo->enabled)
+    if (defined($cluster_view->configurationEx->vsanConfigInfo) && $cluster_view->configurationEx->vsanConfigInfo->enabled)
     {
       
       my $moRef = $cluster_view->{'mo_ref'}->{'type'}."-".$cluster_view->{'mo_ref'}->{'value'};
