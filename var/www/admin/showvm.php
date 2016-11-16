@@ -141,7 +141,7 @@ else
 } # END if (is_array($datastore = $sexihelper->getDatastoreInfos($vm["datastore"], $vm["vcenterID"])))
 
 ?>
-          <tr><td class="table-title text-right">Datastore</td><td style="padding-left: 10px;"><a href="showdatastore.php?dsid=<?php echo $vm["datastore"]; ?>&amp;vmidsource=<?php echo $vm["id"]; ?>" rel="modal"><?php echo $datastoreName; ?> <i class="glyphicon glyphicon-share"></i></a> <?php echo $additionalDatastoreInfos; ?></td></tr>
+          <tr><td class="table-title text-right">Datastore</td><td style="padding-left: 10px;"><a href="showdatastore.php?dsid=<?php echo $vm["datastore"]; ?>&amp;vmidsource=<?php echo $vm["id"]; ?>" rel="modal"><?php echo $datastoreName; ?> <i class="glyphicon glyphicon-share"></i></a><br><?php echo $additionalDatastoreInfos; ?></td></tr>
           <tr><td class="table-title text-right">VMX Path</td><td style="padding-left: 10px;"><?php echo (string)$vm["vmxpath"]; ?></td></tr>
           <tr><td class="table-title text-right">VM Path</td><td style="padding-left: 10px;"><?php echo (string)$vm["vmpath"]; ?></td></tr>
         </table>
