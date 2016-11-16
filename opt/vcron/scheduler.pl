@@ -224,7 +224,6 @@ VMware::VICredStore::init (filename => $filename) or $logger->logdie ("[ERROR] U
 foreach $s_item (@server_list)
 {
   
-  # next if ($s_item ne "vmlon03vce2.lon.uk.world.socgen");
   $activeVC = $s_item;
   $logger->info("[INFO][VCENTER] Start processing vCenter $s_item");
   my $normalizedServerName = $s_item;
@@ -335,7 +334,7 @@ foreach $s_item (@server_list)
   $view_ClusterComputeResource = Vim::find_entity_views(view_type => 'ClusterComputeResource', properties => ['name', 'host', 'summary', 'configIssue', 'configuration.dasConfig.admissionControlPolicy', 'configuration.dasConfig.admissionControlEnabled', 'configurationEx']);
   $logger->info("[INFO][OBJECTS] End retrieving ClusterComputeResource objects");
   $logger->info("[INFO][OBJECTS] Start retrieving HostSystem objects");
-  $view_HostSystem = Vim::find_entity_views(view_type => 'HostSystem', properties => ['name', 'config.dateTimeInfo.ntpConfig.server', 'config.network.dnsConfig', 'config.powerSystemInfo.currentPolicy.shortName', 'configIssue', 'configManager.advancedOption', 'configManager.firmwareSystem', 'configManager.healthStatusSystem', 'configManager.storageSystem', 'configManager.serviceSystem', 'datastore', 'runtime.inMaintenanceMode', 'runtime.connectionState', 'summary.config.product.fullName', 'summary.hardware.cpuMhz', 'summary.hardware.cpuModel', 'summary.hardware.memorySize', 'summary.hardware.model', 'summary.hardware.numCpuCores', 'summary.hardware.numCpuPkgs', 'summary.rebootRequired', 'summary.quickStats']);
+  $view_HostSystem = Vim::find_entity_views(view_type => 'HostSystem', properties => ['name', 'config.dateTimeInfo.ntpConfig.server', 'config.network.dnsConfig', 'config.powerSystemInfo.currentPolicy.shortName', 'configIssue', 'configManager.advancedOption', 'configManager.firmwareSystem', 'configManager.healthStatusSystem', 'configManager.storageSystem', 'configManager.serviceSystem', 'datastore', 'runtime.inMaintenanceMode', 'runtime.connectionState', 'summary.config.product.version', 'summary.config.product.fullName', 'summary.hardware.cpuMhz', 'summary.hardware.cpuModel', 'summary.hardware.memorySize', 'summary.hardware.model', 'summary.hardware.numCpuCores', 'summary.hardware.numCpuPkgs', 'summary.rebootRequired', 'summary.quickStats']);
   $logger->info("[INFO][OBJECTS] End retrieving HostSystem objects");
   $logger->info("[INFO][OBJECTS] Start retrieving DistributedVirtualPortgroup objects");
   $view_DistributedVirtualPortgroup = Vim::find_entity_views(view_type => 'DistributedVirtualPortgroup', properties => ['name', 'vm', 'config.numPorts', 'config.autoExpand', 'tag']);
@@ -1133,10 +1132,21 @@ sub hostinventory
       $esxHostName = $host_view->{'config.network.dnsConfig'}->hostName;
       my $storageSys = Vim::get_view(mo_ref => $host_view->{'configManager.storageSystem'}, properties => ['storageDeviceInfo.multipathInfo']);
       my $luns = eval{$storageSys->{'storageDeviceInfo.multipathInfo'}->lun || []};
-      
+            
       foreach my $lun (@$luns)
       {
         
+        my $polPrefer = "";
+        
+        # We choose to exclude USB devices as they are no valid
+        if (defined($lun->policy) && defined($lun->policy->{prefer}))
+        {
+          
+          $polPrefer = $lun->policy->prefer;
+          
+        } # END if (defined($lun->policy) && defined($lun->policy->{prefer}))
+        
+        next if ($polPrefer =~ /^usb\.vmhba32/);
         $lunpathcount += (0+@{$lun->path});
         
         foreach my $path (@{$lun->path})
@@ -1153,8 +1163,20 @@ sub hostinventory
       eval
       {
         
-        $syslog_target = $advOpt->QueryOptions(name => 'Syslog.global.logHost');
-        $syslog_target = @$syslog_target[0]->value;
+        if ($host_view->{'summary.config.product.version'} ge "5")
+        {
+          
+          $syslog_target = $advOpt->QueryOptions(name => 'Syslog.global.logHost');
+          $syslog_target = @$syslog_target[0]->value;
+          
+        }
+        elsif ($host_view->{'summary.config.product.version'} ge "4")
+        {
+          
+          $syslog_target = $advOpt->QueryOptions(name => 'Syslog.Remote.Hostname');
+          $syslog_target = @$syslog_target[0]->value;
+          
+        } # END if ($host_view->{'summary.config.product.version'} ge "5")
         
       }; # END eval
       
@@ -3742,7 +3764,7 @@ sub mailAlert
     if (dbGetSchedule('clusterMembersLUNPathCountMismatch') ne 'off')
     {
     
-      $sth = $dbh->prepare("SELECT DISTINCT main.id as clusterId, main.cluster_name as cluster, h.host_name, h.datastorecount, T.topProp, v.vcname as vcenter FROM hosts h INNER JOIN clusters main ON h.cluster = main.id INNER JOIN vcenters v ON h.vcenter = v.id INNER JOIN (SELECT cluster as clus, (SELECT datastorecount FROM hosts WHERE cluster = clus GROUP BY datastorecount ORDER BY COUNT(*) DESC LIMIT 0,1) AS topProp FROM hosts WHERE lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY clus) AS T ON T.clus = main.id WHERE h.datastorecount <> T.topProp AND main.id <> 1");
+      $sth = $dbh->prepare("SELECT DISTINCT main.id as clusterId, main.cluster_name as cluster, h.host_name, h.datastorecount, T.topProp, v.vcname as vcenter FROM hosts h INNER JOIN clusters main ON h.cluster = main.id INNER JOIN vcenters v ON h.vcenter = v.id INNER JOIN (SELECT cluster as clus, (SELECT datastorecount FROM hosts WHERE cluster = clus GROUP BY datastorecount ORDER BY COUNT(*) DESC LIMIT 0,1) AS topProp FROM hosts GROUP BY clus) AS T ON T.clus = main.id WHERE h.datastorecount <> T.topProp AND h.lastseen > '" . $dateSqlQuery . " 00:00:01' AND main.id <> 1");
       $sth->execute();
 
       if ($sth->rows > 0)
@@ -3792,7 +3814,7 @@ sub mailAlert
     if (dbGetSchedule('clusterMembersLUNPathCountMismatch') ne 'off')
     {
     
-      $sth = $dbh->prepare("SELECT DISTINCT main.id as clusterId, main.cluster_name as cluster, h.host_name, h.lunpathcount, T.topProp, v.vcname as vcenter FROM hosts h INNER JOIN clusters main ON h.cluster = main.id INNER JOIN vcenters v ON h.vcenter = v.id INNER JOIN (SELECT cluster as clus, (SELECT lunpathcount FROM hosts WHERE cluster = clus GROUP BY lunpathcount ORDER BY COUNT(*) DESC LIMIT 0,1) AS topProp FROM hosts WHERE lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY clus) AS T ON T.clus = main.id WHERE h.lunpathcount <> T.topProp AND main.id <> 1");
+      $sth = $dbh->prepare("SELECT DISTINCT main.id as clusterId, main.cluster_name as cluster, h.host_name, h.lunpathcount, T.topProp, v.vcname as vcenter FROM hosts h INNER JOIN clusters main ON h.cluster = main.id INNER JOIN vcenters v ON h.vcenter = v.id INNER JOIN (SELECT cluster as clus, (SELECT lunpathcount FROM hosts WHERE cluster = clus AND lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY lunpathcount ORDER BY COUNT(*) DESC LIMIT 0,1) AS topProp FROM hosts WHERE lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY clus) AS T ON T.clus = main.id WHERE h.lunpathcount <> T.topProp AND main.id <> 1");
 
       $sth->execute();
 
