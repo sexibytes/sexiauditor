@@ -280,7 +280,7 @@ foreach $s_item (@server_list)
         if ($@)
         {
           
-          $logger->error("[ERROR] Cannot connect to vCenter $normalizedServerName and login $u_item, moving on to next vCenter entry");
+          $logger->error("[ERROR] Cannot connect to vCenter $url and login $u_item, moving on to next vCenter entry");
           next;
           
         }
@@ -308,7 +308,7 @@ foreach $s_item (@server_list)
       if ($@)
       {
         
-        $logger->error("[ERROR] Cannot connect to vCenter $normalizedServerName and login $u_item, moving on to next vCenter entry");
+        $logger->error("[ERROR] Cannot connect to vCenter $url and login $u_item, moving on to next vCenter entry");
         next;
         
       }
@@ -3876,7 +3876,7 @@ sub mailAlert
 
       my $currentSshPolicy = dbGetConfig('hostSSHPolicy');
       my $currentShellPolicy = dbGetConfig('hostShellPolicy');
-      $sth = $dbh->prepare("SELECT main.host_name, main.ssh_policy, main.shell_policy, v.vcname FROM hosts main INNER JOIN vcenters v ON main.vcenter = v.id INNER JOIN clusters c ON main.cluster = c.id WHERE (main.ssh_policy <> '$currentSshPolicy' OR main.shell_policy <> '$currentShellPolicy') AND main.lastseen > '" . $dateSqlQuery . " 00:00:01' AND main.connectionState LIKE 'connected' AND main.id IN (SELECT MAX(id) FROM hosts GROUP BY moref,vcenter) GROUP BY main.host_name");
+      $sth = $dbh->prepare("SELECT main.host_name, main.ssh_policy, main.shell_policy, v.vcname FROM hosts main INNER JOIN vcenters v ON main.vcenter = v.id INNER JOIN clusters c ON main.cluster = c.id WHERE (main.ssh_policy <> '$currentSshPolicy' OR main.shell_policy <> '$currentShellPolicy') AND (main.ssh_policy <> 'n/a' OR main.shell_policy <> 'n/a') AND main.lastseen > '" . $dateSqlQuery . " 00:00:01' AND main.connectionState LIKE 'connected' AND main.id IN (SELECT MAX(id) FROM hosts GROUP BY moref,vcenter) GROUP BY main.host_name");
       $sth->execute();
 
       if ($sth->rows > 0)
