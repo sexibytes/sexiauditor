@@ -204,7 +204,7 @@ INSERT INTO `modules` (`id`, `module`, `type`, `displayName`, `version`, `descri
 	(50, 'vmballoonzipswap', 'report', 'balloon/zip/swap', 1, 'balloon/zip/swap report.', 7, 'off'),
 	(51, 'vmmultiwritermode', 'report', 'multiwriter mode', 1, 'multiwriter mode report.', 7, 'off'),
 	(52, 'vmNonpersistentmode', 'report', 'Non persistent mode', 1, 'Non persistent mode report.', 7, 'off'),
-	(53, 'vmscsibussharing', 'report', 'scsi bus sharing', 1, 'scsi bus sharing report.', 7, 'daoffily'),
+	(53, 'vmscsibussharing', 'report', 'scsi bus sharing', 1, 'scsi bus sharing report.', 7, 'off'),
 	(54, 'vmInvalidOrInaccessible', 'report', 'VM Invalid Or Inaccessible', 1, 'This module will display VMs that are marked as inaccessible or invalid.', 7, 'off'),
 	(55, 'vmInconsistent', 'report', 'Inconsistent Folder', 1, 'The following VMs are not stored in folders consistent to their names, this may cause issues when trying to locate them from the datastore manually.', 7, 'off'),
 	(56, 'vmRemovableConnected', 'report', 'Removable Connected', 1, 'This module will display VM that have removable devices (floppy, CD-Rom, ...) connected.', 7, 'off'),
