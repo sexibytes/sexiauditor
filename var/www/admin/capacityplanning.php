@@ -140,7 +140,7 @@ foreach ($capacityPlanningGroups as $capacityPlanningGroup)
   if ($coefficientCapaPlan < 0)
   {
     
-    $daysLeft = round(abs($currentVmLeft/$coefficientCapaPlan));
+    $daysLeft = (int)round(abs($currentVmLeft/$coefficientCapaPlan));
     
   }
   else
@@ -163,7 +163,7 @@ foreach ($capacityPlanningGroups as $capacityPlanningGroup)
       $widget = "vmleft";
       
     } # END if (is_int($vmLeftT1) && $vmLeftT1 < $vmLeftThreshold)
-    
+    var_dump(gettype($daysLeft));
     if (is_int($daysLeft) && $daysLeft < $daysLeftThreshold)
     {
       
