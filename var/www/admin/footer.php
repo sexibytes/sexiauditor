@@ -86,7 +86,7 @@
     });
 
     $('h2').each(function() {
-      var onlytext = $(this).clone().children().remove().end().text();
+      var onlytext = $(this).clone().children().remove().end().text().replace(/No issue on '|'|Module '| not yet available/gi, "");
       $('div#toc>ul').append('<li><a class="toclink" href="#' + $(this).attr('id') + '"><i class="glyphicon glyphicon-link"></i> ' + onlytext + '</a></li>');
     });
 
