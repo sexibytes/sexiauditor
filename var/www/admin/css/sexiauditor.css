@@ -241,9 +241,11 @@ body {
 .alarm-red { color: #d9534f; }
 .alarm-yellow { color: #f0ad4e; }
 .divider-dashed {
-    width: 60%;
-    border-top: 2px dashed #FF4536;
-    margin-bottom: 50px;
+  width: 90%;
+  border: 0;
+  margin-bottom: 50px;
+  height: 1px;
+  background-image: linear-gradient(to right, rgba(255, 69, 54, 0), rgba(255, 69, 54, 0.75), rgba(255, 69, 54, 0));
 }
 h2.text-success { color: #9acb9a; }
 h2.text-success small {
