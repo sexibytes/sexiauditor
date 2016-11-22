@@ -212,7 +212,20 @@ class SexiHelper
     $this->db->orderBy("date","desc");
     $this->db->groupBy("DATE(executiontime.date)");
     $resultDate = $this->db->get('executiontime', NULL, 'date');
-    return $resultDate;
+    
+    if ($this->db->count > 0)
+    {
+      
+      return $resultDate;  
+      
+    }
+    else
+    {
+      
+      $date = new DateTime();
+      return array(array("date" => $date->format('Y-m-d H:i:s')));
+      
+    } # END if ($this->db->count > 0)
     
   } # END private function dbGetDate()
   
