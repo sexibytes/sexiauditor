@@ -95,7 +95,7 @@ if ($check->getModuleSchedule('clusterMembersLUNPathCountMismatch') != 'off' && 
 } # END if ($check->getModuleSchedule('clusterMembersLUNPathCountMismatch') != 'off' && $check->getModuleSchedule('inventory') != 'off')
 
 ?>
-    <h2 class="not-available"><i class="glyphicon glyphicon-remove-sign"></i> Cluster Members Overcommit <small>(Soon)</small></h2>
+    <h2 class="not-available"><i class="glyphicon glyphicon-remove-sign"></i> Module 'Cluster Members Overcommit' not yet available <small>(Soon)</small></h2>
 <?php
 
 if ($check->getModuleSchedule('clusterMembersVersion') != 'off' && $check->getModuleSchedule('inventory') != 'off')
@@ -149,7 +149,7 @@ if ($check->getModuleSchedule('clusterTPSSavings') != 'off' && $check->getModule
 } # END if ($check->getModuleSchedule('clusterTPSSavings') != 'off' && $check->getModuleSchedule('inventory') != 'off')
 
 ?>
-    <h2 class="not-available"><i class="glyphicon glyphicon-remove-sign"></i> Cluster AutoSlotSize <small>(Soon)</small></h2>
-    <h2 class="not-available"><i class="glyphicon glyphicon-remove-sign"></i> Cluster Profile <small>(Soon)</small></h2>
+    <h2 class="not-available"><i class="glyphicon glyphicon-remove-sign"></i> Module 'Cluster AutoSlotSize' not yet available <small>(Soon)</small></h2>
+    <h2 class="not-available"><i class="glyphicon glyphicon-remove-sign"></i> Module 'Cluster Profile' not yet available <small>(Soon)</small></h2>
   </div>
 <?php require("footer.php"); ?>
