@@ -12,8 +12,9 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] != '1')
 require_once('class/PHPTail.class.php');
 
 # Initilize a new instance of PHPTail
-$tail = new PHPTail(array(
-    "vCron Scheduler" => "/var/log/sexiauditor/vcronScheduler.log"
+$tail = new PHPTail(array(,
+  "vCron Errors" => "/var/log/sexiauditor/vcronScheduler.err",
+  "vCron Scheduler" => "/var/log/sexiauditor/vcronScheduler.log"
 ));
 
 # We're getting an AJAX call
