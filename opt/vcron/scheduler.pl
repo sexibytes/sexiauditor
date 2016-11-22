@@ -483,7 +483,7 @@ foreach $s_item (@server_list)
         else
         {
           
-          $logger->warning("[WARNING][SUBROUTINE] Unknow schedule $value for $key");
+          $logger->info("[WARNING][SUBROUTINE] Unknow schedule $value for $key");
         
         } # END else
         
