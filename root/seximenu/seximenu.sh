@@ -80,9 +80,7 @@ func_restartservices() {
   func_echo-header
   echo -e ""
   echo -e "$red Restarting SexiAuditor services will restart:"
-  echo -e "                     /etc/init.d/collectd"
-  echo -e "                     /etc/init.d/grafana-server"
-  echo -e "                     /etc/init.d/carbon-cache"
+  echo -e "                     /etc/init.d/mariadb"
   echo -e "                     /etc/init.d/apache2"
   echo -e ""
   echo -e -n "Are you sure you want to restart SexiAuditor services? (y/N): $clean"
@@ -91,12 +89,8 @@ func_restartservices() {
   read TMPYN
   if [[ $TMPYN == "y" || $TMPYN == "Y" ]]; then
     /etc/init.d/apache2 stop
-    /etc/init.d/grafana-server stop
-    /etc/init.d/collectd stop
-    /etc/init.d/carbon-cache stop
-    /etc/init.d/carbon-cache start
-    /etc/init.d/collectd start
-    /etc/init.d/grafana-server start
+    /etc/init.d/mysql stop
+    /etc/init.d/mysql start
     /etc/init.d/apache2 start
     echo -e ""
     echo -e "SexiAuditor services restarted"
