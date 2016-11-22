@@ -51,6 +51,6 @@ if ($check->getModuleSchedule('networkDVSportsfree') != 'off')
 } # END if ($check->getModuleSchedule('networkDVSportsfree') != 'off')
 
 ?>
-    <h2 class="not-available"><i class="glyphicon glyphicon-remove-sign"></i> DVS profile <small>(Soon)</small></h2>
+    <h2 class="not-available"><i class="glyphicon glyphicon-remove-sign"></i> Module 'DVS profile' not yet available <small>(Soon)</small></h2>
 	</div>
 <?php require("footer.php"); ?>
