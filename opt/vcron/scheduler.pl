@@ -1146,7 +1146,7 @@ sub hostinventory
           
         } # END if (defined($lun->policy) && defined($lun->policy->{prefer}))
         
-        next if ($polPrefer =~ /^usb\.vmhba32/);
+        next if ($polPrefer =~ /^usb\.vmhba/);
         $lunpathcount += (0+@{$lun->path});
         
         foreach my $path (@{$lun->path})
