@@ -223,7 +223,7 @@ VMware::VICredStore::init (filename => $filename) or $logger->logdie ("[ERROR] U
 
 foreach $s_item (@server_list)
 {
-  
+
   $activeVC = $s_item;
   $logger->info("[INFO][VCENTER] Start processing vCenter $s_item");
   my $normalizedServerName = $s_item;
@@ -766,6 +766,8 @@ sub vminventory
   foreach my $vm_view (@$view_VirtualMachine)
   {
     
+    # Hack to avoid bad VM registration
+    next if $vm_view->name eq 'Unknown';
     my $vmPath = Util::get_inventory_path($vm_view, Vim::get_vim());
     $vmPath = (split(/\/([^\/]+)$/, $vmPath))[0] || "Unknown";
     if ($vmPath ne "Unknown") { $vmPath = '/'.$vmPath; }
@@ -886,12 +888,14 @@ sub vminventory
     my $moRef = $vm_view->{'mo_ref'}->{'type'}."-".$vm_view->{'mo_ref'}->{'value'};
     my $numcpu = ($vm_view->{'summary.config.numCpu'} ? $vm_view->{'summary.config.numCpu'} : "0");
     my $memory = ($vm_view->{'summary.config.memorySizeMB'} ? $vm_view->{'summary.config.memorySizeMB'} : "0");
-    my $provisionned = int(($vm_view->{'summary.storage'}->committed + $vm_view->{'summary.storage'}->uncommitted) / 1073741824);
-    my $uncommitted = int($vm_view->{'summary.storage'}->uncommitted / 1073741824);
+    my $storageCommited = ($vm_view->{'summary.storage'} ? $vm_view->{'summary.storage'}->committed : "0");
+    my $storageUncommited = ($vm_view->{'summary.storage'} ? $vm_view->{'summary.storage'}->uncommitted : "0");
+    my $provisionned = int($storageCommited + $storageUncommited / 1073741824);
+    my $uncommitted = int($storageUncommited / 1073741824);
     my $balloonedMemory = 1048576*$vm_view->{'summary.quickStats'}->balloonedMemory;
     my $swappedMemory = 1048576*$vm_view->{'summary.quickStats'}->swappedMemory;
     my $compressedMemory = 1024*$vm_view->{'summary.quickStats'}->compressedMemory;
-    my $committed = int($vm_view->{'summary.storage'}->committed / 1073741824);
+    my $committed = int($storageCommited / 1073741824);
     my $datastore = (split /\[/, (split /\]/, $vm_view->{'summary.config.vmPathName'})[0])[1];
     $datastore = dbGetDatastore($datastore, $vcenterID);
     my $consolidationNeeded = (defined($vm_view->runtime->consolidationNeeded) ? $vm_view->runtime->consolidationNeeded : 0);
