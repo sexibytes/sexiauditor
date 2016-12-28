@@ -890,7 +890,7 @@ sub vminventory
     my $memory = ($vm_view->{'summary.config.memorySizeMB'} ? $vm_view->{'summary.config.memorySizeMB'} : "0");
     my $storageCommited = ($vm_view->{'summary.storage'} ? $vm_view->{'summary.storage'}->committed : "0");
     my $storageUncommited = ($vm_view->{'summary.storage'} ? $vm_view->{'summary.storage'}->uncommitted : "0");
-    my $provisionned = int($storageCommited + $storageUncommited / 1073741824);
+    my $provisionned = int(($storageCommited + $storageUncommited) / 1073741824);
     my $uncommitted = int($storageUncommited / 1073741824);
     my $balloonedMemory = 1048576*$vm_view->{'summary.quickStats'}->balloonedMemory;
     my $swappedMemory = 1048576*$vm_view->{'summary.quickStats'}->swappedMemory;
