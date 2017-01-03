@@ -4534,7 +4534,7 @@ sub mailAlert
     if (dbGetSchedule('vmballoonzipswap') ne 'off')
     {
     
-      $sth = $dbh->prepare("SELECT main.name, vmm.balloonedMemory, vmm.compressedMemory, vmm.swappedMemory, v.vcname FROM vms AS main INNER JOIN vcenters AS v ON (main.vcenter = v.id) INNER JOIN vmMetrics AS vmm ON (vmm.vm_id = main.id) WHERE main.lastseen > '" . $dateSqlQuery . " 00:00:01' AND vmm.id IN (SELECT MAX(id) FROM vmMetrics WHERE lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY vm_id) AND (vmm.swappedMemory > 0 OR vmm.balloonedMemory > 0 OR vmm.compressedMemory > 0) GROUP BY main.moref, v.id");
+      $sth = $dbh->prepare("SELECT main.name, vmm.balloonedMemory, vmm.compressedMemory, vmm.swappedMemory, v.vcname FROM vms AS main INNER JOIN vcenters AS v ON (main.vcenter = v.id) INNER JOIN vmMetrics AS vmm ON (vmm.vm_id = main.id) WHERE main.lastseen > '" . $dateSqlQuery . " 00:00:01' AND vmm.id IN (SELECT MAX(id) FROM vmMetrics WHERE lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY vm_id) AND (vmm.swappedMemory > 0 OR vmm.balloonedMemory > 0) GROUP BY main.moref, v.id");
 
       $sth->execute();
 
