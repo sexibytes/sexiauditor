@@ -42,6 +42,8 @@ require("header.php");
         <li><strong>Datatables</strong> - jQuery extension for tables handling, <a href="https://datatables.net/">https://datatables.net/</a></li>
         <li><strong>eCharts</strong> - Generation of graph, <a href="https://ecomfe.github.io/echarts/index-en.html">https://ecomfe.github.io/echarts/index-en.html</a></li>
         <li><strong>Highcharts</strong> - Generation of graph, <a href="http://www.highcharts.com/">http://www.highcharts.com/</a></li>
+        <li><strong>php-crud-api</strong> - Used for REST API, <a href="https://github.com/mevdschee/php-crud-api">https://github.com/mevdschee/php-crud-api</a></li>
+        <li><strong>Swagger-UI</strong> - API Framework used for API browser, <a href="http://swagger.io/swagger-ui/">http://swagger.io/swagger-ui/</a></li>
         <li><strong>Isotope</strong> - vOpenData layout handling, <a href="http://isotope.metafizzy.co/">http://isotope.metafizzy.co/</a></li>
         <li><strong>Moment</strong> - Date and time manipulation, <a href="http://momentjs.com/">http://momentjs.com/</a></li>
         <li><strong>vOpenData</strong> - Project for open statistics on VMware objects, <a href="https://github.com/vopendata">https://github.com/vopendata</a></li>
