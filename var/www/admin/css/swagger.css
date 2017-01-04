@@ -1,0 +1,21 @@
+.navbar-brand-api {
+    font-family: 'overseer';
+    font-size: 32px;
+    position: absolute;
+    width: 100%;
+    text-align: left;
+    margin: auto;
+    color: white !important;
+}
+
+.navbar-brand-api>small {
+    font-family: 'Droid Sans';
+    font-size: 20px;
+}
+
+#header {
+    background-color: #282F35 !important;
+    border-width: 0px 0px 1px;
+    border-bottom-style: solid;
+    border-color: #FF4536;
+}
