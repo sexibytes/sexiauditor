@@ -2,5 +2,5 @@
 CREATE USER 'sexiauditor'@'localhost' IDENTIFIED BY 'Sex!@ud1t0r';
 GRANT ALL PRIVILEGES ON sexiauditor.* TO 'sexiauditor'@'localhost';
 CREATE USER 'api'@'localhost' IDENTIFIED BY 'Sex!@ud1t0rR0x';
-GRANT SELECT ON api.* TO 'sexiauditor'@'localhost';
+GRANT SELECT ON sexiauditor.* TO 'sexiauditor'@'localhost';
 FLUSH PRIVILEGES;
