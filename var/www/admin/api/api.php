@@ -2277,7 +2277,7 @@ $api = new PHP_CRUD_API(array(
 	'password'=>'Sex!@ud1t0rR0x',
 	'database'=>'sexiauditor',
 	'charset'=>'utf8',
-	'table_authorizer'=>function($cmd,$db,$tab) { return ($cmd=='list' || $cmd=='read'); }
+	'table_authorizer'=>function($cmd,$db,$tab) { return (($cmd=='list' || $cmd=='read') && $tab!='licenses' && $tab!='users' & $tab!='roles' && $tab!='modules' && $tab!='moduleCategory' && $tab!='executiontime' && $tab!='config' && $tab!='configtype' && $tab!='capacityPlanningGroups'); }
 ));
 $api->executeCommand();
 
