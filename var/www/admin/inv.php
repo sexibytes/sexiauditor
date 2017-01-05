@@ -40,7 +40,7 @@ catch (Exception $e)
 
 ?>
     <div style="width:98%; padding:10px;">
-      <div>Show/Hide column:
+      <div>Show/Hide:
         <button type="button" class="btn btn-success btn-xs toggle-vis" style="outline: 5px auto;" name="1" data-column="1">VM</button>
         <button type="button" class="btn btn-success btn-xs toggle-vis" style="outline: 5px auto;" name="2" data-column="2">vCenter</button>
         <button type="button" class="btn btn-success btn-xs toggle-vis" style="outline: 5px auto;" name="3" data-column="3">Cluster</button>
@@ -56,6 +56,7 @@ catch (Exception $e)
         <button type="button" class="btn btn-danger btn-xs toggle-vis" style="outline: 5px auto;" name="13" data-column="13">VMPath</button>
         <button type="button" class="btn btn-danger btn-xs toggle-vis" style="outline: 5px auto;" name="14" data-column="14">MAC</button>
         <button type="button" class="btn btn-danger btn-xs toggle-vis" style="outline: 5px auto;" name="15" data-column="15">PowerState</button>
+        <button type="button" class="btn btn-danger btn-xs toggle-vis" style="outline: 5px auto;" name="16" data-column="16">OS</button>
       </div>
   		<hr />
       <table id="inventory" class="table display" cellspacing="0" width="100%">
@@ -76,6 +77,7 @@ catch (Exception $e)
           <th>VM Path</th>
           <th>MAC</th>
           <th>PowerState</th>
+          <th>GuestOS</th>
         </tr></thead>
         <tbody>
         </tbody>
@@ -94,7 +96,7 @@ catch (Exception $e)
             "smart": false,
             "regex": true
           },
-          "columnDefs": [ { "targets": [ 0, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15 ], "visible": false } ],
+          "columnDefs": [ { "targets": [ 0, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16 ], "visible": false } ],
           "lengthMenu": [ [10, 25, 50, -1], [10, 25, 50, "All"] ]
         } );
   			new $.fn.dataTable.Buttons( table, { buttons: [ 'csv', 'excel' ] } );
