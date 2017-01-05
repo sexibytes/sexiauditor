@@ -4767,7 +4767,7 @@ sub mailAlert
     if (dbGetSchedule('vmMisnamed') ne 'off')
     {
     
-      $sth = $dbh->prepare("SELECT main.name, main.fqdn, v.vcname FROM vms AS main INNER JOIN vcenters v ON main.vcenter = v.id WHERE main.fqdn <> 'Not Available' AND main.fqdn NOT LIKE CONCAT(main.name, '%') AND main.lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY main.moref, v.id");
+      $sth = $dbh->prepare("SELECT main.name, main.fqdn, v.vcname FROM vms AS main INNER JOIN vcenters v ON main.vcenter = v.id WHERE main.fqdn <> 'Not Available' AND main.fqdn <> '' AND main.fqdn NOT LIKE CONCAT(main.name, '%') AND main.lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY main.moref, v.id");
 
       $sth->execute();
 
