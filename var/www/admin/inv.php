@@ -57,6 +57,7 @@ catch (Exception $e)
         <button type="button" class="btn btn-danger btn-xs toggle-vis" style="outline: 5px auto;" name="14" data-column="14">MAC</button>
         <button type="button" class="btn btn-danger btn-xs toggle-vis" style="outline: 5px auto;" name="15" data-column="15">PowerState</button>
         <button type="button" class="btn btn-danger btn-xs toggle-vis" style="outline: 5px auto;" name="16" data-column="16">OS</button>
+        <button type="button" class="btn btn-danger btn-xs toggle-vis" style="outline: 5px auto;" name="17" data-column="17">Group</button>
       </div>
   		<hr />
       <table id="inventory" class="table display" cellspacing="0" width="100%">
@@ -78,6 +79,7 @@ catch (Exception $e)
           <th>MAC</th>
           <th>PowerState</th>
           <th>GuestOS</th>
+          <th>Group</th>
         </tr></thead>
         <tbody>
         </tbody>
@@ -96,7 +98,7 @@ catch (Exception $e)
             "smart": false,
             "regex": true
           },
-          "columnDefs": [ { "targets": [ 0, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16 ], "visible": false } ],
+          "columnDefs": [ { "targets": [ 0, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17 ], "visible": false } ],
           "lengthMenu": [ [10, 25, 50, -1], [10, 25, 50, "All"] ]
         } );
   			new $.fn.dataTable.Buttons( table, { buttons: [ 'csv', 'excel' ] } );
