@@ -48,6 +48,7 @@ $lang['LOGOUT'] = "Logout";
 $lang['GOBACK'] = "Go back";
 $lang['CLOSE'] = "Close";
 $lang['CAPACITYPLANNINGGROUP'] = "Capacity Planning Group";
+$lang['VCENTERGROUP'] = "vCenter Logical Group";
 
 # Footer
 $lang['ADMINRIGHTS'] = "Beware of these awesome admin rights, with power comes great responsibility-ish !!!";
