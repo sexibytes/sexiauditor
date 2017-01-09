@@ -496,6 +496,19 @@ CREATE TABLE IF NOT EXISTS `users` (
 -- Data exporting was unselected.
 
 
+-- Dumping structure for table sexiauditor.vcenterGroups
+DROP TABLE IF EXISTS `vcenterGroups`;
+CREATE TABLE IF NOT EXISTS `vcenterGroups` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `vcenter_name` text CHARACTER SET utf8 NOT NULL,
+  `group_name` varchar(255) CHARACTER SET utf8 NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `vcenter_name` (`vcenter_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+-- Data exporting was unselected.
+
+
 -- Dumping structure for table sexiauditor.vcenters
 DROP TABLE IF EXISTS `vcenters`;
 CREATE TABLE IF NOT EXISTS `vcenters` (
