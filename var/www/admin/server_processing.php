@@ -10,6 +10,7 @@ if (isset($_GET['c']))
     
   } # END if ($_GET['c'] != "ROVMINVENTORY")
   
+  require( 'class/SSP.class.php' );
   require("helper.php");
   $sexihelper = new SexiHelper();
   # SQL server connection information
@@ -22,6 +23,10 @@ if (isset($_GET['c']))
   );
   $joinQuery = "";
   $extraCondition = "";
+  
+
+
+
   
   # if timestamp not sent, we consider it as latest query
   if (isset($_GET['t']))
@@ -497,9 +502,10 @@ if (isset($_GET['c']))
         array( 'db' => 'vms.mac', 'dt' => 14, 'field' => 'mac', 'formatter' => function( $d, $row ) { return str_ireplace(',','<br/>',$d); } ),
         array( 'db' => 'vms.powerState', 'dt' => 15, 'field' => 'powerState' ),
         array( 'db' => 'vms.guestOS', 'dt' => 16, 'field' => 'guestOS' ),
-        array( 'db' => 'h.id', 'dt' => 17, 'field' => 'id' )
+        array( 'db' => 'vcg.group_name', 'dt' => 17, 'field' => 'group_name', 'formatter' => function( $d, $row ) { return (($d != '') ? $d : 'Default'); } ),
+        array( 'db' => 'h.id', 'dt' => 18, 'field' => 'id' )
       );
-      $joinQuery = "FROM {$table} INNER JOIN vmMetrics AS vmm ON (vms.id = vmm.vm_id) INNER JOIN hosts AS h ON (vms.host = h.id) INNER JOIN clusters c ON h.cluster = c.id INNER JOIN vcenters AS v ON (h.vcenter = v.id) INNER JOIN datastores AS d ON (vms.datastore = d.id)";
+      $joinQuery = "FROM {$table} INNER JOIN vmMetrics AS vmm ON (vms.id = vmm.vm_id) INNER JOIN hosts AS h ON (vms.host = h.id) INNER JOIN clusters c ON h.cluster = c.id INNER JOIN vcenters AS v ON (h.vcenter = v.id) INNER JOIN datastores AS d ON (vms.datastore = d.id) LEFT JOIN vcenterGroups AS vcg ON (vcg.id = v.id)";
       $extraCondition = "vms.firstseen < '" . $dateStart . "' AND vms.lastseen > '" . $dateEnd . "' AND vmm.id IN (SELECT MAX(id) FROM vmMetrics WHERE firstseen < '" . $dateStart . "' AND lastseen > '" . $dateEnd . "' GROUP BY vm_id) GROUP BY vms.moref, v.id";
       
     break; # END case 'VMINVENTORY':
@@ -526,9 +532,10 @@ if (isset($_GET['c']))
         array( 'db' => 'vms.mac', 'dt' => 14, 'field' => 'mac', 'formatter' => function( $d, $row ) { return str_ireplace(',','<br/>',$d); } ),
         array( 'db' => 'vms.powerState', 'dt' => 15, 'field' => 'powerState' ),
         array( 'db' => 'vms.guestOS', 'dt' => 16, 'field' => 'guestOS' ),
-        array( 'db' => 'h.id', 'dt' => 17, 'field' => 'id' )
+        array( 'db' => 'vcg.group_name', 'dt' => 17, 'field' => 'group_name', 'formatter' => function( $d, $row ) { return (($d != '') ? $d : 'Default'); } ),
+        array( 'db' => 'h.id', 'dt' => 18, 'field' => 'id' )
       );
-      $joinQuery = "FROM {$table} INNER JOIN vmMetrics AS vmm ON (vms.id = vmm.vm_id) INNER JOIN hosts AS h ON (vms.host = h.id) INNER JOIN clusters c ON h.cluster = c.id INNER JOIN vcenters AS v ON (h.vcenter = v.id) INNER JOIN datastores AS d ON (vms.datastore = d.id)";
+      $joinQuery = "FROM {$table} INNER JOIN vmMetrics AS vmm ON (vms.id = vmm.vm_id) INNER JOIN hosts AS h ON (vms.host = h.id) INNER JOIN clusters c ON h.cluster = c.id INNER JOIN vcenters AS v ON (h.vcenter = v.id) INNER JOIN datastores AS d ON (vms.datastore = d.id) LEFT JOIN vcenterGroups AS vcg ON (vcg.id = v.id)";
       $extraCondition = "vms.firstseen < '" . $dateStart . "' AND vms.lastseen > '" . $dateEnd . "' AND vmm.id IN (SELECT MAX(id) FROM vmMetrics WHERE firstseen < '" . $dateStart . "' AND lastseen > '" . $dateEnd . "' GROUP BY vm_id) GROUP BY vms.moref, v.id";
       
     break; # END case 'ROVMINVENTORY':
@@ -557,7 +564,6 @@ if (isset($_GET['c']))
     
   } # END switch($_GET['c'])
 
-  require( 'class/SSP.class.php' );
   echo json_encode( SSP::simple( $_GET, $sql_details, $table, $primaryKey, $columns, $joinQuery, $extraCondition) );
 
 } # END if (isset($_GET['c']))
