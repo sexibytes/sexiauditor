@@ -21,9 +21,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST')
       if (!empty($_POST['groups'][$i]) && !empty($_POST['members'][$i]))
       {
         
-        # Values are OK, so we add them to hash to be inserted
-        array_push($data, array("group_name" => $_POST['groups'][$i], "members" => $_POST['members'][$i]));
-        
+        foreach (explode(";", $_POST['members'][$i]) as $memberVC)
+        {
+
+          # Values are OK, so we add them to hash to be inserted
+          array_push($data, array("group_name" => $_POST['groups'][$i], "vcenter_name" => $memberVC));
+
+        }
+
       }
       
     }
@@ -53,7 +58,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST')
 
 } # END if ($_SERVER['REQUEST_METHOD'] == 'POST')
 
-$vcenterGroups = $db->get("vcenterGroups", NULL, "group_name, members");
+$db->groupBy ("group_name");
+$vcenterGroups = $db->get("vcenterGroups", NULL, "group_name, GROUP_CONCAT(vcenter_name SEPARATOR ';') as members");
 ?>
   <div class="container"><br/>
     <div class="panel panel-primary">
