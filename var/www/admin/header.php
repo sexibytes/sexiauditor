@@ -139,6 +139,7 @@ else
 <?php if (isset($_SESSION['role']) && $_SESSION['role'] == '1'): ?>
                   <li><a href="config.php"><i class="glyphicon glyphicon-pencil glyphicon-custom"></i> <?php echo $sexilang->getLocaleText('MODULESETTINGS'); ?></a></li>
                   <li><a href="cpgroup.php"><i class="glyphicon glyphicon-th-list glyphicon-custom"></i> <?php echo $sexilang->getLocaleText('CAPACITYPLANNINGGROUP'); ?></a></li>
+                  <li><a href="vcgroup.php"><i class="glyphicon glyphicon-th-list glyphicon-custom"></i> <?php echo $sexilang->getLocaleText('VCENTERGROUP'); ?></a></li>
                   <li><a href="users.php"><i class="glyphicon glyphicon-user glyphicon-custom"></i> <?php echo $sexilang->getLocaleText('USERSMANAGEMENT'); ?></a></li>
                   <li><a href="import-export.php"><i class="glyphicon glyphicon-transfer glyphicon-custom"></i> <?php echo $sexilang->getLocaleText('IMPORTEXPORT'); ?></a></li>
 <?php endif; ?>
