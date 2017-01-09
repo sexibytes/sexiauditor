@@ -505,7 +505,7 @@ if (isset($_GET['c']))
         array( 'db' => 'vcg.group_name', 'dt' => 17, 'field' => 'group_name', 'formatter' => function( $d, $row ) { return (($d != '') ? $d : 'Default'); } ),
         array( 'db' => 'h.id', 'dt' => 18, 'field' => 'id' )
       );
-      $joinQuery = "FROM {$table} INNER JOIN vmMetrics AS vmm ON (vms.id = vmm.vm_id) INNER JOIN hosts AS h ON (vms.host = h.id) INNER JOIN clusters c ON h.cluster = c.id INNER JOIN vcenters AS v ON (h.vcenter = v.id) INNER JOIN datastores AS d ON (vms.datastore = d.id) LEFT JOIN vcenterGroups AS vcg ON (vcg.id = v.id)";
+      $joinQuery = "FROM {$table} INNER JOIN vmMetrics AS vmm ON (vms.id = vmm.vm_id) INNER JOIN hosts AS h ON (vms.host = h.id) INNER JOIN clusters c ON h.cluster = c.id INNER JOIN vcenters AS v ON (h.vcenter = v.id) INNER JOIN datastores AS d ON (vms.datastore = d.id) LEFT JOIN vcenterGroups AS vcg ON (vcg.vcenter_name = v.vcname)";
       $extraCondition = "vms.firstseen < '" . $dateStart . "' AND vms.lastseen > '" . $dateEnd . "' AND vmm.id IN (SELECT MAX(id) FROM vmMetrics WHERE firstseen < '" . $dateStart . "' AND lastseen > '" . $dateEnd . "' GROUP BY vm_id) GROUP BY vms.moref, v.id";
       
     break; # END case 'VMINVENTORY':
@@ -535,7 +535,7 @@ if (isset($_GET['c']))
         array( 'db' => 'vcg.group_name', 'dt' => 17, 'field' => 'group_name', 'formatter' => function( $d, $row ) { return (($d != '') ? $d : 'Default'); } ),
         array( 'db' => 'h.id', 'dt' => 18, 'field' => 'id' )
       );
-      $joinQuery = "FROM {$table} INNER JOIN vmMetrics AS vmm ON (vms.id = vmm.vm_id) INNER JOIN hosts AS h ON (vms.host = h.id) INNER JOIN clusters c ON h.cluster = c.id INNER JOIN vcenters AS v ON (h.vcenter = v.id) INNER JOIN datastores AS d ON (vms.datastore = d.id) LEFT JOIN vcenterGroups AS vcg ON (vcg.id = v.id)";
+      $joinQuery = "FROM {$table} INNER JOIN vmMetrics AS vmm ON (vms.id = vmm.vm_id) INNER JOIN hosts AS h ON (vms.host = h.id) INNER JOIN clusters c ON h.cluster = c.id INNER JOIN vcenters AS v ON (h.vcenter = v.id) INNER JOIN datastores AS d ON (vms.datastore = d.id) LEFT JOIN vcenterGroups AS vcg ON (vcg.vcenter_name = v.vcname)";
       $extraCondition = "vms.firstseen < '" . $dateStart . "' AND vms.lastseen > '" . $dateEnd . "' AND vmm.id IN (SELECT MAX(id) FROM vmMetrics WHERE firstseen < '" . $dateStart . "' AND lastseen > '" . $dateEnd . "' GROUP BY vm_id) GROUP BY vms.moref, v.id";
       
     break; # END case 'ROVMINVENTORY':
