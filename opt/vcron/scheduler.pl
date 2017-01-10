@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use DBI;
 use DBD::mysql;
-use Data::Dumper;
+#use Data::Dumper;
 use Date::Format qw(time2str);
 use Date::Parse;
 use Encode;
@@ -757,6 +757,54 @@ sub inventory
   datastoreinventory( );
   dvpginventory( );
   vminventory( );
+
+  # dump offline csv file for quick access
+  my $dateSqlQuery = time2str("%Y-%m-%d", $start);
+  my $csvHostFile = "/var/www/admin/latest-hosts.csv";
+  my $sth = $dbh->prepare("SELECT h.host_name, v.vcname, c.cluster_name, h.numcpu, h.numcpucore, h.memory, h.model, h.cputype, h.cpumhz, h.esxbuild, vcg.group_name FROM hosts h INNER JOIN clusters c ON h.cluster = c.id INNER JOIN vcenters AS v ON (h.vcenter = v.id) LEFT JOIN vcenterGroups AS vcg ON (vcg.vcenter_name = v.vcname) WHERE h.firstseen < '" . $dateSqlQuery . " 23:59:59' AND h.lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY h.moref, v.id");
+  $sth->execute();
+
+  if ($sth->rows > 0)
+  {
+    
+    open(my $fh, '>', $csvHostFile);
+    print $fh "host_name;vcname;cluster_name;numcpu;numcpucore;memory;model;cputype;cpumhz;esxbuild;group_name\n";
+
+    while (my $ref = $sth->fetchrow_hashref)
+    {
+
+      my $groupName = defined($ref->{'group_name'}) ? $ref->{'group_name'} : 'Default';
+      print $fh $ref->{'host_name'} . ";" . $ref->{'vcname'} . ";" . $ref->{'cluster_name'} . ";" . $ref->{'numcpu'} . ";" . $ref->{'numcpucore'} . ";" . $ref->{'memory'} . ";" . $ref->{'model'} . ";" . $ref->{'cputype'} . ";" . $ref->{'cpumhz'} . ";" . $ref->{'esxbuild'} . ";" . "$groupName\n";
+      
+    } # END while ($ref = $sth->fetchrow_hashref)
+
+    close $fh;
+    my $command = `chown www-data:www-data /var/www/admin/latest-hosts.csv`;
+
+  } # END if ($sth->rows > 0)
+
+  my $csvVMFile = "/var/www/admin/latest-vms.csv";
+  $sth = $dbh->prepare("SELECT vms.name, v.vcname, c.cluster_name, h.host_name, vms.vmxpath, vms.portgroup, vms.ip, vms.numcpu, vms.memory, vmm.commited, vms.provisionned, d.datastore_name, vms.vmpath, vms.mac, vms.powerState, vms.configGuestId, vcg.group_name FROM vms INNER JOIN vmMetrics AS vmm ON (vms.id = vmm.vm_id) INNER JOIN hosts AS h ON (vms.host = h.id) INNER JOIN clusters c ON h.cluster = c.id INNER JOIN vcenters AS v ON (h.vcenter = v.id) INNER JOIN datastores AS d ON (vms.datastore = d.id) LEFT JOIN vcenterGroups AS vcg ON (vcg.vcenter_name = v.vcname) WHERE vms.firstseen < '" . $dateSqlQuery . " 23:59:59' AND vms.lastseen > '" . $dateSqlQuery . " 00:00:01' AND vmm.id IN (SELECT MAX(id) FROM vmMetrics WHERE firstseen < '" . $dateSqlQuery . " 23:59:59' AND lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY vm_id) GROUP BY vms.moref, v.id");
+  $sth->execute();
+
+  if ($sth->rows > 0)
+  {
+    
+    open(my $fh, '>', $csvVMFile);
+    print $fh "name;vcname;cluster_name;host_name;vmxpath;portgroup;ip;numcpu;memory;commited;provisionned;datastore_name;vmpath;mac;powerState;configGuestId;group_name\n";
+
+    while (my $ref = $sth->fetchrow_hashref)
+    {
+
+      my $groupName = defined($ref->{'group_name'}) ? $ref->{'group_name'} : 'Default';
+      print $fh $ref->{'name'} . ";" . $ref->{'vcname'} . ";" . $ref->{'cluster_name'} . ";" . $ref->{'host_name'} . ";" . $ref->{'vmxpath'} . ";" . $ref->{'portgroup'} . ";" . $ref->{'ip'} . ";" . $ref->{'numcpu'} . ";" . $ref->{'memory'} . ";" . $ref->{'commited'} . ";" . $ref->{'provisionned'} . ";" . $ref->{'datastore_name'} . ";" . $ref->{'vmpath'} . ";" . $ref->{'mac'} . ";" . $ref->{'powerState'} . ";" . $ref->{'configGuestId'} . ";" . "$groupName\n";
+      
+    } # END while ($ref = $sth->fetchrow_hashref)
+
+    close $fh;
+    my $command = `chown www-data:www-data /var/www/admin/latest-vms.csv`;
+
+  } # END if ($sth->rows > 0)
   
 } # END sub inventory
 
@@ -765,7 +813,7 @@ sub vminventory
   
   foreach my $vm_view (@$view_VirtualMachine)
   {
-    
+    # next if ($vm_view->name ne 'domdevap009');
     # Hack to avoid bad VM registration
     next if $vm_view->name eq 'Unknown';
     my $vmPath = Util::get_inventory_path($vm_view, Vim::get_vim());
@@ -884,7 +932,8 @@ sub vminventory
     
     my $vcentersdk = new URI::URL $vm_view->{'vim'}->{'service_url'};
     my $vcenterID = dbGetVC($vcentersdk->host);
-    my $host = dbGetHost($vm_view->runtime->host->type."-".$vm_view->runtime->host->value, $vcenterID);
+    my $host = (defined $vm_view->runtime->host) ? dbGetHost($vm_view->runtime->host->type."-".$vm_view->runtime->host->value, $vcenterID) : 0;
+    my $hostId = ($host != 0) ? $host->{'id'} : '';
     my $moRef = $vm_view->{'mo_ref'}->{'type'}."-".$vm_view->{'mo_ref'}->{'value'};
     my $numcpu = ($vm_view->{'summary.config.numCpu'} ? $vm_view->{'summary.config.numCpu'} : "0");
     my $memory = ($vm_view->{'summary.config.memorySizeMB'} ? $vm_view->{'summary.config.memorySizeMB'} : "0");
@@ -898,15 +947,16 @@ sub vminventory
     my $committed = int($storageCommited / 1073741824);
     my $datastore = (split /\[/, (split /\]/, $vm_view->{'summary.config.vmPathName'})[0])[1];
     $datastore = dbGetDatastore($datastore, $vcenterID);
+    my $datastoreId = ($datastore != 0) ? $datastore->{'id'} : '';
     my $consolidationNeeded = (defined($vm_view->runtime->consolidationNeeded) ? $vm_view->runtime->consolidationNeeded : 0);
     my $cpuHotAddEnabled = (defined($vm_view->{'config.cpuHotAddEnabled'}) ? $boolHash{$vm_view->{'config.cpuHotAddEnabled'}} : 0);
     my $memHotAddEnabled = (defined($vm_view->{'config.memoryHotAddEnabled'}) ? $boolHash{$vm_view->{'config.memoryHotAddEnabled'}} : 0);
     # TODO > generate error and skip if multiple + manage deletion (execute query on lastseen != $start)
     my $refVM = dbGetVM($moRef,$vcenterID);
     my $insertVM = 0;
-    
+   
     if ( ($refVM != 0)
-      && ($refVM->{'host'} eq $host->{'id'})
+      && ($refVM->{'host'} eq $hostId)
       && ($refVM->{'memReservation'} eq $vm_view->resourceConfig->memoryAllocation->reservation)
       && ($refVM->{'guestFamily'} eq $vm_guestFamily)
       && ($refVM->{'ip'} eq join(',', @vm_ip_string))
@@ -926,7 +976,7 @@ sub vminventory
       && ($refVM->{'memHotAddEnabled'} eq $memHotAddEnabled)
       && ($refVM->{'guestOS'} eq $vm_guestfullname)
       && ($refVM->{'removable'} eq $removableExist)
-      && ($refVM->{'datastore'} eq $datastore->{'id'})
+      && ($refVM->{'datastore'} eq $datastoreId)
       && ($refVM->{'vmtools'} eq $vm_toolsVersion)
       && ($refVM->{'name'} eq $vm_view->name)
       && ($refVM->{'memLimit'} eq $vm_view->resourceConfig->memoryAllocation->limit)
@@ -940,7 +990,7 @@ sub vminventory
     {
 
       # VM already exists, have not changed, updated lastseen property
-      $logger->info("[DEBUG][VM-INVENTORY] VM $moRef on host " . $host->{'id'} . " already exists and have not changed since last check, updating lastseen property") if $showDebug;
+      $logger->info("[DEBUG][VM-INVENTORY] VM $moRef on host $hostId already exists and have not changed since last check, updating lastseen property") if $showDebug;
       my $sqlUpdate = $dbh->prepare("UPDATE vms set lastseen = FROM_UNIXTIME (?) WHERE id = '" . $refVM->{'id'} . "'");
       $sqlUpdate->execute($start);
       $sqlUpdate->finish();
@@ -953,7 +1003,7 @@ sub vminventory
       {
 
         # VM have changed, we must decom old one before create a new one
-        compareAndLog($refVM->{'host'}, $host->{'id'});
+        compareAndLog($refVM->{'host'}, $hostId);
         compareAndLog($refVM->{'memReservation'}, $vm_view->resourceConfig->memoryAllocation->reservation);
         compareAndLog($refVM->{'guestFamily'}, $vm_guestFamily);
         compareAndLog($refVM->{'ip'}, join(',', @vm_ip_string));
@@ -973,7 +1023,7 @@ sub vminventory
         compareAndLog($refVM->{'memHotAddEnabled'}, $memHotAddEnabled);
         compareAndLog($refVM->{'guestOS'}, $vm_guestfullname);
         compareAndLog($refVM->{'removable'}, $removableExist);
-        compareAndLog($refVM->{'datastore'}, $datastore->{'id'});
+        compareAndLog($refVM->{'datastore'}, $datastoreId);
         compareAndLog($refVM->{'vmtools'}, $vm_toolsVersion);
         compareAndLog($refVM->{'name'}, $vm_view->name);
         compareAndLog($refVM->{'memLimit'}, $vm_view->resourceConfig->memoryAllocation->limit);
@@ -984,15 +1034,15 @@ sub vminventory
         compareAndLog($refVM->{'guestId'}, $vm_guestId);
         compareAndLog($refVM->{'configGuestId'}, $vm_configGuestId);
         compareAndLog($refVM->{'vmpath'}, $vmPath);
-        $logger->info("[DEBUG][VM-INVENTORY] VM $moRef on host " . $host->{'id'} . " have changed since last check, sending old entry " . $refVM->{'id'} . " it into oblivion") if $showDebug;
+        $logger->info("[DEBUG][VM-INVENTORY] VM $moRef on host $hostId have changed since last check, sending old entry " . $refVM->{'id'} . " it into oblivion") if $showDebug;
         
       } # END if ($refVM != 0)
       
-      $logger->info("[DEBUG][VM-INVENTORY] Adding data for VM $moRef on host $host->{'id'}") if $showDebug;
+      $logger->info("[DEBUG][VM-INVENTORY] Adding data for VM $moRef on host $hostId") if $showDebug;
       my $sqlInsert = $dbh->prepare("INSERT INTO vms (vcenter, host, moref, memReservation, guestFamily, ip, cpuLimit, consolidationNeeded, fqdn, numcpu, cpuReservation, sharedBus, portgroup, memory, phantomSnapshot, hwversion, provisionned, mac, multiwriter, memHotAddEnabled, guestOS, removable, datastore, vmtools, name, memLimit, vmxpath, connectionState, cpuHotAddEnabled, powerState, guestId, configGuestId, vmpath, firstseen, lastseen) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, FROM_UNIXTIME (?), FROM_UNIXTIME (?))");
       my @h_tmp = (
         $vcenterID,
-        $host->{'id'},
+        $hostId,
         $moRef,
         $vm_view->resourceConfig->memoryAllocation->reservation,
         $vm_guestFamily,
@@ -1013,7 +1063,7 @@ sub vminventory
         $memHotAddEnabled,
         $vm_guestfullname,
         $removableExist,
-        $datastore->{'id'},
+        $datastoreId,
         $vm_toolsVersion,
         $vm_view->name,
         $vm_view->resourceConfig->memoryAllocation->limit,
@@ -3551,8 +3601,6 @@ sub capacityPlanningReport
         
       } # END if ($coefficientCapaPlan < 0)
       
-      # print(Dumper("daysLeft: $daysLeft"));
-      
       my $colorCP = "#5cb85c";
           
       if ($currentVmLeft < $vmLeftThreshold)
@@ -3818,7 +3866,7 @@ sub mailAlert
     if (dbGetSchedule('clusterMembersLUNPathCountMismatch') ne 'off')
     {
     
-      $sth = $dbh->prepare("SELECT DISTINCT main.id as clusterId, main.cluster_name as cluster, h.host_name, h.lunpathcount, T.topProp, v.vcname as vcenter FROM hosts h INNER JOIN clusters main ON h.cluster = main.id INNER JOIN vcenters v ON h.vcenter = v.id INNER JOIN (SELECT cluster as clus, (SELECT lunpathcount FROM hosts WHERE cluster = clus AND lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY lunpathcount ORDER BY COUNT(*) DESC LIMIT 0,1) AS topProp FROM hosts WHERE lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY clus) AS T ON T.clus = main.id WHERE h.lunpathcount <> T.topProp AND h.connectionState = 'connected' AND h.id IN (SELECT MAX(id) FROM hosts GROUP BY moref,vcenter) AND main.id <> 1");
+      $sth = $dbh->prepare("SELECT DISTINCT main.id as clusterId, main.cluster_name as cluster, h.host_name, h.lunpathcount, T.topProp, v.vcname as vcenter FROM hosts h INNER JOIN clusters main ON h.cluster = main.id INNER JOIN vcenters v ON h.vcenter = v.id INNER JOIN (SELECT cluster as clus, (SELECT lunpathcount FROM hosts WHERE cluster = clus AND lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY lunpathcount ORDER BY COUNT(*) DESC LIMIT 0,1) AS topProp FROM hosts WHERE lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY clus) AS T ON T.clus = main.id WHERE h.lunpathcount <> T.topProp AND h.id IN (SELECT MAX(id) FROM hosts GROUP BY moref,vcenter) AND main.id <> 1");
 
       $sth->execute();
 
@@ -4534,7 +4582,7 @@ sub mailAlert
     if (dbGetSchedule('vmballoonzipswap') ne 'off')
     {
     
-      $sth = $dbh->prepare("SELECT main.name, vmm.balloonedMemory, vmm.compressedMemory, vmm.swappedMemory, v.vcname FROM vms AS main INNER JOIN vcenters AS v ON (main.vcenter = v.id) INNER JOIN vmMetrics AS vmm ON (vmm.vm_id = main.id) WHERE main.lastseen > '" . $dateSqlQuery . " 00:00:01' AND vmm.id IN (SELECT MAX(id) FROM vmMetrics WHERE lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY vm_id) AND (vmm.swappedMemory > 0 OR vmm.balloonedMemory > 0) GROUP BY main.moref, v.id");
+      $sth = $dbh->prepare("SELECT main.name, vmm.balloonedMemory, vmm.compressedMemory, vmm.swappedMemory, v.vcname FROM vms AS main INNER JOIN vcenters AS v ON (main.vcenter = v.id) INNER JOIN vmMetrics AS vmm ON (vmm.vm_id = main.id) WHERE main.lastseen > '" . $dateSqlQuery . " 00:00:01' AND vmm.id IN (SELECT MAX(id) FROM vmMetrics WHERE lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY vm_id) AND (vmm.swappedMemory > 0 OR vmm.balloonedMemory > 0 OR vmm.compressedMemory > 0) GROUP BY main.moref, v.id");
 
       $sth->execute();
 
@@ -4767,7 +4815,7 @@ sub mailAlert
     if (dbGetSchedule('vmMisnamed') ne 'off')
     {
     
-      $sth = $dbh->prepare("SELECT main.name, main.fqdn, v.vcname FROM vms AS main INNER JOIN vcenters v ON main.vcenter = v.id WHERE main.fqdn <> 'Not Available' AND main.fqdn <> '' AND main.fqdn NOT LIKE CONCAT(main.name, '%') AND main.lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY main.moref, v.id");
+      $sth = $dbh->prepare("SELECT main.name, main.fqdn, v.vcname FROM vms AS main INNER JOIN vcenters v ON main.vcenter = v.id WHERE main.fqdn <> 'Not Available' AND main.fqdn NOT LIKE CONCAT(main.name, '%') AND main.lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY main.moref, v.id");
 
       $sth->execute();
 
