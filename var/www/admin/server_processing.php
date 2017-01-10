@@ -24,10 +24,6 @@ if (isset($_GET['c']))
   $joinQuery = "";
   $extraCondition = "";
   
-
-
-
-  
   # if timestamp not sent, we consider it as latest query
   if (isset($_GET['t']))
   {
@@ -555,9 +551,10 @@ if (isset($_GET['c']))
         array( 'db' => 'h.model', 'dt' => 7, 'field' => 'model' ),
         array( 'db' => 'h.cputype', 'dt' => 8, 'field' => 'cputype' ),
         array( 'db' => 'h.cpumhz', 'dt' => 9, 'field' => 'cpumhz', 'formatter' => function( $d, $row ) { return (round($d/1000,2)) . " GHz"; } ),
-        array( 'db' => 'h.esxbuild', 'dt' => 10, 'field' => 'esxbuild' )
+        array( 'db' => 'h.esxbuild', 'dt' => 10, 'field' => 'esxbuild' ),
+        array( 'db' => 'vcg.group_name', 'dt' => 11, 'field' => 'group_name', 'formatter' => function( $d, $row ) { return (($d != '') ? $d : 'Default'); } )
       );
-      $joinQuery = "FROM {$table} h INNER JOIN clusters c ON h.cluster = c.id INNER JOIN vcenters AS v ON (h.vcenter = v.id)";
+      $joinQuery = "FROM {$table} h INNER JOIN clusters c ON h.cluster = c.id INNER JOIN vcenters AS v ON (h.vcenter = v.id) LEFT JOIN vcenterGroups AS vcg ON (vcg.vcenter_name = v.vcname)";
       $extraCondition = "h.firstseen < '" . $dateStart . "' AND h.lastseen > '" . $dateEnd . "' GROUP BY h.moref, v.id";
       
     break; # END case 'HOSTINVENTORY':
