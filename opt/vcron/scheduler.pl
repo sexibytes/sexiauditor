@@ -110,6 +110,7 @@ my $query = "SELECT module, schedule FROM modules ORDER BY id";
 my $sth = $dbh->prepare($query);
 $sth->execute();
 my $nbActiveModule = 0;
+my $nbScheduledModule = 0;
 
 while (my $ref = $sth->fetchrow_hashref())
 {
@@ -119,6 +120,13 @@ while (my $ref = $sth->fetchrow_hashref())
     
     $nbActiveModule++;
     $logger->info("[INFO] Found module " . $ref->{'module'} . " with schedule " . $ref->{'schedule'});
+
+    if (modulePlanToRun($ref->{'schedule'}))
+    {
+
+      $nbScheduledModule++;
+
+    } # END if (modulePlanToRun($ref->{'schedule'}))
     
   }
   else
@@ -135,6 +143,9 @@ $logger->info("[INFO] End processing modules list, found $nbActiveModule active 
 
 # exiting if no active module
 ($nbActiveModule gt 0) or $logger->logdie ("[ERROR] No active module found, abort");
+
+# exiting if no scheduled module
+($nbScheduledModule gt 0) or $logger->logdie ("[ERROR] No scheduled module found, abort");
 
 ###########################################################
 # dispatch table for subroutine (1 module = 1 subroutine) #
@@ -3496,6 +3507,26 @@ sub buildSqlQueryCPGroup
   return $sqlQuery . ")";
   
 } # END sub buildSqlQueryCPGroup
+
+sub modulePlanToRun
+{
+
+  my ($moduleSchedule) = @_;
+
+  if ($force || $moduleSchedule eq "hourly" || ($moduleSchedule eq "daily" && $hour == $dailySchedule) || ($moduleSchedule eq "weekly" && $wday == $weeklySchedule) || ($moduleSchedule eq "monthly" && $mon == $monthlySchedule))
+  {
+
+    return 1; # TRUE
+
+  }
+  else
+  {
+
+    return 0; # FALSE
+
+  } # END if ($moduleSchedule eq "hourly" || ($moduleSchedule eq "daily" && $hour == $dailySchedule) || ($moduleSchedule eq "weekly" && $wday == $weeklySchedule) || ($moduleSchedule eq "monthly" && $mon == $monthlySchedule))
+
+} # END sub modulePlanToRun
 
 sub capacityPlanningReport
 {
