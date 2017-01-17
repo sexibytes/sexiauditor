@@ -206,17 +206,6 @@ my %actions = ( inventory => \&inventory,
                 mailAlert => \&dummy
               );
 
-# Data purge
-# no purge done if 0
-if ($purgeThreshold ne 0)
-{
-  
-  $logger->info("[INFO][PURGE] Start purge process");
-  dbPurgeOldData($purgeThreshold);
-  $logger->info("[INFO][PURGE] End purge process");
-  
-} # END if ($purgeThreshold ne 0)
-
 # TODO = plan to kill some previous execution if it's hang
 VMware::VICredStore::init (filename => $filename) or $logger->logdie ("[ERROR] Unable to initialize Credential Store.");
 @server_list = VMware::VICredStore::get_hosts ();
@@ -497,6 +486,17 @@ foreach $s_item (@server_list)
   $logger->info("[INFO][VCENTER] End processing vCenter $s_item");
   
 } # END foreach $s_item (@server_list)
+
+# Data purge
+# no purge done if 0
+if ($purgeThreshold ne 0)
+{
+  
+  $logger->info("[INFO][PURGE] Start purge process");
+  dbPurgeOldData($purgeThreshold);
+  $logger->info("[INFO][PURGE] End purge process");
+  
+} # END if ($purgeThreshold ne 0)
 
 # Send Mail Alert if enabled, this check must be called manually to be able to query stats from all vcenter and from the previous execution
 if (  ($force && dbGetSchedule('mailAlert') ne "off") || 
@@ -951,6 +951,7 @@ sub vminventory
     my $consolidationNeeded = (defined($vm_view->runtime->consolidationNeeded) ? $vm_view->runtime->consolidationNeeded : 0);
     my $cpuHotAddEnabled = (defined($vm_view->{'config.cpuHotAddEnabled'}) ? $boolHash{$vm_view->{'config.cpuHotAddEnabled'}} : 0);
     my $memHotAddEnabled = (defined($vm_view->{'config.memoryHotAddEnabled'}) ? $boolHash{$vm_view->{'config.memoryHotAddEnabled'}} : 0);
+    my $hwversion = (defined($vm_view->{'config.version'}) ? $vm_view->{'config.version'} : 0);
     # TODO > generate error and skip if multiple + manage deletion (execute query on lastseen != $start)
     my $refVM = dbGetVM($moRef,$vcenterID);
     my $insertVM = 0;
@@ -969,7 +970,7 @@ sub vminventory
       && ($refVM->{'portgroup'} eq join(',', @vm_pg_string))
       && ($refVM->{'memory'} eq $memory)
       && ($refVM->{'phantomSnapshot'} eq $phantomSnapshot)
-      && ($refVM->{'hwversion'} eq $vm_view->{'config.version'})
+      && ($refVM->{'hwversion'} eq $hwversion)
       && ($refVM->{'provisionned'} eq $provisionned)
       && ($refVM->{'mac'} eq join(',', @vm_mac))
       && ($refVM->{'multiwriter'} eq $multiwriter)
@@ -1016,7 +1017,7 @@ sub vminventory
         compareAndLog($refVM->{'portgroup'}, join(',', @vm_pg_string));
         compareAndLog($refVM->{'memory'}, $memory);
         compareAndLog($refVM->{'phantomSnapshot'}, $phantomSnapshot);
-        compareAndLog($refVM->{'hwversion'}, $vm_view->{'config.version'});
+        compareAndLog($refVM->{'hwversion'}, $hwversion);
         compareAndLog($refVM->{'provisionned'}, $provisionned);
         compareAndLog($refVM->{'mac'}, join(',', @vm_mac));
         compareAndLog($refVM->{'multiwriter'}, $multiwriter);
@@ -1238,8 +1239,8 @@ sub hostinventory
 
     my @sorted_dnsservers = map { $_->[1] } sort { $a->[0] <=> $b->[0] } map {[ unpack('N',inet_aton($_)), $_ ]} @$dnsservers;
     my $ntpservers = $host_view->{'config.dateTimeInfo.ntpConfig.server'} || [];
-    my $datastores = $host_view->{'datastore'} || [];
-    my $datastorecount = 0+@{$host_view->{'datastore'}};
+    my $datastores = (defined($host_view->{'datastore'})) ? $host_view->{'datastore'} : [];
+    my $datastorecount = 0+@{$datastores};
     my $memoryShared = QuickQueryPerf($host_view, 'mem', 'shared', 'average', '*');
     $memoryShared = (defined($memoryShared)) ? 0+$memoryShared : 0;
     my $cpuUsage = (defined $host_view->{'summary.quickStats'}->overallCpuUsage) ? $host_view->{'summary.quickStats'}->overallCpuUsage : 0;
