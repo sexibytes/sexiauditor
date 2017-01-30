@@ -4770,7 +4770,7 @@ sub mailAlert
     if (dbGetSchedule('alarms') ne 'off')
     {
     
-      $sth = $dbh->prepare("SELECT alarm_name, status, time, entityMoRef, v.vcname, vms.name as entity FROM alarms INNER JOIN vms ON alarms.entityMoRef = vms.moref INNER JOIN vcenters v ON vms.vcenter = v.id WHERE alarms.entityMoRef LIKE 'VirtualMachine%' AND alarms.lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY alarms.vcenter, alarms.moref");
+      $sth = $dbh->prepare("SELECT alarm_name, status, time, entityMoRef, v.vcname, vms.name as entity FROM alarms INNER JOIN vms ON alarms.entityMoRef = vms.moref INNER JOIN vcenters v ON vms.vcenter = v.id WHERE alarms.entityMoRef LIKE 'VirtualMachine%' AND alarms.lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY alarms.vcenter, alarms.moref, vms.moref");
       $sth->execute();
 
       if ($sth->rows > 0)
