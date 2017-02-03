@@ -430,7 +430,7 @@ if (isset($_GET['c']))
         array( 'db' => 'v.vcname', 'dt' => 4, 'field' => 'vcname' )
       );
       $joinQuery = "FROM {$table} a INNER JOIN vcenters v ON a.vcenter = v.id INNER JOIN vms ON a.entityMoRef = vms.moref";
-      $extraCondition = "a.firstseen < '" . $dateStart . "' AND a.lastseen > '" . $dateEnd . "' AND a.entityMoRef LIKE 'VirtualMachine%' GROUP BY a.vcenter, a.moref";
+      $extraCondition = "a.firstseen < '" . $dateStart . "' AND a.lastseen > '" . $dateEnd . "' AND a.entityMoRef LIKE 'VirtualMachine%' GROUP BY a.vcenter, a.moref, a.entityMoRef";
       
     break; # END case 'ALARMSVM':
     
