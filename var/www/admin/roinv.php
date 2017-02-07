@@ -106,6 +106,26 @@ if ($sexihelper->getConfig('anonymousROInventory') == 'disable')
           <th>GuestOS</th>
           <th>Group</th>
         </tr></thead>
+        <tfoot><tr>
+          <th>id</th>
+          <th>VM</th>
+          <th>vCenter</th>
+          <th>Cluster</th>
+          <th>Host</th>
+          <th>vmx Path</th>
+          <th>Portgroup</th>
+          <th>IP</th>
+          <th>NumCPU</th>
+          <th>MemoryMB</th>
+          <th>CommitedGB</th>
+          <th>ProvisionnedGB</th>
+          <th>Datastore</th>
+          <th>VM Path</th>
+          <th>MAC</th>
+          <th>PowerState</th>
+          <th>GuestOS</th>
+          <th>Group</th>
+        </tr></tfoot>
         <tbody>
         </tbody>
       </table>
@@ -125,6 +145,11 @@ if ($sexihelper->getConfig('anonymousROInventory') == 'disable')
 
   <script type="text/javascript">
     $(document).ready( function () {
+      // Setup - add a text input to each footer cell
+      $('#inventory tfoot th').each( function () {
+          var title = $(this).text();
+          $(this).html( '<input type="text" placeholder="Search '+title+'" />' );
+      } );
       var table = $('#inventory').DataTable( {
         "language": { "infoFiltered": "" },
         "processing": true,
@@ -137,6 +162,17 @@ if ($sexihelper->getConfig('anonymousROInventory') == 'disable')
         },
         "columnDefs": [ { "targets": [ 0, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17 ], "visible": false } ],
         "lengthMenu": [ [10, 25, 50, -1], [10, 25, 50, "All"] ]
+      } );
+      // Apply the search
+      table.columns().every( function () {
+        var that = this;
+        $( 'input', this.footer() ).on( 'keyup change', function () {
+          if ( that.search() !== this.value ) {
+            that
+              .search( this.value )
+              .draw();
+          }
+        } );
       } );
       new $.fn.dataTable.Buttons( table, { buttons: [ 'csv' ] } );
       table.buttons().container().appendTo( '#inventory_wrapper .col-sm-6:eq(0)' );
@@ -162,8 +198,6 @@ if ($sexihelper->getConfig('anonymousROInventory') == 'disable')
         }
       } );
     });
-    
-    
     $('#modal').on('click', 'a[rel=modal]', function(evt) {
       evt.preventDefault();
       var modal = $('#modal').modal();
@@ -173,7 +207,6 @@ if ($sexihelper->getConfig('anonymousROInventory') == 'disable')
         }
       });
     });
-    
     $("#modal").on("shown.bs.modal",function(){
        $(this).hide().show(); 
     });
