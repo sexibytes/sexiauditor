@@ -1172,7 +1172,7 @@ sub hostinventory
       {
         
         my $serviceSys = Vim::get_view(mo_ref => $host_view->{'configManager.serviceSystem'}, properties => ['serviceInfo']);
-        $services = $serviceSys->serviceInfo->service;
+        $services = (defined($serviceSys->serviceInfo)) ? $serviceSys->serviceInfo->service : [];
         
       } # END if (defined($host_view->{'configManager.serviceSystem'}))
 
@@ -1194,8 +1194,8 @@ sub hostinventory
         
       } # END foreach(@$services)
     
-      $dnsservers = $host_view->{'config.network.dnsConfig'}->address;
-      $esxHostName = $host_view->{'config.network.dnsConfig'}->hostName;
+      $dnsservers = (defined($host_view->{'config.network.dnsConfig'})) ? $host_view->{'config.network.dnsConfig'}->address : [];
+      $esxHostName = (defined($host_view->{'config.network.dnsConfig'})) ? $host_view->{'config.network.dnsConfig'}->hostName : [];
       my $storageSys = Vim::get_view(mo_ref => $host_view->{'configManager.storageSystem'}, properties => ['storageDeviceInfo.multipathInfo']);
       my $luns = eval{$storageSys->{'storageDeviceInfo.multipathInfo'}->lun || []};
             
