@@ -500,10 +500,10 @@ CREATE TABLE IF NOT EXISTS `users` (
 DROP TABLE IF EXISTS `vcenterGroups`;
 CREATE TABLE IF NOT EXISTS `vcenterGroups` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `vcenter_name` text CHARACTER SET utf8 NOT NULL,
+  `vcenter_name` varchar(255) CHARACTER SET utf8 NOT NULL,
   `group_name` varchar(255) CHARACTER SET utf8 NOT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `vcenter_name` (`vcenter_name`)
+  KEY `vcenter_name` (`vcenter_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- Data exporting was unselected.
@@ -516,7 +516,8 @@ CREATE TABLE IF NOT EXISTS `vcenters` (
   `vcname` varchar(255) CHARACTER SET utf8 NOT NULL,
   `firstseen` datetime NOT NULL,
   `lastseen` datetime NOT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `vcname` (`vcname`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- Data exporting was unselected.
@@ -584,7 +585,8 @@ CREATE TABLE IF NOT EXISTS `vms` (
   PRIMARY KEY (`id`),
   KEY `vcenter` (`vcenter`),
   KEY `firstseen_lastseen` (`firstseen`,`lastseen`),
-  KEY `host` (`host`,`moref`)
+  KEY `host` (`host`,`moref`),
+  KEY `datastore` (`datastore`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- Data exporting was unselected.
