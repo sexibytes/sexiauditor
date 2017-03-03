@@ -3245,6 +3245,7 @@ sub dbPurgeOldData
   $dbh->do("DELETE FROM clusterMetrics WHERE lastseen < DATE_SUB(NOW(), INTERVAL ".($purgeThreshold+1)." DAY)");
   $dbh->do("DELETE FROM configurationissues WHERE lastseen < DATE_SUB(NOW(), INTERVAL $purgeThreshold DAY)");
   $dbh->do("DELETE FROM datastores WHERE lastseen < DATE_SUB(NOW(), INTERVAL $purgeThreshold DAY)");
+  $dbh->do("DELETE FROM datastoreMappings WHERE lastseen < DATE_SUB(NOW(), INTERVAL $purgeThreshold DAY)");
   $dbh->do("DELETE FROM datastoreMetrics WHERE lastseen < DATE_SUB(NOW(), INTERVAL ".($purgeThreshold+1)." DAY)");
   $dbh->do("DELETE FROM distributedvirtualportgroups WHERE lastseen < DATE_SUB(NOW(), INTERVAL $purgeThreshold DAY)");
   $dbh->do("DELETE FROM hardwarestatus WHERE lastseen < DATE_SUB(NOW(), INTERVAL $purgeThreshold DAY)");
