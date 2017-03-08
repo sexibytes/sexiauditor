@@ -2248,6 +2248,9 @@ sub getHardwareStatus
         foreach (@$sensorInfo)
         {
           
+          # We want to bypass global alarm as it should have already triggered real alarm
+          next if ($_->healthState->key eq 'VMware Rollup Health' || $_->healthState->key eq 'VMware Rollup Health State');
+          
           if ($_->healthState && lc($_->healthState->key) ne 'green' && lc($_->healthState->key) ne 'unknown')
           {
             
