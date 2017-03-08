@@ -3986,7 +3986,7 @@ sub mailAlert
     if (dbGetSchedule('hostNTPCheck') ne 'off')
     {
     
-      $sth = $dbh->prepare("SELECT DISTINCT main.id as clusterId, main.cluster_name as cluster, h.host_name, h.ntpservers, T.topProp, v.vcname as vcenter FROM hosts h INNER JOIN clusters main ON h.cluster = main.id INNER JOIN vcenters v ON h.vcenter = v.id INNER JOIN (SELECT cluster as clus, (SELECT ntpservers FROM hosts WHERE cluster = clus GROUP BY ntpservers ORDER BY COUNT(*) DESC LIMIT 0,1) AS topProp FROM hosts WHERE lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY clus) AS T ON T.clus = main.id WHERE h.ntpservers <> T.topProp AND main.id <> 1 AND h.connectionState LIKE 'connected' AND h.id IN (SELECT MAX(id) FROM hosts GROUP BY moref,vcenter)");
+      $sth = $dbh->prepare("SELECT DISTINCT main.id as clusterId, main.cluster_name as cluster, h.host_name, h.ntpservers, T.topProp, v.vcname as vcenter FROM hosts h INNER JOIN clusters main ON h.cluster = main.id INNER JOIN vcenters v ON h.vcenter = v.id INNER JOIN (SELECT cluster as clus, (SELECT ntpservers FROM hosts WHERE cluster = clus AND lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY ntpservers ORDER BY COUNT(*) DESC LIMIT 0,1) AS topProp FROM hosts WHERE lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY clus) AS T ON T.clus = main.id WHERE h.ntpservers <> T.topProp AND main.id <> 1 AND h.connectionState LIKE 'connected' AND h.id IN (SELECT MAX(id) FROM hosts GROUP BY moref,vcenter)");
       $sth->execute();
 
       if ($sth->rows > 0)
