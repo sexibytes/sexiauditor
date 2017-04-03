@@ -2249,7 +2249,7 @@ sub getHardwareStatus
         {
           
           # We want to bypass global alarm as it should have already triggered real alarm
-          next if ($_->healthState->name eq 'VMware Rollup Health' || $_->healthState->name eq 'VMware Rollup Health State');
+          next if ($_->name eq 'VMware Rollup Health' || $_->name eq 'VMware Rollup Health State');
           
           if ($_->healthState && lc($_->healthState->key) ne 'green' && lc($_->healthState->key) ne 'unknown')
           {
