@@ -4429,7 +4429,7 @@ sub mailAlert
     {
       
       my $networkDVSVSSportsfree = dbGetConfig('networkDVSVSSportsfree');
-      $sth = $dbh->prepare("SELECT name, autoexpand, numports, openports FROM distributedvirtualportgroups WHERE openports < $networkDVSVSSportsfree AND autoexpand <> 1 firstseen < '" . $dateSqlQuery . " 23:59:59' AND lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY vcenter, moref");
+      $sth = $dbh->prepare("SELECT name, autoexpand, numports, openports FROM distributedvirtualportgroups WHERE openports < $networkDVSVSSportsfree AND autoexpand <> 1 AND firstseen < '" . $dateSqlQuery . " 23:59:59' AND lastseen > '" . $dateSqlQuery . " 00:00:01' GROUP BY vcenter, moref");
       $sth->execute();
 
       if ($sth->rows > 0)
