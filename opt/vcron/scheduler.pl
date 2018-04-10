@@ -869,6 +869,7 @@ sub vminventory
     } # END foreach (@$vnics)
     
     my $vm_guestfullname = (defined($vm_view->guest) && defined($vm_view->guest->guestFullName)) ? $vm_view->guest->guestFullName : "Not Available";
+    $vm_guestfullname =~ s/\xa0/ /g;
     my $vm_guestFamily = (defined($vm_view->guest) && defined($vm_view->guest->guestFamily)) ? $vm_view->guest->guestFamily : "Not Available";
     my $vm_guestHostName = (defined($vm_view->guest) && defined($vm_view->guest->hostName)) ? $vm_view->guest->hostName : "Not Available";
     my $vm_guestId = (defined($vm_view->guest) && defined($vm_view->guest->guestId)) ? $vm_view->guest->guestId : "Not Available";
