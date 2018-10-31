@@ -203,7 +203,7 @@ if (isset($_GET['c']))
         array( 'db' => 'd.datastore_name', 'dt' => 0, 'field' => 'datastore_name' ),
         array( 'db' => 'dm.size', 'dt' => 1, 'field' => 'size', 'formatter' => function( $d, $row ) { return human_filesize($d,0); } ),
         array( 'db' => 'dm.freespace', 'dt' => 2, 'field' => 'freespace', 'formatter' => function( $d, $row ) { return human_filesize($d,0); } ),
-        array( 'db' => 'ROUND(100*(dm.freespace/dm.size)) as pct_free', 'dt' => 3, 'field' => 'pct_free', 'formatter' => function( $d, $row ) { return "$d %"; } ),
+        array( 'db' => 'ROUND(100*(dm.freespace/dm.size))', 'dt' => 3, 'field' => 3, 'formatter' => function( $d, $row ) { return "$d %"; } ),
         array( 'db' => 'v.vcname', 'dt' => 4, 'field' => 'vcname' )
       );
       $joinQuery = "FROM {$table} d INNER JOIN datastoreMetrics AS dm ON (d.id = dm.datastore_id) INNER JOIN vcenters AS v ON (d.vcenter = v.id)";
