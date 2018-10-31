@@ -1,4 +1,5 @@
 <?php
+session_name('SexiAuditor');
 
 if (isset($isAdminPage) && $isAdminPage && (!isset($_SESSION['role']) || $_SESSION['role'] != '1'))
 {
