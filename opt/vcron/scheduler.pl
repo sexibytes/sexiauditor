@@ -42,7 +42,7 @@ my $start = time;
 # add option --debug to show verbose log in console
 # enable debug log only with debug flag
 
-$Util::script_version = "0.2.1";
+$Util::script_version = "0.2.2";
 $ENV{'PERL_LWP_SSL_VERIFY_HOSTNAME'} = 0;
 my $logger = Log::Log4perl->get_logger('sexiauditor.vcronScheduler');
 
@@ -868,7 +868,10 @@ sub vminventory
     # my $vmPath = Util::get_inventory_path($vm_view, Vim::get_vim());
     # $vmPath = (split(/\/([^\/]+)$/, $vmPath))[0] || "Unknown";
     my $vmPath = getVmPath $vm_view;
-    if ($vmPath ne "Unknown") { $vmPath = '/'.$vmPath; }
+ 		  $vmPath =~ s/[ .()]/_/g;
+		  # $vmPath = NFD($vmPath);
+			$vmPath =~ s/[^[:ascii:]]//g;
+			$vmPath =~ s/[^A-Za-z0-9-_\/]/_/g;
     my $vnics = $vm_view->guest->net;
     my @vm_pg_string = ();
     my @vm_ip_string = ();
