@@ -42,7 +42,7 @@ my $start = time;
 # add option --debug to show verbose log in console
 # enable debug log only with debug flag
 
-$Util::script_version = "0.1";
+$Util::script_version = "0.2";
 $ENV{'PERL_LWP_SSL_VERIFY_HOSTNAME'} = 0;
 my $logger = Log::Log4perl->get_logger('sexiauditor.vcronScheduler');
 
@@ -92,6 +92,32 @@ my ($alarm_key,$alarm_state,$alarm_name,$alarm_entity) = ("Alarm Key","Alarm Sta
 my %h_cluster = ("domain-c000" => "N/A");
 my %h_host = ();
 my %h_hostcluster = ();
+
+my %all_folder_views_name_table = ();
+my %all_folder_views_type_table = ();
+my %all_folder_views_parent_table = ();
+
+
+# VM blue folder function
+sub getVmPath {
+	my ($child_object) = @_;
+	if (defined $child_object->{'parent'}) {
+		if ($all_folder_views_name_table{$child_object->{'parent'}->value}) {
+			my $VmPathTree = "/";
+			my $parent_folder = $child_object->{'parent'}->value;
+
+			while ($all_folder_views_type_table{$all_folder_views_parent_table{$parent_folder}}) {
+				if ($all_folder_views_type_table{$parent_folder} eq "Folder") {
+					$VmPathTree = "/" . "$all_folder_views_name_table{$parent_folder}" . "$VmPathTree";
+				}
+				if ($all_folder_views_type_table{$all_folder_views_parent_table{$parent_folder}}) {
+					$parent_folder = $all_folder_views_parent_table{$parent_folder};
+				}
+			}
+			return $VmPathTree;
+		}
+	}
+}
 
 # debug Mode
 my $showDebug = (dbGetConfig("showDebug", 'disable') eq 'disable') ? 0 : 1;
@@ -334,7 +360,7 @@ foreach $s_item (@server_list)
   $view_ClusterComputeResource = Vim::find_entity_views(view_type => 'ClusterComputeResource', properties => ['name', 'host', 'summary', 'configIssue', 'configuration.dasConfig.admissionControlPolicy', 'configuration.dasConfig.admissionControlEnabled', 'configurationEx']);
   $logger->info("[INFO][OBJECTS] End retrieving ClusterComputeResource objects");
   $logger->info("[INFO][OBJECTS] Start retrieving HostSystem objects");
-  $view_HostSystem = Vim::find_entity_views(view_type => 'HostSystem', properties => ['name', 'config.dateTimeInfo.ntpConfig.server', 'config.network.dnsConfig', 'config.powerSystemInfo.currentPolicy.shortName', 'configIssue', 'configManager.advancedOption', 'configManager.firmwareSystem', 'configManager.healthStatusSystem', 'configManager.storageSystem', 'configManager.serviceSystem', 'datastore', 'runtime.inMaintenanceMode', 'runtime.connectionState', 'summary.config.product.version', 'summary.config.product.fullName', 'summary.hardware.cpuMhz', 'summary.hardware.cpuModel', 'summary.hardware.memorySize', 'summary.hardware.model', 'summary.hardware.numCpuCores', 'summary.hardware.numCpuPkgs', 'summary.rebootRequired', 'summary.quickStats']);
+  $view_HostSystem = Vim::find_entity_views(view_type => 'HostSystem', properties => ['name', 'config.dateTimeInfo.ntpConfig.server', 'config.network.dnsConfig', 'config.powerSystemInfo.currentPolicy.shortName', 'configIssue', 'configManager.advancedOption', 'configManager.firmwareSystem', 'configManager.healthStatusSystem', 'configManager.storageSystem', 'configManager.serviceSystem', 'datastore', 'runtime.inMaintenanceMode', 'runtime.connectionState', 'summary.config.product.version', 'summary.config.product.fullName', 'summary.hardware.cpuMhz', 'summary.hardware.cpuModel', 'summary.hardware.memorySize', 'summary.hardware.model', 'summary.hardware.numCpuCores', 'summary.hardware.numCpuPkgs', 'summary.rebootRequired', 'summary.quickStats'], filter => {'runtime.connectionState' => "connected"});
   $logger->info("[INFO][OBJECTS] End retrieving HostSystem objects");
   $logger->info("[INFO][OBJECTS] Start retrieving DistributedVirtualPortgroup objects");
   $view_DistributedVirtualPortgroup = Vim::find_entity_views(view_type => 'DistributedVirtualPortgroup', properties => ['name', 'vm', 'config.numPorts', 'config.autoExpand', 'tag']);
@@ -346,8 +372,20 @@ foreach $s_item (@server_list)
   $view_Datacenter = Vim::find_entity_views(view_type => 'Datacenter', properties => ['name','triggeredAlarmState']);
   $logger->info("[INFO][OBJECTS] End retrieving Datacenter objects");
   $logger->info("[INFO][OBJECTS] Start retrieving VirtualMachine objects");
-  $view_VirtualMachine = Vim::find_entity_views(view_type => 'VirtualMachine', properties => ['name','guest','summary.config.vmPathName','layoutEx.file','layout.swapFile','config.guestId','runtime','network','summary.config.numCpu','summary.config.memorySizeMB','summary.storage','triggeredAlarmState','config.hardware.device','config.version','resourceConfig','config.cpuHotAddEnabled','config.memoryHotAddEnabled','config.extraConfig','summary.quickStats','snapshot']);
+  $view_VirtualMachine = Vim::find_entity_views(view_type => 'VirtualMachine', properties => ['name','guest','summary.config.vmPathName','layoutEx.file','layout.swapFile','config.guestId','runtime','network','summary.config.numCpu','summary.config.memorySizeMB','summary.storage','triggeredAlarmState','config.hardware.device','config.version','resourceConfig','config.cpuHotAddEnabled','config.memoryHotAddEnabled','config.extraConfig','summary.quickStats','snapshot'], filter => {'runtime.connectionState' => "connected"});
   $logger->info("[INFO][OBJECTS] End retrieving VirtualMachine objects");
+
+  %all_folder_views_name_table = ();
+  %all_folder_views_type_table = ();
+  %all_folder_views_parent_table = ();
+  my $all_folder_views = Vim::find_entity_views(view_type => 'Folder', properties => ['name', 'parent']);
+  foreach my $all_folder_view (@$all_folder_views) {
+    if ($all_folder_view->{'parent'}) { # skip folder-group-d1
+      $all_folder_views_name_table{$all_folder_view->{'mo_ref'}->value} = $all_folder_view->name;
+      $all_folder_views_parent_table{$all_folder_view->{'mo_ref'}->value} = $all_folder_view->{'parent'}->value;
+      $all_folder_views_type_table{$all_folder_view->{'mo_ref'}->value} = $all_folder_view->{'mo_ref'}->type;
+    }
+  }
   
   # hastables creation to speed later queries
   foreach my $cluster_view (@$view_ClusterComputeResource)
@@ -1507,7 +1545,8 @@ sub clusterinventory
         
         $admissionModel = 'ClusterFailoverResourcesAdmissionControlPolicy';
         $admissionThreshold = "CPU:".$admissionControlPolicy->cpuFailoverResourcesPercent."% | MEM:".$admissionControlPolicy->memoryFailoverResourcesPercent."%";;
-        $admissionValue = "CPU:".$cluster_view->summary->admissionControlInfo->currentCpuFailoverResourcesPercent."% | MEM:".$cluster_view->summary->admissionControlInfo->currentMemoryFailoverResourcesPercent."%";
+        # $admissionValue = "CPU:".$cluster_view->summary->admissionControlInfo->currentCpuFailoverResourcesPercent."% | MEM:".$cluster_view->summary->admissionControlInfo->currentMemoryFailoverResourcesPercent."%";
+        # TODO_RS check def
         
       } # END if ($admissionControlPolicy->isa('ClusterFailoverHostAdmissionControlPolicy'))
       
