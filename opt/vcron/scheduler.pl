@@ -42,7 +42,7 @@ my $start = time;
 # add option --debug to show verbose log in console
 # enable debug log only with debug flag
 
-$Util::script_version = "0.2";
+$Util::script_version = "0.2.1";
 $ENV{'PERL_LWP_SSL_VERIFY_HOSTNAME'} = 0;
 my $logger = Log::Log4perl->get_logger('sexiauditor.vcronScheduler');
 
@@ -372,7 +372,7 @@ foreach $s_item (@server_list)
   $view_Datacenter = Vim::find_entity_views(view_type => 'Datacenter', properties => ['name','triggeredAlarmState']);
   $logger->info("[INFO][OBJECTS] End retrieving Datacenter objects");
   $logger->info("[INFO][OBJECTS] Start retrieving VirtualMachine objects");
-  $view_VirtualMachine = Vim::find_entity_views(view_type => 'VirtualMachine', properties => ['name','guest','summary.config.vmPathName','layoutEx.file','layout.swapFile','config.guestId','runtime','network','summary.config.numCpu','summary.config.memorySizeMB','summary.storage','triggeredAlarmState','config.hardware.device','config.version','resourceConfig','config.cpuHotAddEnabled','config.memoryHotAddEnabled','config.extraConfig','summary.quickStats','snapshot'], filter => {'runtime.connectionState' => "connected"});
+  $view_VirtualMachine = Vim::find_entity_views(view_type => 'VirtualMachine', properties => ['name','guest','summary.config.vmPathName','layoutEx.file','layout.swapFile','config.guestId','runtime','network','summary.config.numCpu','summary.config.memorySizeMB','summary.storage','triggeredAlarmState','config.hardware.device','config.version','resourceConfig','config.cpuHotAddEnabled','config.memoryHotAddEnabled','config.extraConfig','summary.quickStats','snapshot', 'parent'], filter => {'runtime.connectionState' => "connected"});
   $logger->info("[INFO][OBJECTS] End retrieving VirtualMachine objects");
 
   %all_folder_views_name_table = ();
@@ -865,8 +865,9 @@ sub vminventory
     # next if ($vm_view->name ne 'domdevap009');
     # Hack to avoid bad VM registration
     next if $vm_view->name eq 'Unknown';
-    my $vmPath = Util::get_inventory_path($vm_view, Vim::get_vim());
-    $vmPath = (split(/\/([^\/]+)$/, $vmPath))[0] || "Unknown";
+    # my $vmPath = Util::get_inventory_path($vm_view, Vim::get_vim());
+    # $vmPath = (split(/\/([^\/]+)$/, $vmPath))[0] || "Unknown";
+    my $vmPath = getVmPath $vm_view;
     if ($vmPath ne "Unknown") { $vmPath = '/'.$vmPath; }
     my $vnics = $vm_view->guest->net;
     my @vm_pg_string = ();
