@@ -60,7 +60,7 @@ if ($sexihelper->getConfig('anonymousROInventory') == 'disable')
   <div style="padding-top: 10px; padding-bottom: 10px;" class="container" id="wrapper-container">
     <div class="row">
       <div class="col-lg-12 alert alert-info" style="padding: 6px; margin-top: 20px; text-align: center;">
-        <h1 style="margin-top: 10px;">Global Inventory <small>on <?php echo date("F j Y"); ?> <br><small><a href="/latest-hosts.csv">ESX dump csv file <i class="glyphicon glyphicon-share"></i></a> | <a href="/latest-vms.csv">VM dump csv file <i class="glyphicon glyphicon-share"></i></a></small></small></h1>
+        <h1 style="margin-top: 10px;">Global Inventory <small>on <?php echo date("j F Y"); ?> <br><small><a href="/latest-hosts.csv">ESX dump csv file <i class="glyphicon glyphicon-share"></i></a> | <a href="/latest-vms.csv">VM dump csv file <i class="glyphicon glyphicon-share"></i></a></small></small></h1>
       </div>
     </div>
 
