@@ -272,7 +272,7 @@ else
     if ($guestOS["guestOS"] == 'Not Available') { continue; }
     echo '                  <tr>';
     echo '                <td class=\'tdlabel\'>' . $topGuestOS++ . '. '. $guestOS["guestOS"] . '</td>';
-    echo '                <td class=\'tdvalue\'>' . $guestOS["total"] . '</td>';
+    echo '                <td class=\'tdvalue\'>' . $guestOS["total"] . ' (' . floor(100 * $guestOS["total"] / $totalVMs) . '%)</td>';
     echo '              </tr>';
               
   } # END foreach ($sortedTabGuestOS as $guestOS)
