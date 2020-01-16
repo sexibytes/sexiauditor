@@ -16,10 +16,12 @@ $userAgent = array("Perl" => '<img src="images/logo-perl.png" title="VI Perl" />
 
 function isHttpAvailable($domain) {
   //initialize curl
-  $curlInit = curl_init($domain);
+  $curlInit = curl_init("https://$domain");
   curl_setopt($curlInit,CURLOPT_CONNECTTIMEOUT,5);
   curl_setopt($curlInit,CURLOPT_HEADER,true);
   curl_setopt($curlInit,CURLOPT_NOBODY,true);
+  curl_setopt($curlInit,CURLOPT_SSL_VERIFYPEER,false);
+  curl_setopt($curlInit,CURLOPT_SSL_VERIFYHOST,0);
   curl_setopt($curlInit,CURLOPT_RETURNTRANSFER,true);
 
   //get answer
